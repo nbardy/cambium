@@ -1,0 +1,51 @@
+name: Bootstrap validated Cambium source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bootstrap/READY
+
+permissions:
+  contents: write
+
+jobs:
+  import-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: false
+      - name: Verify and extract source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat bootstrap/source.part-* | base64 --decode > /tmp/cambium-source.tar.gz
+          echo 'dc01a12418e2b0b22db57ba117e6c0ae25eb6a6161b644f25762c32bf442ba73  /tmp/cambium-source.tar.gz' | sha256sum --check --strict
+          mkdir -p /tmp/cambium-source
+          tar -xzf /tmp/cambium-source.tar.gz -C /tmp/cambium-source --strip-components=1
+          test "$(cat /tmp/cambium-source/VERSION)" = '0.4.0'
+      - name: Replace bootstrap tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/cambium-source/. .
+      - name: Validate imported tree
+        run: |
+          make check
+          make system-test
+          git diff --check
+      - name: Commit complete source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Nicholas Bardy'
+          git config user.email '1278972+nbardy@users.noreply.github.com'
+          git add -A
+          git commit -m 'Build transparent worktrees and environment receipts'
+          git push origin HEAD:main
