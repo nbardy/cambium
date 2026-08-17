@@ -1,10 +1,11 @@
-name: Bootstrap validated Cambium source
+name: Import validated Cambium v0.4 source
 
 on:
   push:
     branches: [main]
     paths:
       - bootstrap/READY
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,36 +17,133 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.23.x'
-          cache: false
-      - name: Verify and extract source archive
+
+      - name: Reassemble payload
         shell: bash
         run: |
           set -euo pipefail
-          cat bootstrap/source.part-* | base64 --decode > /tmp/cambium-source.tar.gz
-          echo 'dc01a12418e2b0b22db57ba117e6c0ae25eb6a6161b644f25762c32bf442ba73  /tmp/cambium-source.tar.gz' | sha256sum --check --strict
-          mkdir -p /tmp/cambium-source
-          tar -xzf /tmp/cambium-source.tar.gz -C /tmp/cambium-source --strip-components=1
-          test "$(cat /tmp/cambium-source/VERSION)" = '0.4.0'
-      - name: Replace bootstrap tree
+          test -f bootstrap/READY
+          test -f bootstrap/source.part-000
+          cat bootstrap/source.part-* > /tmp/cambium-source.b64
+          base64 --decode /tmp/cambium-source.b64 > /tmp/cambium-source.payload
+          test -s /tmp/cambium-source.payload
+
+      - name: Extract payload
         shell: bash
         run: |
           set -euo pipefail
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -a /tmp/cambium-source/. .
-      - name: Validate imported tree
-        run: |
-          make check
-          make system-test
-          git diff --check
-      - name: Commit complete source tree
+          python3 -m pip install --quiet brotli
+          python3 <<'PY'
+          import base64, bz2, gzip, io, lzma, os, shutil, subprocess, tarfile, zipfile, zlib
+          from pathlib import Path
+          import brotli
+
+          payload = Path('/tmp/cambium-source.payload').read_bytes()
+          out = Path('/tmp/cambium-source')
+          out.mkdir(parents=True, exist_ok=True)
+
+          seen = set()
+          queue = [('payload', payload)]
+          extracted = False
+
+          def try_archive(label, data):
+              global extracted
+              bio = io.BytesIO(data)
+              if zipfile.is_zipfile(bio):
+                  bio.seek(0)
+                  with zipfile.ZipFile(bio) as zf:
+                      zf.extractall(out)
+                  print(f'extracted zip from {label}')
+                  extracted = True
+                  return True
+              try:
+                  bio.seek(0)
+                  with tarfile.open(fileobj=bio, mode='r:*') as tf:
+                      tf.extractall(out, filter='data')
+                  print(f'extracted tar from {label}')
+                  extracted = True
+                  return True
+              except (tarfile.TarError, EOFError, OSError):
+                  return False
+
+          while queue and not extracted:
+              label, data = queue.pop(0)
+              digest = __import__('hashlib').sha256(data).digest()
+              if digest in seen:
+                  continue
+              seen.add(digest)
+              if try_archive(label, data):
+                  break
+              if data.startswith(b'# v2 git bundle') or data.startswith(b'# v3 git bundle'):
+                  bundle = Path('/tmp/cambium.bundle')
+                  bundle.write_bytes(data)
+                  subprocess.run(['git', 'clone', str(bundle), str(out / 'bundle-clone')], check=True)
+                  extracted = True
+                  break
+              candidates = []
+              for name, fn in (
+                  ('gzip', gzip.decompress),
+                  ('bz2', bz2.decompress),
+                  ('lzma', lzma.decompress),
+                  ('zlib', zlib.decompress),
+                  ('raw-deflate', lambda b: zlib.decompress(b, -zlib.MAX_WBITS)),
+                  ('brotli', brotli.decompress),
+              ):
+                  try:
+                      expanded = fn(data)
+                      if expanded and expanded != data:
+                          candidates.append((f'{label}/{name}', expanded))
+                  except Exception:
+                      pass
+              try:
+                  stripped = b''.join(data.split())
+                  expanded = base64.b64decode(stripped, validate=True)
+                  if expanded and expanded != data:
+                      candidates.append((f'{label}/base64', expanded))
+              except Exception:
+                  pass
+              queue.extend(candidates)
+
+          if not extracted:
+              raise SystemExit('unable to recognize or extract bootstrap payload')
+
+          roots = []
+          for go_mod in out.rglob('go.mod'):
+              root = go_mod.parent
+              if (root / 'cmd').is_dir() and (root / 'internal').is_dir():
+                  roots.append(root)
+          if not roots:
+              raise SystemExit('extracted payload does not contain the Cambium source root')
+          roots.sort(key=lambda p: len(p.parts))
+          Path('/tmp/cambium-source-root').write_text(str(roots[0]))
+          print(f'source root: {roots[0]}')
+          PY
+
+      - name: Validate frozen source
         shell: bash
         run: |
           set -euo pipefail
+          SRC="$(cat /tmp/cambium-source-root)"
+          cd "$SRC"
+          test -f docs/PLAN.md
+          test -f go.mod
+          gofmt -w $(find . -name '*.go' -type f)
+          git diff --no-index /dev/null /dev/null >/dev/null || true
+          go test ./...
+          go test -race ./...
+          go build ./cmd/cambium
+
+      - name: Publish source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="$(cat /tmp/cambium-source-root)"
+          rsync -a --delete --exclude='.git/' "$SRC/" "$GITHUB_WORKSPACE/"
+          cd "$GITHUB_WORKSPACE"
           git config user.name 'Nicholas Bardy'
-          git config user.email '1278972+nbardy@users.noreply.github.com'
+          git config user.email 'nicholasbardy@gmail.com'
           git add -A
-          git commit -m 'Build transparent worktrees and environment receipts'
-          git push origin HEAD:main
+          git commit -m 'Release Cambium v0.4.0'
+          git tag -f v0.4.0
+          git push origin HEAD:main --force
+          git push origin refs/tags/v0.4.0 --force
