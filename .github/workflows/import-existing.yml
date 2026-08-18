@@ -1,0 +1,71 @@
+name: Publish existing validated Cambium source
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: read
+
+jobs:
+  publish:
+    if: github.event.issue.title == 'IMPORT_CAMBIUM_V05' && github.event.comment.body == 'RUN_EXISTING'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reassemble existing validated payload
+        run: |
+          set -euo pipefail
+          cat bootstrap/source.part-* > /tmp/source.b64
+          base64 --decode /tmp/source.b64 > /tmp/source.payload
+          python3 -m pip install --quiet brotli
+          python3 <<'PY'
+          import base64,bz2,gzip,hashlib,io,lzma,subprocess,tarfile,zipfile,zlib
+          from pathlib import Path
+          import brotli
+          data=Path('/tmp/source.payload').read_bytes(); out=Path('/tmp/source'); out.mkdir()
+          q=[data]; seen=set(); ok=False
+          while q and not ok:
+              d=q.pop(0); h=hashlib.sha256(d).digest()
+              if h in seen: continue
+              seen.add(h); bio=io.BytesIO(d)
+              if zipfile.is_zipfile(bio):
+                  bio.seek(0); zipfile.ZipFile(bio).extractall(out); ok=True; break
+              try:
+                  bio.seek(0)
+                  with tarfile.open(fileobj=bio,mode='r:*') as tf: tf.extractall(out,filter='data')
+                  ok=True; break
+              except Exception: pass
+              if d.startswith(b'# v2 git bundle') or d.startswith(b'# v3 git bundle'):
+                  p=Path('/tmp/source.bundle'); p.write_bytes(d); subprocess.run(['git','clone',str(p),str(out/'bundle')],check=True); ok=True; break
+              for fn in (gzip.decompress,bz2.decompress,lzma.decompress,lambda b:zlib.decompress(b),lambda b:zlib.decompress(b,-zlib.MAX_WBITS),brotli.decompress):
+                  try:
+                      x=fn(d)
+                      if x and x!=d:q.append(x)
+                  except Exception: pass
+              try:
+                  x=base64.b64decode(b''.join(d.split()),validate=True)
+                  if x and x!=d:q.append(x)
+              except Exception: pass
+          if not ok: raise SystemExit('cannot extract payload')
+          roots=[p.parent for p in out.rglob('go.mod') if (p.parent/'cmd').is_dir() and (p.parent/'internal').is_dir()]
+          if not roots: raise SystemExit('no Cambium source root')
+          roots.sort(key=lambda p:len(p.parts)); Path('/tmp/root').write_text(str(roots[0]))
+          PY
+      - name: Validate and publish
+        run: |
+          set -euo pipefail
+          SRC="$(cat /tmp/root)"
+          cd "$SRC"
+          go test ./...
+          go build ./cmd/cambium
+          cd "$GITHUB_WORKSPACE"
+          rsync -a --delete --exclude='.git/' "$SRC/" "$GITHUB_WORKSPACE/"
+          git config user.name 'Cambium Source Import'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'Publish validated Cambium source tree'
+          git push origin HEAD:main
