@@ -1,6 +1,10 @@
 name: Publish validated Cambium v0.5 source
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/PUBLISH_V05
   pull_request_target:
     types: [opened, synchronize, reopened]
 
@@ -11,7 +15,7 @@ permissions:
 
 jobs:
   publish:
-    if: github.event.pull_request.head.ref == 'agent/publish-v05-source'
+    if: github.event_name == 'push' || github.event.pull_request.head.ref == 'agent/publish-v05-source'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
