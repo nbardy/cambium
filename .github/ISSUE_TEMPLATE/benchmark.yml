@@ -1,0 +1,23 @@
+name: Benchmark result
+description: Share a reproducible workspace benchmark
+title: "benchmark: "
+labels: [benchmark]
+body:
+  - type: textarea
+    attributes:
+      label: Environment
+      description: OS, filesystem, hardware, Git version, Cambium version, path/file counts, logical bytes.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Method
+      description: Include commands and distinguish physical allocation from logical `du` size.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Results
+      description: Setup, first/warm status, first/warm build, storage delta, and cleanup.
+    validations:
+      required: true

@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+      - name: Formatting
+        run: make fmt-check
+      - name: Whitespace and patch integrity
+        run: git diff --check
+      - name: Vet
+        run: make vet
+      - name: Tests
+        run: make test
+      - name: Race tests
+        run: make test-race
+      - name: System test
+        run: make system-test
+      - name: Benchmark smoke
+        run: |
+          mkdir -p dist
+          go run ./cmd/cambium benchmark \
+            --methods git,git-env-copy,cambium-auto,cambium-git,cambium-copy,simgit,cow \
+            --count 2 --files 100 --file-bytes 256 \
+            --env-files 25 --env-file-bytes 256 \
+            --output "dist/benchmark-${{ runner.os }}-${{ runner.arch }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ runner.os }}-${{ runner.arch }}
+          path: dist/benchmark-*.json
+
+  cross-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      - run: |
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 go build ./cmd/cambium
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 go build ./cmd/git-cambium
+
+
+  apfs-proof:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+      - name: Install simgit comparison tool
+        continue-on-error: true
+        run: brew install abendrothj/tap/simgit
+      - name: Install cow comparison tool
+        continue-on-error: true
+        run: brew install joeinnes/tap/cow
+      - name: Build benchmark matrix on APFS
+        run: |
+          mkdir -p dist
+          go run ./cmd/cambium benchmark \
+            --methods git,git-env-copy,cambium-auto,cambium-cow,simgit,cow \
+            --count 8 --files 1000 --file-bytes 65536 \
+            --env-files 500 --env-file-bytes 65536 \
+            --output dist/benchmark-apfs.json
+      - name: Assert physical CoW sharing
+        run: python3 scripts/assert-apfs-benchmark.py dist/benchmark-apfs.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-apfs
+          path: dist/benchmark-apfs.json

@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a reproducible Cambium defect
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: Reproduction
+      description: Include exact commands, repository scale, materializer, OS, filesystem, and output from `cambium doctor --json`.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Data-loss risk
+      options: [None observed, Possible, Confirmed]
+    validations:
+      required: true

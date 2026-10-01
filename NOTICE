@@ -1,0 +1,11 @@
+Cambium
+Copyright 2026 Nicholas Bardy
+
+Cambium is an independent implementation licensed under Apache-2.0.
+
+Git, APFS, macOS, Linux, simgit, cow, ArtifactFS, EdenFS, Sapling, and other
+names are trademarks or projects of their respective owners. Their mention in
+documentation and benchmark adapters does not imply endorsement.
+
+Optional benchmark integrations invoke separately installed third-party tools.
+Those tools are not bundled with Cambium and retain their own licenses.

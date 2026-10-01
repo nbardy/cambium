@@ -1,0 +1,27 @@
+version = 1
+
+# Override a built-in for this repository.
+[[path]]
+path = "target"
+policy = "empty"
+
+# Add an unknown/internal package manager without Cambium code changes.
+[[path]]
+name = "internal dependencies"
+path = ".company-deps"
+policy = "clone"
+inputs = [
+  "company.lock",
+  "company.toml",
+]
+required = true
+
+# Commands remain disabled until allow_policy_commands is enabled locally.
+[[path]]
+name = "generated environment"
+path = ".company-env"
+policy = "recreate"
+inputs = ["company.lock"]
+prepare = ["company-pm", "sync", "--locked"]
+validate = ["company-pm", "check"]
+required = true

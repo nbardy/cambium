@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "branch_prefix": "cambium/",
+  "materializer": "auto",
+  "require_cow": false,
+  "prepared_index": true,
+  "require_ignored_layers": true,
+  "layers": [],
+  "allow_policy_commands": false
+}

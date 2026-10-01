@@ -1,0 +1,11 @@
+/cambium
+/bin/
+/dist/
+.coverage
+*.prof
+.DS_Store
+.cambium.json.local
+.cambium-cas/
+
+__pycache__/
+*.pyc

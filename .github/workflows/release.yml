@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          version="${GITHUB_REF_NAME#v}"
+          name="cambium-${version}-${GOOS}-${GOARCH}"
+          mkdir -p "dist/${name}"
+          go build -trimpath -ldflags="-s -w -X github.com/nbardy/cambium/internal/cli.Version=${version}" -o "dist/${name}/cambium" ./cmd/cambium
+          go build -trimpath -ldflags="-s -w -X github.com/nbardy/cambium/internal/cli.Version=${version}" -o "dist/${name}/git-cambium" ./cmd/git-cambium
+          cp README.md COMPARISONS.md LICENSE NOTICE "dist/${name}/"
+          tar -C dist -czf "dist/${name}.tar.gz" "${name}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cambium-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*.tar.gz
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - run: sha256sum dist/*.tar.gz > dist/SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/SHA256SUMS
