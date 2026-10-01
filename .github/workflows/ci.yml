@@ -41,7 +41,7 @@ jobs:
             --count 2 --files 100 --file-bytes 256 \
             --env-files 25 --env-file-bytes 256 \
             --output "dist/benchmark-${{ runner.os }}-${{ runner.arch }}.json"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: benchmark-${{ runner.os }}-${{ runner.arch }}
           path: dist/benchmark-*.json
@@ -93,7 +93,7 @@ jobs:
             --output dist/benchmark-apfs.json
       - name: Assert physical CoW sharing
         run: python3 scripts/assert-apfs-benchmark.py dist/benchmark-apfs.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: benchmark-apfs
           path: dist/benchmark-apfs.json
