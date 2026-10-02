@@ -38,6 +38,29 @@ verify Git status + publish workspace metadata
 Once created, the workspace is made of ordinary native files. Cambium is not in
 the live I/O path.
 
+## Baselines: one per commit, paid for by the diff
+
+A baseline is an immutable checkout of one commit under
+`.git/cambium/baselines/<commit>/`; workspaces at that commit are CoW clones of
+it and cost almost nothing. Agents usually start from a *new* commit, though,
+so the baseline itself is where disk goes. A new baseline is built one of two
+ways, recorded as `source` in its `metadata.json`:
+
+| Source | When | Cost |
+|---|---|---|
+| `checkout` | no CoW, no ready baseline, or the nearest one differs in over half the tree | full tracked size |
+| `derived:<parent>` | otherwise | only the changed paths |
+
+Deriving clones the ready baseline with the fewest changed paths, refreshes a
+fresh index against the clones (their new inodes would otherwise make
+`read-tree -m` refuse every path), applies `read-tree -m -u <parent> <commit>`,
+and verifies the result with `git diff-index --quiet <commit>`. Measured on a
+16,050-file, 802 MB repository (2026-10-01): full checkout 810 MB, derived
+baseline for a 14-file diff 10 MB.
+
+Baseline construction and cache pruning share `cache-admin.lock`, so a parent
+cannot be pruned while it is being cloned.
+
 ## Generic path-policy flow
 
 ```text

@@ -87,7 +87,7 @@ func (b *Backend) prepareAt(ctx context.Context, ref string, requested model.Mat
 	}
 	var baseline *Baseline
 	if plan.UseBaseline {
-		value, err := EnsureBaseline(ctx, b.Project, commit)
+		value, err := EnsureBaseline(ctx, b.Project, b.Cloner, commit)
 		if err != nil {
 			return PrepareResult{}, err
 		}

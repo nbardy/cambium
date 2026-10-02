@@ -19,6 +19,11 @@
 - Lean README, detailed comparison, configuration, policy, receipt, defaults,
   plan, and validation documents.
 
+- Derived baselines: with CoW available, a new commit's baseline is cloned
+  from the nearest ready baseline and only changed paths are rewritten
+  (802 MB repository: 810 MB full checkout vs 10 MB for a 14-file diff).
+  Each baseline records its `source` (`checkout` or `derived:<parent>`).
+
 ### Changed
 
 - One configuration format: committed `.cambium.toml` (`[settings]` and
