@@ -26,13 +26,20 @@ func TestWorkspacePreservesGitAndFilesystemState(t *testing.T) {
 	ctx := context.Background()
 	root := initializeRepository(t, true)
 
-	value := config.Default()
-	value.Layers = []config.LayerRule{
-		{Path: "deps", Mode: config.LayerClone, Fingerprint: []string{"deps.lock"}},
-		{Path: "scratch", Mode: config.LayerEmpty},
-		{Path: "shared-cache", Mode: config.LayerShare},
-	}
-	writeConfig(t, root, value)
+	writePolicy(t, root, `
+[[path]]
+path = "deps"
+policy = "clone"
+inputs = ["deps.lock"]
+
+[[path]]
+path = "scratch"
+policy = "empty"
+
+[[path]]
+path = "shared-cache"
+policy = "share"
+`)
 
 	backend := openBackend(t, ctx, root)
 	workspace, err := backend.Create(ctx, native.CreateSpec{Name: "agent-one", Ref: "HEAD"})
@@ -124,7 +131,6 @@ func TestPreparedAndFreshIndexesRemainCorrect(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
 
 	for _, test := range []struct {
@@ -162,7 +168,6 @@ func TestRecoveryRollsBackInterruptedCreate(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
 
 	t.Setenv("CAMBIUM_FAILPOINT", "after-register")
@@ -199,7 +204,6 @@ func TestRecoveryProtectsWorkCommittedAfterInterruptedCreate(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
 
 	t.Setenv("CAMBIUM_FAILPOINT", "after-register")
@@ -247,7 +251,6 @@ func TestConcurrentWorkspaceCreation(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
 
 	const count = 8
@@ -296,7 +299,6 @@ func TestConcurrentDuplicateCreateCannotDeleteWinner(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
 
 	results := make(chan error, 2)
@@ -333,9 +335,8 @@ func TestConcurrentDifferentNamesCannotClaimSamePath(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
-	sharedPath := filepath.Join(t.TempDir(), "shared")
+	sharedPath := filepath.Join(canonicalTempDir(t), "shared")
 
 	type result struct {
 		name string
@@ -380,7 +381,6 @@ func TestWorkspacePathInsidePrimaryCheckoutIsRejected(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
 	inside := filepath.Join(root, "nested-workspace")
 	if _, err := backend.Create(ctx, native.CreateSpec{Name: "nested", Path: inside, Materializer: model.MaterializerGit}); err == nil || !strings.Contains(err.Error(), "inside the primary working tree") {
@@ -398,7 +398,6 @@ func TestWorkspacePathCannotReenterPrimaryCheckoutThroughSymlink(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
 
 	aliasRoot := t.TempDir()
@@ -422,10 +421,9 @@ func TestWorkspacePathCanonicalizesSymlinkedExternalParent(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, false)
-	writeConfig(t, root, config.Default())
 	backend := openBackend(t, ctx, root)
 
-	external := t.TempDir()
+	external := canonicalTempDir(t)
 	aliasRoot := t.TempDir()
 	alias := filepath.Join(aliasRoot, "external-link")
 	if err := os.Symlink(external, alias); err != nil {
@@ -452,9 +450,11 @@ func TestLayerSafetyRejectsTrackedAndUnignoredPaths(t *testing.T) {
 
 	t.Run("tracked", func(t *testing.T) {
 		root := initializeRepository(t, false)
-		value := config.Default()
-		value.Layers = []config.LayerRule{{Path: "src", Mode: config.LayerClone}}
-		writeConfig(t, root, value)
+		writePolicy(t, root, `
+[[path]]
+path = "src"
+policy = "clone"
+`)
 		backend := openBackend(t, ctx, root)
 		if _, err := backend.Create(ctx, native.CreateSpec{Name: "unsafe"}); err == nil || !strings.Contains(err.Error(), "tracked") {
 			t.Fatalf("expected tracked-layer refusal, got %v", err)
@@ -467,9 +467,11 @@ func TestLayerSafetyRejectsTrackedAndUnignoredPaths(t *testing.T) {
 			t.Fatal(err)
 		}
 		mustWrite(t, filepath.Join(root, "local-state", "value"), "x", 0o644)
-		value := config.Default()
-		value.Layers = []config.LayerRule{{Path: "local-state", Mode: config.LayerClone}}
-		writeConfig(t, root, value)
+		writePolicy(t, root, `
+[[path]]
+path = "local-state"
+policy = "clone"
+`)
 		backend := openBackend(t, ctx, root)
 		if _, err := backend.Create(ctx, native.CreateSpec{Name: "unsafe"}); err == nil || !strings.Contains(err.Error(), "not ignored") {
 			t.Fatalf("expected unignored-layer refusal, got %v", err)
@@ -487,9 +489,11 @@ func TestLayerSafetyRejectsTrackedAndUnignoredPaths(t *testing.T) {
 		mustWrite(t, filepath.Join(root, ".gitignore"), withNegation, 0o644)
 		git(t, root, "add", ".gitignore")
 		git(t, root, "commit", "-q", "-m", "nested ignore")
-		value := config.Default()
-		value.Layers = []config.LayerRule{{Path: "managed", Mode: config.LayerClone}}
-		writeConfig(t, root, value)
+		writePolicy(t, root, `
+[[path]]
+path = "managed"
+policy = "clone"
+`)
 		backend := openBackend(t, ctx, root)
 		if _, err := backend.Create(ctx, native.CreateSpec{Name: "negated"}); err == nil || !strings.Contains(err.Error(), "contains untracked files") {
 			t.Fatalf("expected negated unignored child to be rejected, got %v", err)
@@ -499,7 +503,7 @@ func TestLayerSafetyRejectsTrackedAndUnignoredPaths(t *testing.T) {
 
 func initializeRepository(t *testing.T, environments bool) string {
 	t.Helper()
-	root := t.TempDir()
+	root := canonicalTempDir(t)
 	git(t, root, "init", "-q", "-b", "main")
 	git(t, root, "config", "user.name", "Cambium Test")
 	git(t, root, "config", "user.email", "cambium@example.invalid")
@@ -542,11 +546,13 @@ func openBackend(t *testing.T, ctx context.Context, root string) *native.Backend
 	return native.New(projectValue)
 }
 
-func writeConfig(t *testing.T, root string, value config.Config) {
+// writePolicy commits a .cambium.toml. Path rules are read from the target
+// commit, so an uncommitted policy file would have no effect.
+func writePolicy(t *testing.T, root, rules string) {
 	t.Helper()
-	if _, err := config.Write(root, value, false); err != nil {
-		t.Fatal(err)
-	}
+	mustWrite(t, filepath.Join(root, config.PolicyFilename), "version = 1\n"+rules, 0o644)
+	git(t, root, "add", config.PolicyFilename)
+	git(t, root, "commit", "-q", "-m", "cambium policy")
 }
 
 func requireGit(t *testing.T) {
@@ -587,3 +593,15 @@ func mustWrite(t *testing.T, path, content string, mode os.FileMode) {
 }
 
 func boolPtr(value bool) *bool { return &value }
+
+// canonicalTempDir resolves symlinks in t.TempDir(). On macOS the temp dir is
+// /var/... but Cambium canonicalizes workspace paths to /private/var/..., so
+// expectations built from the raw temp dir fail spuriously.
+func canonicalTempDir(t *testing.T) string {
+	t.Helper()
+	path, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return path
+}

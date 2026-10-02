@@ -21,7 +21,10 @@
 
 ### Changed
 
-- Configuration schema is version 3.
+- One configuration format: committed `.cambium.toml` (`[settings]` and
+  `[[path]]`) plus clone-local `.git/cambium/config.toml` (`[settings]` only).
+  `.cambium.json` and the `pattern`/`mode`/`fingerprint` aliases are gone.
+- `allow_policy_commands` is rejected in committed config.
 - Environment cache format is version 5.
 - `.venv` and other Python environments default to `recreate`, never clone.
 - Git's worktree registry is authoritative over Cambium's secondary metadata.

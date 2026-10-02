@@ -13,7 +13,7 @@ import (
 func TestAdoptAndReconcileOrdinaryGitWorktreeLifecycle(t *testing.T) {
 	ctx := context.Background()
 	repo := initSpecRepo(t)
-	external := filepath.Join(t.TempDir(), "external")
+	external := filepath.Join(canonicalTempDir(t), "external")
 	runGitTest(t, repo, "worktree", "add", "-b", "external-branch", external, "main")
 
 	projectValue, err := project.Open(ctx, repo, nil)
@@ -100,4 +100,16 @@ func TestAdoptRejectsPrimaryDetachedAndUnknownPaths(t *testing.T) {
 	if _, err := manager.Adopt(ctx, "detached", detached); err == nil {
 		t.Fatal("detached worktree was adopted without a branch")
 	}
+}
+
+// canonicalTempDir resolves symlinks in t.TempDir(). On macOS the temp dir is
+// /var/... but Cambium canonicalizes workspace paths to /private/var/..., so
+// expectations built from the raw temp dir fail spuriously.
+func canonicalTempDir(t *testing.T) string {
+	t.Helper()
+	path, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return path
 }

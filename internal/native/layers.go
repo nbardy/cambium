@@ -70,7 +70,7 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 		sourceEntries, sourceCommitErr = project.Repository.TreeEntries(ctx, sourceCommit)
 	}
 
-	rules, err := environment.ResolveRulesAt(ctx, project.Repository, commit, project.Config.Layers)
+	rules, err := environment.ResolveRulesAt(ctx, project.Repository, commit)
 	if err != nil {
 		return nil, fmt.Errorf("resolve environment policies at %s: %w", commit, err)
 	}
@@ -261,7 +261,7 @@ func CaptureWorkspaceLayers(ctx context.Context, project *project.Project, works
 	if err != nil {
 		return nil, err
 	}
-	rules, err := environment.ResolveRulesAt(ctx, project.Repository, sourceRef, project.Config.Layers)
+	rules, err := environment.ResolveRulesAt(ctx, project.Repository, sourceRef)
 	if err != nil {
 		return nil, fmt.Errorf("resolve environment policies at %s: %w", sourceRef, err)
 	}
@@ -570,7 +570,7 @@ func runRuleCommand(ctx context.Context, project *project.Project, dir string, a
 		return nil
 	}
 	if !project.Config.AllowPolicyCommands {
-		return fmt.Errorf("%s command for environment path %s is disabled; set allow_policy_commands in %s only after reviewing the repository policy", kind, path, config.Filename)
+		return fmt.Errorf("%s command for environment path %s is disabled because allow_policy_commands is off; after reviewing the repository policy, run `cambium init --force --allow-policy-commands` (writes %s)", kind, path, config.LocalPath(project.Repository.CommonGitDir))
 	}
 	_, err := project.Runner.Run(ctx, execx.Command{Dir: dir, Name: argv[0], Args: argv[1:]})
 	if err != nil {

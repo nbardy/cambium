@@ -1,9 +1,9 @@
 package config
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nbardy/cambium/internal/model"
@@ -11,23 +11,17 @@ import (
 
 func TestValidateRejectsEscapingAndOverlappingLayers(t *testing.T) {
 	t.Run("escaping", func(t *testing.T) {
-		value := Default()
-		value.Layers = []LayerRule{{Path: filepath.Join("..", "secret"), Mode: LayerClone}}
-		if err := value.Validate(); err == nil {
+		if err := ValidateRules([]LayerRule{{Path: filepath.Join("..", "secret"), Mode: LayerClone}}); err == nil {
 			t.Fatal("expected escaping path to be rejected")
 		}
 	})
 	t.Run("overlap", func(t *testing.T) {
-		value := Default()
-		value.Layers = []LayerRule{{Path: "node_modules", Mode: LayerClone}, {Path: "node_modules/pkg", Mode: LayerEmpty}}
-		if err := value.Validate(); err == nil {
+		if err := ValidateRules([]LayerRule{{Path: "node_modules", Mode: LayerClone}, {Path: "node_modules/pkg", Mode: LayerEmpty}}); err == nil {
 			t.Fatal("expected overlapping layers to be rejected")
 		}
 	})
 	t.Run("git", func(t *testing.T) {
-		value := Default()
-		value.Layers = []LayerRule{{Path: ".git/cache", Mode: LayerClone}}
-		if err := value.Validate(); err == nil {
+		if err := ValidateRules([]LayerRule{{Path: ".git/cache", Mode: LayerClone}}); err == nil {
 			t.Fatal("expected .git layer to be rejected")
 		}
 	})
@@ -41,55 +35,60 @@ func TestValidateRejectsUnknownMaterializer(t *testing.T) {
 	}
 }
 
-func TestWriteAndLoad(t *testing.T) {
+// Local settings must override only the keys they set. If init wrote every
+// default into the local file, a committed [settings] value (e.g. a team
+// branch_prefix) would be silently shadowed in every clone.
+func TestLocalSettingsOverrideOnlyKeysTheySet(t *testing.T) {
 	root := t.TempDir()
-	value := Default()
-	value.AllowPolicyCommands = true
-	value.Layers = []LayerRule{{Path: "node_modules", Mode: LayerClone, Fingerprint: []string{"package-lock.json"}}}
-	if _, err := Write(root, value, false); err != nil {
+	gitDir := filepath.Join(root, ".git")
+	committed := "version = 1\n\n[settings]\nbranch_prefix = \"team/\"\nrequire_cow = true\n"
+	if err := os.WriteFile(filepath.Join(root, PolicyFilename), []byte(committed), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	loaded, err := Load(root)
+	if _, err := WriteLocal(gitDir, []Setting{BoolSetting("require_cow", false), BoolSetting("allow_policy_commands", true)}, false); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := Load(root, gitDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.Version != 3 || !loaded.AllowPolicyCommands || len(loaded.Layers) != 1 || loaded.Layers[0].Path != "node_modules" {
-		t.Fatalf("unexpected config: %#v", loaded)
+	if loaded.BranchPrefix != "team/" || loaded.RequireCoW || !loaded.AllowPolicyCommands {
+		t.Fatalf("layering wrong: %#v", loaded)
 	}
-	if _, err := Write(root, value, false); err == nil {
-		t.Fatal("write without overwrite replaced an existing config")
+	if _, err := WriteLocal(gitDir, nil, false); err == nil {
+		t.Fatal("WriteLocal replaced an existing local config without overwrite")
 	}
 }
 
-func TestLoadMigratesUsefulV1FieldsInMemory(t *testing.T) {
+// The committed file is controlled by whatever branch is checked out. It must
+// never be able to turn on command execution, and the local file must not be
+// able to smuggle in path rules that differ from the commit.
+func TestTrustBoundaryBetweenCommittedAndLocal(t *testing.T) {
 	root := t.TempDir()
-	legacy := map[string]any{
-		"version":       1,
-		"branch_prefix": "agents/",
-		"require_cow":   true,
-		"layers": []map[string]any{{
-			"path": "node_modules", "mode": "clone", "fingerprint": []string{"package-lock.json"},
-		}},
-	}
-	bytes, err := json.Marshal(legacy)
-	if err != nil {
+	gitDir := filepath.Join(root, ".git")
+	enable := "version = 1\n\n[settings]\nallow_policy_commands = true\n"
+	if err := os.WriteFile(filepath.Join(root, PolicyFilename), []byte(enable), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, Filename), bytes, 0o644); err != nil {
-		t.Fatal(err)
+	if _, err := Load(root, gitDir); err == nil || !strings.Contains(err.Error(), "allow_policy_commands") {
+		t.Fatalf("committed allow_policy_commands was not rejected: %v", err)
 	}
-	loaded, err := Load(root)
-	if err != nil {
-		t.Fatal(err)
+	if _, err := ParsePolicy("target", strings.NewReader(enable)); err == nil {
+		t.Fatal("target-tree policy enabling commands was not rejected")
 	}
-	if loaded.Version != 3 || loaded.BranchPrefix != "agents/" || !loaded.RequireCoW || len(loaded.Layers) != 1 {
-		t.Fatalf("legacy migration lost useful settings: %#v", loaded)
+
+	localRules := "version = 1\n\n[[path]]\npath = \"node_modules\"\npolicy = \"share\"\n"
+	if _, err := Parse("local", strings.NewReader(localRules), ScopeLocal); err == nil {
+		t.Fatal("local config accepted [[path]] rules")
 	}
 }
 
 func TestLoadPolicyFileAndOverride(t *testing.T) {
 	root := t.TempDir()
 	content := `version = 1
+
+[settings]
+branch_prefix = "agents/"
 
 [[path]]
 path = "node_modules"
@@ -188,13 +187,13 @@ prepare = [
 	}
 }
 
-func TestLoadRejectsUnknownOperationalConfigFields(t *testing.T) {
+func TestLoadRejectsUnknownSettings(t *testing.T) {
 	root := t.TempDir()
-	content := `{"version":3,"branch_prefix":"cambium/","materializer":"auto","prepared_index":true,"require_ignored_layers":true,"materalizer":"typo"}`
-	if err := os.WriteFile(filepath.Join(root, Filename), []byte(content), 0o644); err != nil {
+	content := "version = 1\n\n[settings]\nmateralizer = \"git\"\n"
+	if err := os.WriteFile(filepath.Join(root, PolicyFilename), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Load(root); err == nil {
-		t.Fatal("unknown operational config field was silently ignored")
+	if _, err := Load(root, filepath.Join(root, ".git")); err == nil {
+		t.Fatal("misspelled setting was silently ignored")
 	}
 }

@@ -30,6 +30,15 @@ type Cloner struct {
 	Runner execx.Runner
 }
 
+// runner is the single place a zero-value Cloner gets its default. ClonePath
+// once read c.Runner directly and crashed on Cloner{} (TestAPFSCloneIsIndependent).
+func (c Cloner) runner() execx.Runner {
+	if c.Runner == nil {
+		return execx.OSRunner{}
+	}
+	return c.Runner
+}
+
 // Probe reports whether directory supports Cambium's native copy-on-write
 // primitive for a source and destination located on that same filesystem.
 func (c Cloner) Probe(ctx context.Context, directory string) CloneCapability {
@@ -66,9 +75,6 @@ func (c Cloner) ProbeBetween(ctx context.Context, sourceDirectory, destinationDi
 }
 
 func (c Cloner) probeLocal(ctx context.Context, directory string) CloneCapability {
-	if c.Runner == nil {
-		c.Runner = execx.OSRunner{}
-	}
 	temporary, err := os.MkdirTemp(directory, ".cambium-clone-probe-*")
 	if err != nil {
 		return CloneCapability{Mode: model.CloneModeCopy, Supported: false, Detail: err.Error()}
@@ -83,7 +89,7 @@ func (c Cloner) probeLocal(ctx context.Context, directory string) CloneCapabilit
 	if !ok {
 		return CloneCapability{Mode: model.CloneModeCopy, Supported: false, Detail: "platform has no configured native clone primitive"}
 	}
-	if _, err := c.Runner.Run(ctx, execx.Command{Dir: temporary, Name: command, Args: args}); err != nil {
+	if _, err := c.runner().Run(ctx, execx.Command{Dir: temporary, Name: command, Args: args}); err != nil {
 		return CloneCapability{Mode: model.CloneModeCopy, Supported: false, Detail: err.Error()}
 	}
 	bytes, err := os.ReadFile(destination)
@@ -136,9 +142,6 @@ func planMaterialization(requested model.Materializer, capability CloneCapabilit
 }
 
 func (c Cloner) CloneTree(ctx context.Context, source, destination string, mode model.Materializer) (model.CloneMode, error) {
-	if c.Runner == nil {
-		c.Runner = execx.OSRunner{}
-	}
 	switch mode {
 	case model.MaterializerCoW:
 		capability := c.ProbeBetween(ctx, filepath.Dir(filepath.Clean(source)), destination)
@@ -146,13 +149,13 @@ func (c Cloner) CloneTree(ctx context.Context, source, destination string, mode 
 			return "", fmt.Errorf("copy-on-write is unavailable: %s", capability.Detail)
 		}
 		command, args := cloneTreeCommand(source, destination, true)
-		if _, err := c.Runner.Run(ctx, execx.Command{Dir: destination, Name: command, Args: args}); err != nil {
+		if _, err := c.runner().Run(ctx, execx.Command{Dir: destination, Name: command, Args: args}); err != nil {
 			return "", fmt.Errorf("native CoW tree clone failed: %w", err)
 		}
 		return capability.Mode, nil
 	case model.MaterializerCopy:
 		command, args := cloneTreeCommand(source, destination, false)
-		if _, err := c.Runner.Run(ctx, execx.Command{Dir: destination, Name: command, Args: args}); err != nil {
+		if _, err := c.runner().Run(ctx, execx.Command{Dir: destination, Name: command, Args: args}); err != nil {
 			return "", fmt.Errorf("tree copy failed: %w", err)
 		}
 		return model.CloneModeCopy, nil
@@ -197,7 +200,7 @@ func (c Cloner) ClonePath(ctx context.Context, source, destination string, requi
 	capability := c.ProbeBetween(ctx, filepath.Dir(filepath.Clean(source)), filepath.Dir(destination))
 	if capability.Supported {
 		_, command, args, _ := cloneFileCommand(source, destination)
-		if _, err := c.Runner.Run(ctx, execx.Command{Dir: filepath.Dir(destination), Name: command, Args: args}); err == nil {
+		if _, err := c.runner().Run(ctx, execx.Command{Dir: filepath.Dir(destination), Name: command, Args: args}); err == nil {
 			return capability.Mode, nil
 		} else if requireCoW {
 			return "", err
@@ -207,7 +210,7 @@ func (c Cloner) ClonePath(ctx context.Context, source, destination string, requi
 		return "", fmt.Errorf("copy-on-write is required but unavailable: %s", capability.Detail)
 	}
 	command, args := copyFileCommand(source, destination)
-	if _, err := c.Runner.Run(ctx, execx.Command{Dir: filepath.Dir(destination), Name: command, Args: args}); err != nil {
+	if _, err := c.runner().Run(ctx, execx.Command{Dir: filepath.Dir(destination), Name: command, Args: args}); err != nil {
 		return "", err
 	}
 	return model.CloneModeCopy, nil

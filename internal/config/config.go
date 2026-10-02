@@ -1,11 +1,8 @@
 package config
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -15,10 +12,27 @@ import (
 	"github.com/nbardy/cambium/internal/model"
 )
 
+// Cambium has exactly one configuration format, TOML, in two places with
+// different trust:
+//
+//   - PolicyFilename (.cambium.toml) is committed. Its [[path]] rules are read
+//     from the exact target commit; its [settings] are read from the primary
+//     checkout. Any branch can edit it, so it may not enable command execution.
+//   - LocalFilename (<git-common-dir>/cambium/config.toml) is never committed.
+//     It accepts [settings] only and is the sole place allow_policy_commands
+//     may be turned on.
+//
+// Precedence: built-in defaults < committed [settings] < local [settings].
 const (
-	Filename       = ".cambium.json"
 	PolicyFilename = ".cambium.toml"
+	LocalFilename  = "config.toml"
 )
+
+// LocalPath returns the clone-local settings file inside Git's common dir, so
+// it is shared by every linked worktree and can never be committed.
+func LocalPath(commonGitDir string) string {
+	return filepath.Join(commonGitDir, "cambium", LocalFilename)
+}
 
 type LayerMode string
 
@@ -41,7 +55,6 @@ type LayerRule struct {
 	Path             string    `json:"path"`
 	Mode             LayerMode `json:"mode"`
 	Inputs           []string  `json:"inputs,omitempty"`
-	Fingerprint      []string  `json:"fingerprint,omitempty"` // legacy alias for Inputs
 	Prepare          []string  `json:"prepare,omitempty"`
 	Validate         []string  `json:"validate,omitempty"`
 	AllowUnignored   bool      `json:"allow_unignored,omitempty"`
@@ -54,8 +67,7 @@ type LayerRule struct {
 }
 
 func (r LayerRule) EffectiveInputs() []string {
-	values := append([]string(nil), r.Inputs...)
-	values = append(values, r.Fingerprint...)
+	values := r.Inputs
 	seen := make(map[string]struct{}, len(values))
 	out := make([]string, 0, len(values))
 	for _, value := range values {
@@ -74,116 +86,88 @@ func (r LayerRule) EffectiveInputs() []string {
 }
 
 type Config struct {
-	Version              int                `json:"version"`
 	BranchPrefix         string             `json:"branch_prefix"`
 	Materializer         model.Materializer `json:"materializer"`
 	RequireCoW           bool               `json:"require_cow"`
 	PreparedIndex        bool               `json:"prepared_index"`
 	RequireIgnoredLayers bool               `json:"require_ignored_layers"`
 	AllowPolicyCommands  bool               `json:"allow_policy_commands"`
-	Layers               []LayerRule        `json:"layers,omitempty"` // legacy/JSON overrides
 }
 
 func Default() Config {
 	return Config{
-		Version:              3,
 		BranchPrefix:         "cambium/",
 		Materializer:         model.MaterializerAuto,
 		PreparedIndex:        true,
 		RequireIgnoredLayers: true,
-		Layers:               []LayerRule{},
 	}
 }
 
-func Load(repoRoot string) (Config, error) {
-	path := filepath.Join(repoRoot, Filename)
-	bytes, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return Default(), nil
-	}
+// Load resolves operational settings: defaults, then the primary checkout's
+// committed .cambium.toml [settings], then the clone-local config.toml.
+func Load(repoRoot, commonGitDir string) (Config, error) {
+	value := Default()
+	committed, err := readFile(filepath.Join(repoRoot, PolicyFilename), ScopeCommitted)
 	if err != nil {
 		return Config{}, err
 	}
-	var header struct {
-		Version int `json:"version"`
+	local, err := readFile(LocalPath(commonGitDir), ScopeLocal)
+	if err != nil {
+		return Config{}, err
 	}
-	if err := json.Unmarshal(bytes, &header); err != nil {
-		return Config{}, fmt.Errorf("parse %s: %w", path, err)
-	}
-	value := Default()
-	switch header.Version {
-	case 1:
-		var legacy struct {
-			Version      int         `json:"version"`
-			BranchPrefix string      `json:"branch_prefix"`
-			RequireCoW   bool        `json:"require_cow"`
-			Layers       []LayerRule `json:"layers"`
+	for _, file := range []File{committed, local} {
+		if err := applySettings(&value, file); err != nil {
+			return Config{}, err
 		}
-		if err := decodeStrictJSON(bytes, &legacy); err != nil {
-			return Config{}, fmt.Errorf("parse legacy %s: %w", path, err)
-		}
-		if legacy.BranchPrefix != "" {
-			value.BranchPrefix = legacy.BranchPrefix
-		}
-		value.RequireCoW = legacy.RequireCoW
-		value.Layers = legacy.Layers
-	case 2, 3:
-		if err := decodeStrictJSON(bytes, &value); err != nil {
-			return Config{}, fmt.Errorf("parse %s: %w", path, err)
-		}
-		value.Version = 3
-	default:
-		return Config{}, fmt.Errorf("unsupported config version %d", header.Version)
 	}
 	if err := value.Validate(); err != nil {
-		return Config{}, fmt.Errorf("validate %s: %w", path, err)
+		return Config{}, err
 	}
 	return value, nil
 }
 
-func decodeStrictJSON(data []byte, destination any) error {
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(destination); err != nil {
-		return err
-	}
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		if err == nil {
-			return errors.New("multiple JSON values are not allowed")
-		}
-		return err
-	}
-	return nil
-}
-
-func Write(repoRoot string, value Config, overwrite bool) (string, error) {
-	value.Version = 3
-	if err := value.Validate(); err != nil {
-		return "", err
-	}
-	path := filepath.Join(repoRoot, Filename)
+// WriteLocal writes the clone-local settings file. Only explicitly chosen
+// settings are written, so unset keys keep following the committed file.
+func WriteLocal(commonGitDir string, settings []Setting, overwrite bool) (string, error) {
+	path := LocalPath(commonGitDir)
 	if !overwrite {
 		if _, err := os.Stat(path); err == nil {
-			return "", fmt.Errorf("%s already exists", path)
+			return "", fmt.Errorf("%s already exists; pass --force to replace it", path)
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return "", err
 		}
 	}
-	bytes, err := json.MarshalIndent(value, "", "  ")
+	var builder strings.Builder
+	builder.WriteString("# Cambium settings for this clone only. Never committed.\n")
+	builder.WriteString("# Overrides [settings] in the committed " + PolicyFilename + ".\n")
+	builder.WriteString("version = 1\n\n[settings]\n")
+	for _, setting := range settings {
+		builder.WriteString(setting.Key + " = " + setting.Raw + "\n")
+	}
+	content := builder.String()
+	// Round-trip through the real parser so init can never write a file that a
+	// later Load rejects.
+	parsed, err := Parse(path, strings.NewReader(content), ScopeLocal)
 	if err != nil {
 		return "", err
 	}
-	bytes = append(bytes, '\n')
-	if err := fsx.WriteFileAtomic(path, bytes, 0o644); err != nil {
+	check := Default()
+	if err := applySettings(&check, parsed); err != nil {
+		return "", err
+	}
+	if err := check.Validate(); err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return "", err
+	}
+	if err := fsx.WriteFileAtomic(path, []byte(content), 0o644); err != nil {
 		return "", err
 	}
 	return path, nil
 }
 
 func (c Config) Validate() error {
-	if c.Version != 3 {
-		return fmt.Errorf("unsupported config version %d", c.Version)
-	}
 	if err := ValidateMaterializer(c.Materializer); err != nil {
 		return err
 	}
@@ -193,7 +177,7 @@ func (c Config) Validate() error {
 	if strings.ContainsAny(c.BranchPrefix, " \t\n~^:?*[\\") {
 		return fmt.Errorf("branch_prefix %q contains characters Git rejects", c.BranchPrefix)
 	}
-	return ValidateRules(c.Layers)
+	return nil
 }
 
 func ValidateRules(rules []LayerRule) error {

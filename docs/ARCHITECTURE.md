@@ -48,8 +48,9 @@ target Git tree
 └─ untracked but not ignored      → refuse by default
 ```
 
-Policy precedence is built-in, then legacy local JSON override, then the exact
-target-tree `.cambium.toml` rule.
+Policy precedence is built-in, then the exact target-tree `.cambium.toml`
+rule. Operational settings come from committed `.cambium.toml` `[settings]`,
+overridden by the clone-local `.git/cambium/config.toml`.
 
 Receipts hash target-tree input object IDs plus policy/platform semantics.
 Clone/seed payloads publish atomically beneath `.git/cambium/layers`; metadata

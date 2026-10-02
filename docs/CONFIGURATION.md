@@ -1,47 +1,28 @@
 # Configuration
 
-Cambium has two configuration surfaces with deliberately different trust and
-versioning roles.
+Cambium has one configuration format, TOML, in two places with different
+trust:
 
-## `.cambium.json`: local operational settings
+| File | Committed? | May contain | Read from |
+|---|---|---|---|
+| `.cambium.toml` | yes | `[settings]` and `[[path]]` rules | rules: the exact target commit; settings: the primary checkout |
+| `.git/cambium/config.toml` | never | `[settings]` only | the clone (shared by all its worktrees) |
 
-`cambium init` writes `.cambium.json`:
+Settings resolve as **built-in defaults < committed `[settings]` < local
+`[settings]`**. The local file holds only keys you set explicitly, so a team
+default in `.cambium.toml` keeps applying unless you override that one key.
 
-```json
-{
-  "version": 3,
-  "branch_prefix": "cambium/",
-  "materializer": "auto",
-  "require_cow": false,
-  "prepared_index": true,
-  "require_ignored_layers": true,
-  "allow_policy_commands": false,
-  "layers": []
-}
-```
+Neither file is required. With no files, Cambium uses its defaults and the
+built-in path policies.
 
-Fields:
-
-- `materializer`: `auto`, `cow`, `git`, or diagnostic `copy`.
-- `require_cow`: fail instead of falling back to normal Git checkout.
-- `prepared_index`: seed worktree indexes from immutable baselines.
-- `require_ignored_layers`: require managed outputs to be Git-ignored unless a
-  rule explicitly opts out.
-- `allow_policy_commands`: allow reviewed `prepare`/`validate` argv from policy
-  rules to execute. The default is false.
-- `layers`: legacy JSON path overrides; `.cambium.toml` is preferred for new
-  project-specific policy.
-
-This file is loaded from the invocation's primary checkout and controls local
-operation. It is not used as a branch-varying environment receipt input.
-
-## `.cambium.toml`: target-tree path policy
-
-`.cambium.toml` is read from the **exact target Git commit or speculative root**.
-A branch can therefore carry policy that matches its own build layout.
+## `.cambium.toml`
 
 ```toml
 version = 1
+
+[settings]
+branch_prefix = "agent/"
+require_cow = true
 
 [[path]]
 name = "internal dependency tree"
@@ -64,12 +45,26 @@ path = "target"
 policy = "empty" # override the built-in seed policy
 ```
 
-Supported keys:
+`[[path]]` rules are read from the **exact target Git commit or speculative
+root**, so a branch carries the policy that matches its own build layout.
+
+### Settings
+
+| Key | Default | Meaning |
+|---|---|---|
+| `branch_prefix` | `"cambium/"` | prefix for generated workspace branches |
+| `materializer` | `"auto"` | `auto`, `cow`, `git`, or diagnostic `copy` |
+| `require_cow` | `false` | fail instead of falling back to a normal Git checkout |
+| `prepared_index` | `true` | seed worktree indexes from immutable baselines |
+| `require_ignored_layers` | `true` | managed outputs must be Git-ignored unless a rule opts out |
+| `allow_policy_commands` | `false` | **local file only**; see [Commands and trust](#commands-and-trust) |
+
+### Path rule keys
 
 - `name`
-- `path` (`pattern` is an alias, but output paths must be concrete)
-- `policy` (`mode` is an alias)
-- `inputs` (`fingerprint` is a legacy alias)
+- `path` (a concrete relative path; globs are rejected)
+- `policy`: `clone`, `seed`, `recreate`, `share`, `empty`, or `skip`
+- `inputs` (globs allowed)
 - `prepare` and `validate` as direct argv arrays
 - `allow_unignored`
 - `source_sensitive`
@@ -77,17 +72,38 @@ Supported keys:
 - `activate_on_inputs`
 - `priority`
 
-The parser accepts a strict, documented TOML subset: double-quoted strings,
-booleans, integers, and one- or multi-line string arrays inside `[[path]]`
-tables. Unknown and duplicate keys fail closed.
+The parser accepts a strict TOML subset: double-quoted strings, booleans,
+integers, and one- or multi-line string arrays. Unknown tables, unknown keys,
+and duplicate keys fail closed.
 
-## Precedence
+## `.git/cambium/config.toml`
+
+`cambium init` writes this file with only the flags you pass:
+
+```bash
+cambium init --require-cow=false --allow-policy-commands
+```
+
+```toml
+# Cambium settings for this clone only. Never committed.
+# Overrides [settings] in the committed .cambium.toml.
+version = 1
+
+[settings]
+require_cow = false
+allow_policy_commands = true
+```
+
+It lives in Git's common directory, so every linked worktree of the clone
+shares it and it can never be committed. `[[path]]` rules here are rejected:
+what a commit builds with is decided by that commit.
+
+## Path precedence
 
 For one exact output path:
 
 ```text
 built-in default
-    < legacy .cambium.json layer
     < target-tree .cambium.toml rule
 ```
 
@@ -99,17 +115,13 @@ safely own the same subtree.
 Policy commands execute directly as argv in the target workspace; Cambium does
 not invoke a shell unless the policy explicitly names a shell executable.
 
-Tracked repository policy can execute code, so commands are disabled by
-default. Enable them only after review:
+Committed policy can execute code, and any branch can edit it, so commands are
+disabled by default and `allow_policy_commands` is **rejected** in
+`.cambium.toml`. Enable it in the local file only after reviewing the
+repository policy:
 
 ```bash
 cambium init --force --allow-policy-commands
-```
-
-or set:
-
-```json
-"allow_policy_commands": true
 ```
 
 Cambium is not a sandbox. Commands inherit the user's process environment and

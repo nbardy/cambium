@@ -140,7 +140,7 @@ func TestCheckpointDiffTracksOneSpeculativeEdit(t *testing.T) {
 
 func initSpecRepo(t *testing.T) string {
 	t.Helper()
-	root := filepath.Join(t.TempDir(), "repo")
+	root := filepath.Join(canonicalTempDir(t), "repo")
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -507,9 +507,8 @@ validate = ["sh", "-c", "test -f .generated-env/state"]
 	_ = os.WriteFile(filepath.Join(root, ".company-deps", "state"), []byte("shared-v1\n"), 0o644)
 	runGitTest(t, root, "add", ".")
 	runGitTest(t, root, "commit", "-m", "custom policy")
-	operational := config.Default()
-	operational.AllowPolicyCommands = true
-	if _, err := config.Write(root, operational, false); err != nil {
+	allow := []config.Setting{config.BoolSetting("allow_policy_commands", true)}
+	if _, err := config.WriteLocal(filepath.Join(root, ".git"), allow, false); err != nil {
 		t.Fatal(err)
 	}
 
