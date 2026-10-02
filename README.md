@@ -15,7 +15,7 @@ actually changes:
 |---|---|
 | `git worktree add` | ~810 MB each |
 | Cambium, first worktree at a new commit | ~10 MB for a small diff |
-| Cambium, another worktree at the same commit | ~0 |
+| Cambium, another worktree at the same commit | ~10 MB |
 | New worktree with a 609 MB `node_modules`, ready to run | ~25 MB |
 
 After creation it is ordinary Git: branches, `git status`, editors, and package
