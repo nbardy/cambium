@@ -71,6 +71,20 @@ because any branch can edit the committed file.
 See [configuration](docs/CONFIGURATION.md) and
 [path policies](docs/PATH_POLICIES.md).
 
+## Use it from coding agents
+
+`integrations/` has adapters so agents get Cambium worktrees automatically:
+
+- **Claude Code:** `integrations/claude-worktree-hook` for the `WorktreeCreate` /
+  `WorktreeRemove` hooks (needs `jq`). Worktrees go under
+  `~/.claude/worktrees` (`CLAUDE_WORKTREE_ROOT` overrides).
+- **Codex:** `export CODEX_WORKTREE_COMMAND=$PWD/integrations/codex-worktree-command`
+  (needs a Codex build with `CODEX_WORKTREE_COMMAND` support).
+
+Both put the agent's worktree on its own branch, mark it ephemeral, and keep any
+commits the agent made when the worktree is removed. `make integration-test`
+exercises both against real git.
+
 ## More
 
 - **Checkpoints:** `cambium checkpoint` / `cambium fork` snapshot uncommitted
