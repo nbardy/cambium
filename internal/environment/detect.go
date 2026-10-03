@@ -128,25 +128,21 @@ func Builtins() []config.LayerRule {
 	return rules
 }
 
-// ResolveRules merges conservative built-ins, legacy JSON rules, and optional
-// .cambium.toml rules. Later exact-path rules override earlier defaults.
-func ResolveRules(repoRoot string, legacy []config.LayerRule) ([]config.LayerRule, error) {
+// ResolveRules merges conservative built-ins with the primary checkout's
+// committed .cambium.toml rules. Later exact-path rules override built-ins.
+func ResolveRules(repoRoot string) ([]config.LayerRule, error) {
 	custom, err := config.LoadPolicyFile(repoRoot)
 	if err != nil {
 		return nil, err
 	}
-	for i := range legacy {
-		legacy[i].Origin = config.Filename
-	}
-	return config.MergeRules(Builtins(), legacy, custom)
+	return config.MergeRules(Builtins(), custom)
 }
 
 // ResolveRulesAt resolves .cambium.toml from the exact target Git tree. This
 // keeps path policy branch-correct in the same way environment receipts are
-// branch-correct. Legacy .cambium.json rules remain invocation-local
-// operational overrides and are applied after built-ins but before the target
-// tree policy.
-func ResolveRulesAt(ctx context.Context, repository gitx.Repository, commit string, legacy []config.LayerRule) ([]config.LayerRule, error) {
+// branch-correct. Path rules have no local override: what a commit builds with
+// is decided by that commit.
+func ResolveRulesAt(ctx context.Context, repository gitx.Repository, commit string) ([]config.LayerRule, error) {
 	content, present, err := repository.FileAt(ctx, commit, config.PolicyFilename)
 	if err != nil {
 		return nil, err
@@ -158,17 +154,13 @@ func ResolveRulesAt(ctx context.Context, repository gitx.Repository, commit stri
 			return nil, err
 		}
 	}
-	legacyCopy := append([]config.LayerRule(nil), legacy...)
-	for i := range legacyCopy {
-		legacyCopy[i].Origin = config.Filename
-	}
-	return config.MergeRules(Builtins(), legacyCopy, custom)
+	return config.MergeRules(Builtins(), custom)
 }
 
 // Detect returns active existing ignored rules for init/explain output. It uses
 // Git's own ignore engine and never infers unknown ignored files.
 func Detect(ctx context.Context, repository gitx.Repository) ([]config.LayerRule, error) {
-	rules, err := ResolveRules(repository.Root, nil)
+	rules, err := ResolveRules(repository.Root)
 	if err != nil {
 		return nil, err
 	}

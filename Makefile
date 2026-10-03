@@ -1,4 +1,4 @@
-.PHONY: build test test-race vet fmt fmt-check check install system-test benchmark benchmark-apfs clean
+.PHONY: build test test-race vet fmt fmt-check check install system-test integration-test benchmark benchmark-apfs clean
 
 build:
 	mkdir -p bin
@@ -29,6 +29,9 @@ install:
 
 system-test: build
 	CAMBIUM_BIN=$$(pwd)/bin/cambium scripts/system-test.sh
+
+integration-test: build
+	CAMBIUM_BIN=$$(pwd)/bin/cambium scripts/integration-test.sh
 
 benchmark: build
 	CAMBIUM_BIN=$$(pwd)/bin/cambium \

@@ -13,7 +13,7 @@ import (
 
 type Project struct {
 	Repository gitx.Repository
-	Config     config.Config      // raw operational config from .cambium.json
+	Config     config.Config      // defaults < committed .cambium.toml [settings] < local config.toml
 	Rules      []config.LayerRule // effective rules for the primary checkout
 	StateDir   string
 	Runner     execx.Runner
@@ -27,11 +27,11 @@ func Open(ctx context.Context, path string, runner execx.Runner) (*Project, erro
 	if err != nil {
 		return nil, err
 	}
-	value, err := config.Load(repository.Root)
+	value, err := config.Load(repository.Root, repository.CommonGitDir)
 	if err != nil {
 		return nil, err
 	}
-	rules, err := environment.ResolveRules(repository.Root, value.Layers)
+	rules, err := environment.ResolveRules(repository.Root)
 	if err != nil {
 		return nil, err
 	}

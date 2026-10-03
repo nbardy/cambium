@@ -1,0 +1,60 @@
+#!/bin/sh
+# Claude Code WorktreeCreate / WorktreeRemove hook backed by Cambium.
+#
+# In ~/.claude/settings.json (or a project's .claude/settings.json):
+#
+#   "hooks": {
+#     "WorktreeCreate": [{"hooks": [{"type": "command",
+#       "command": "/path/to/claude-worktree-hook create"}]}],
+#     "WorktreeRemove": [{"hooks": [{"type": "command",
+#       "command": "/path/to/claude-worktree-hook remove"}]}]
+#   }
+#
+# Claude sends JSON on stdin and, for create, reads the worktree path from the
+# single line this script prints on stdout. Worktrees go under
+# $CLAUDE_WORKTREE_ROOT (default ~/.claude/worktrees). Needs jq, `cambium` and
+# `git-cambium` on PATH.
+set -eu
+
+action=${1:?usage: claude-worktree-hook create|remove}
+input=$(cat)
+
+# Workspace names and paths use only these characters.
+sanitize() { printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '-'; }
+
+case "$action" in
+  create)
+    name=$(sanitize "$(printf '%s' "$input" | jq -r '.name')")
+    cwd=$(printf '%s' "$input" | jq -r '.cwd')
+    base_ref=$(printf '%s' "$input" | jq -r '.base_ref // "head"')
+    repo=$(git -C "$cwd" rev-parse --show-toplevel)
+    # Cambium refuses worktrees inside the primary checkout, so Claude's usual
+    # <repo>/.claude/worktrees is not available. Keep them next to each other
+    # outside any repo, grouped per repository.
+    root=${CLAUDE_WORKTREE_ROOT:-$HOME/.claude/worktrees}
+    repo_id="$(basename "$repo")-$(printf '%s' "$repo" | shasum | cut -c1-8)"
+    path="$root/$repo_id/$name"
+    start=HEAD
+    if [ "$base_ref" = fresh ] && git -C "$repo" rev-parse --verify -q origin/HEAD >/dev/null; then
+      start=origin/HEAD
+    fi
+    mkdir -p "$root/$repo_id"
+    # stdout is the hook's result, so keep Cambium's chatter on stderr.
+    (cd "$repo" && git cambium add -b "worktree-$name" -name "claude-$name" -ephemeral "$path" "$start" >&2)
+    printf '%s\n' "$path"
+    ;;
+  remove)
+    path=$(printf '%s' "$input" | jq -r '.path')
+    name=$(basename "$path")
+    # Already gone: nothing to unregister.
+    common=$(git -C "$path" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
+    repo=$(dirname "$common")
+    cd "$repo"
+    cambium remove "claude-$name" >&2
+    git branch -d "worktree-$name" >/dev/null 2>&1 || true
+    ;;
+  *)
+    echo "unknown action: $action" >&2
+    exit 2
+    ;;
+esac

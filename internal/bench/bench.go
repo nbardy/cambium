@@ -409,9 +409,8 @@ func createSyntheticRepository(ctx context.Context, root string, options Options
 	if err := os.WriteFile(filepath.Join(root, ".gitignore"), []byte("deps/\n"), 0o644); err != nil {
 		return err
 	}
-	value := config.Default()
-	value.Layers = []config.LayerRule{{Path: "deps", Mode: config.LayerClone, Fingerprint: []string{"deps.lock"}}}
-	if _, err := config.Write(root, value, false); err != nil {
+	policy := "version = 1\n\n[[path]]\npath = \"deps\"\npolicy = \"clone\"\ninputs = [\"deps.lock\"]\n"
+	if err := os.WriteFile(filepath.Join(root, config.PolicyFilename), []byte(policy), 0o644); err != nil {
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(root, "deps.lock"), []byte("synthetic-v1\n"), 0o644); err != nil {

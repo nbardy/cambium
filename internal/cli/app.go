@@ -109,12 +109,12 @@ func (a *App) Run(ctx context.Context, args []string) int {
 
 func (a *App) runInit(ctx context.Context, args []string) error {
 	set := a.flagSet("init")
-	force := set.Bool("force", false, "replace an existing .cambium.json")
+	force := set.Bool("force", false, "replace an existing local config.toml")
 	materializerValue := set.String("materializer", string(model.MaterializerAuto), "auto, cow, git, or copy")
 	branchPrefix := set.String("branch-prefix", "cambium/", "prefix for generated workspace branches")
 	requireCoW := set.Bool("require-cow", false, "refuse non-CoW workspaces")
 	preparedIndex := set.Bool("prepared-index", true, "install the prepared baseline index")
-	allowPolicyCommands := set.Bool("allow-policy-commands", false, "allow reviewed .cambium.toml prepare/validate commands")
+	allowPolicyCommands := set.Bool("allow-policy-commands", false, "allow reviewed .cambium.toml prepare/validate commands (local only)")
 	detectLayers := set.Bool("detect-layers", true, "detect existing ignored dependency environments")
 	if err := set.Parse(args); err != nil {
 		return err
@@ -126,16 +126,35 @@ func (a *App) runInit(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
-	materializer, err := parseMaterializer(*materializerValue)
-	if err != nil {
-		return err
+	// Only flags the user actually passed become local settings; everything else
+	// keeps following the committed .cambium.toml and the built-in defaults.
+	var settings []config.Setting
+	var visitErr error
+	set.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "materializer":
+			materializer, err := parseMaterializer(*materializerValue)
+			if err != nil {
+				visitErr = err
+				return
+			}
+			settings = append(settings, config.StringSetting("materializer", string(materializer)))
+		case "branch-prefix":
+			settings = append(settings, config.StringSetting("branch_prefix", *branchPrefix))
+		case "require-cow":
+			settings = append(settings, config.BoolSetting("require_cow", *requireCoW))
+		case "prepared-index":
+			settings = append(settings, config.BoolSetting("prepared_index", *preparedIndex))
+		case "allow-policy-commands":
+			settings = append(settings, config.BoolSetting("allow_policy_commands", *allowPolicyCommands))
+		case "force", "detect-layers":
+		default:
+			panic("runInit: unhandled flag " + f.Name)
+		}
+	})
+	if visitErr != nil {
+		return visitErr
 	}
-	value := config.Default()
-	value.Materializer = materializer
-	value.BranchPrefix = *branchPrefix
-	value.RequireCoW = *requireCoW
-	value.PreparedIndex = *preparedIndex
-	value.AllowPolicyCommands = *allowPolicyCommands
 	var detected []config.LayerRule
 	if *detectLayers {
 		detected, err = environment.Detect(ctx, repository)
@@ -143,7 +162,7 @@ func (a *App) runInit(ctx context.Context, args []string) error {
 			return err
 		}
 	}
-	path, err := config.Write(repository.Root, value, *force)
+	path, err := config.WriteLocal(repository.CommonGitDir, settings, *force)
 	if err != nil {
 		return err
 	}

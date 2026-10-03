@@ -4,7 +4,8 @@ set -eu
 CAMBIUM_BIN=${CAMBIUM_BIN:-cambium}
 PATH=$(dirname "$CAMBIUM_BIN"):$PATH
 export PATH
-ROOT=$(mktemp -d "${TMPDIR:-/tmp}/cambium-system.XXXXXX")
+# Resolve symlinks (macOS /var -> /private/var): Cambium reports canonical paths.
+ROOT=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/cambium-system.XXXXXX")" && pwd -P)
 trap 'rm -rf "$ROOT"' EXIT INT TERM
 REPO="$ROOT/repo"
 mkdir -p "$REPO"
@@ -22,9 +23,14 @@ printf 'node_modules/\n.env\n' > .gitignore
 git add .
 git commit -q -m initial
 
-"$CAMBIUM_BIN" init >/dev/null
-grep -q '"version": 3' .cambium.json
-grep -q '"allow_policy_commands": false' .cambium.json
+LOCAL_CONFIG=$("$CAMBIUM_BIN" init 2>/dev/null)
+test "$LOCAL_CONFIG" = "$(git rev-parse --path-format=absolute --git-common-dir)/cambium/config.toml"
+# init must not write into the working tree, and with no flags it sets nothing.
+test -z "$(git status --porcelain)"
+if grep -q '^allow_policy_commands' "$LOCAL_CONFIG"; then
+  echo "init enabled policy commands without --allow-policy-commands" >&2
+  exit 1
+fi
 "$CAMBIUM_BIN" prepare >/dev/null
 
 # The Git-facing constructor still creates a normal registered linked worktree.

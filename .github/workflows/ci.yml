@@ -33,6 +33,8 @@ jobs:
         run: make test-race
       - name: System test
         run: make system-test
+      - name: Agent integration test
+        run: make integration-test
       - name: Benchmark smoke
         run: |
           mkdir -p dist

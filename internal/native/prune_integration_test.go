@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nbardy/cambium/internal/config"
 	"github.com/nbardy/cambium/internal/failpoint"
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/native"
@@ -18,9 +17,12 @@ func TestCachePruneProtectsLiveWorkspacesAndRemovesOldOrphans(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, true)
-	value := config.Default()
-	value.Layers = []config.LayerRule{{Path: "deps", Mode: config.LayerClone, Fingerprint: []string{"deps.lock"}}}
-	writeConfig(t, root, value)
+	writePolicy(t, root, `
+[[path]]
+path = "deps"
+policy = "clone"
+inputs = ["deps.lock"]
+`)
 	backend := openBackend(t, ctx, root)
 
 	workspace, err := backend.Create(ctx, native.CreateSpec{Name: "cache-owner", Materializer: model.MaterializerCopy})
@@ -64,9 +66,12 @@ func TestCachePruneProtectsInterruptedCreateOperation(t *testing.T) {
 	requireGit(t)
 	ctx := context.Background()
 	root := initializeRepository(t, true)
-	value := config.Default()
-	value.Layers = []config.LayerRule{{Path: "deps", Mode: config.LayerClone, Fingerprint: []string{"deps.lock"}}}
-	writeConfig(t, root, value)
+	writePolicy(t, root, `
+[[path]]
+path = "deps"
+policy = "clone"
+inputs = ["deps.lock"]
+`)
 	backend := openBackend(t, ctx, root)
 
 	t.Setenv("CAMBIUM_FAILPOINT", "after-register")

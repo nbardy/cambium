@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/nbardy/cambium/internal/config"
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/native"
 	"github.com/nbardy/cambium/internal/project"
@@ -173,7 +174,7 @@ func (m *Manager) Doctor(ctx context.Context) []model.DoctorCheck {
 	if err := m.Project.Config.Validate(); err != nil {
 		checks = append(checks, model.DoctorCheck{Name: "config", Status: "error", Message: err.Error()})
 	} else {
-		checks = append(checks, model.DoctorCheck{Name: "config", Status: "ok", Message: filepath.Join(m.Project.Repository.Root, ".cambium.json")})
+		checks = append(checks, model.DoctorCheck{Name: "config", Status: "ok", Message: filepath.Join(m.Project.Repository.Root, config.PolicyFilename) + " + " + config.LocalPath(m.Project.Repository.CommonGitDir)})
 	}
 	probePath := filepath.Join(m.Project.StateDir, ".doctor-write")
 	if err := os.WriteFile(probePath, []byte(time.Now().UTC().Format(time.RFC3339Nano)), 0o600); err != nil {

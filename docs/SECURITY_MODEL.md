@@ -34,8 +34,9 @@ checkout. Use it only for caches that explicitly support multi-process access.
 
 Tracked `.cambium.toml` may contain direct `prepare` and `validate` argv.
 Executing repository configuration is code execution, so commands are disabled
-by default. `allow_policy_commands` must be enabled in the local operational
-`.cambium.json` only after review.
+by default. `allow_policy_commands` is rejected in committed `.cambium.toml`
+(any branch can edit it) and may be enabled only in the clone-local
+`.git/cambium/config.toml`, after review.
 
 Cambium invokes argv directly. It does not add a shell, but a policy may
 explicitly invoke one. Commands inherit user credentials and environment and

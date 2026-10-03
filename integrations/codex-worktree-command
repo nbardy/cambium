@@ -1,0 +1,40 @@
+#!/bin/sh
+# Codex worktree provisioner backed by Cambium.
+#
+#   export CODEX_WORKTREE_COMMAND=/path/to/codex-worktree-command
+#
+# Contract (Codex):
+#   codex-worktree-command create <source-root> <worktree-root> <commit>
+#   codex-worktree-command remove <source-root> <worktree-root>
+#
+# Codex allocates <worktree-root> as <home>/worktrees/<hash>/<repo>; the hash
+# directory is unique per worktree, so it names the Cambium workspace. Needs
+# `cambium` and `git-cambium` on PATH.
+set -eu
+
+action=${1:?usage: codex-worktree-command create|remove <source-root> <worktree-root> [commit]}
+source_root=${2:?missing source root}
+root=${3:?missing worktree root}
+
+id=$(basename "$(dirname "$root")")
+name="codex-$id"
+branch="codex/$id"
+
+cd "$source_root"
+case "$action" in
+  create)
+    commit=${4:?missing commit}
+    # Cambium falls back to a normal Git checkout when the filesystem has no
+    # copy-on-write, so this works everywhere and saves disk where it can.
+    git cambium add -b "$branch" -name "$name" -ephemeral "$root" "$commit" >/dev/null
+    ;;
+  remove)
+    cambium remove "$name" >/dev/null
+    # Safe delete: keeps the branch (and any commits on it) unless it is merged.
+    git branch -d "$branch" >/dev/null 2>&1 || true
+    ;;
+  *)
+    echo "unknown action: $action" >&2
+    exit 2
+    ;;
+esac

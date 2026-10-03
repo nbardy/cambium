@@ -19,9 +19,17 @@
 - Lean README, detailed comparison, configuration, policy, receipt, defaults,
   plan, and validation documents.
 
+- Derived baselines: with CoW available, a new commit's baseline is cloned
+  from the nearest ready baseline and only changed paths are rewritten
+  (802 MB repository: 810 MB full checkout vs 10 MB for a 14-file diff).
+  Each baseline records its `source` (`checkout` or `derived:<parent>`).
+
 ### Changed
 
-- Configuration schema is version 3.
+- One configuration format: committed `.cambium.toml` (`[settings]` and
+  `[[path]]`) plus clone-local `.git/cambium/config.toml` (`[settings]` only).
+  `.cambium.json` and the `pattern`/`mode`/`fingerprint` aliases are gone.
+- `allow_policy_commands` is rejected in committed config.
 - Environment cache format is version 5.
 - `.venv` and other Python environments default to `recreate`, never clone.
 - Git's worktree registry is authoritative over Cambium's secondary metadata.
