@@ -1,0 +1,12 @@
+version = 1
+
+[[path]]
+path = "node_modules"
+policy = "clone"
+inputs = ["package.json", "package-lock.json", "packages/**", "validate.mjs"]
+required = true
+validate = ["node", "validate.mjs"]
+
+[[path]]
+path = "dist"
+policy = "skip"

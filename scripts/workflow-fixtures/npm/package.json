@@ -1,0 +1,8 @@
+{
+  "name": "cambium-workflow-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs", "test": "node --test test.mjs" },
+  "dependencies": { "fixture-helper": "file:./packages/helper-v1" }
+}

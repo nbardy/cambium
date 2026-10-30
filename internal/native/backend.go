@@ -171,11 +171,17 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		_ = cacheLock.Release()
 		return model.Workspace{}, prepareErr
 	}
+	workspaceID, idErr := state.NewID()
+	if idErr != nil {
+		_ = cacheLock.Release()
+		return model.Workspace{}, idErr
+	}
 	record, beginErr := b.Journal.Begin(operation.KindCreate, spec.Name, spec.Branch, spec.Path, prepared.Commit)
 	if beginErr != nil {
 		_ = cacheLock.Release()
 		return model.Workspace{}, beginErr
 	}
+	record.WorkspaceID = workspaceID
 	for _, layer := range prepared.Layers {
 		record.LayerIDs = append(record.LayerIDs, layer.ID)
 	}
@@ -188,30 +194,32 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		_ = b.Journal.Delete(record.ID)
 		return model.Workspace{}, releaseErr
 	}
-	createdWorktree := false
-	createdBranch := false
-	pathOwned := false
+	registrationAttempted := false
 	defer func() {
 		if err == nil || errors.Is(err, failpoint.ErrInjectedCrash) {
+			return
+		}
+		if !registrationAttempted {
+			// Rejected shared invariants cannot have created a worktree or
+			// branch. Drop only our journal, without inspecting a winner's data.
+			_ = b.Journal.Delete(record.ID)
 			return
 		}
 		// Registration and refs live in the common Git directory. Serialize the
 		// rollback just like creation so a failed concurrent create cannot damage
 		// another agent's successful workspace.
-		cleanupLock, _ := lockfile.AcquireContext(context.Background(), filepath.Join(b.Project.LocksDir(), "git-admin.lock"))
-		if cleanupLock != nil {
-			defer cleanupLock.Release()
+		cleanupLock, cleanupErr := lockfile.AcquireContext(context.Background(), filepath.Join(b.Project.LocksDir(), "git-admin.lock"))
+		if cleanupErr != nil {
+			err = errors.Join(err, fmt.Errorf("rollback retained operation %s: %w", record.ID, cleanupErr))
+			return
 		}
-		if createdWorktree {
-			_ = b.Project.Repository.WorktreeRemove(context.Background(), spec.Path, true)
+		defer cleanupLock.Release()
+		action, cleanupErr := b.recoverCreate(context.Background(), record, false)
+		if cleanupErr != nil {
+			err = errors.Join(err, fmt.Errorf("rollback retained operation %s: %w", record.ID, cleanupErr))
+		} else if action.Status == "blocked" {
+			err = errors.Join(err, fmt.Errorf("rollback retained operation %s for inspection: %s", record.ID, action.Message))
 		}
-		if createdBranch {
-			_ = b.Project.Repository.DeleteBranch(context.Background(), spec.Branch, true)
-		}
-		if pathOwned {
-			_ = os.RemoveAll(spec.Path)
-		}
-		_ = b.Journal.Delete(record.ID)
 	}()
 
 	var cloneMode model.CloneMode
@@ -244,9 +252,7 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		_ = gitLock.Release()
 		return model.Workspace{}, checkErr
 	}
-	pathOwned = true
-	createdWorktree = true // cleanup is safe even if Git fails midway
-	createdBranch = true
+	registrationAttempted = true
 	if prepared.Plan.Resolved == model.MaterializerGit {
 		err = b.Project.Repository.WorktreeAddCheckout(ctx, spec.Branch, spec.Path, prepared.Commit)
 		cloneMode = model.CloneModeGitCheckout
@@ -257,15 +263,20 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		}
 		err = b.Project.Repository.WorktreeAddNoCheckout(ctx, spec.Branch, spec.Path, prepared.Commit)
 	}
+	if err == nil {
+		// The marker proves this operation owns this particular registration;
+		// a planned journal entry alone never authorizes removing a path.
+		record.WorktreeDir, err = b.claimWorktree(ctx, record.Path, record.Branch, record.WorkspaceID)
+	}
+	if err == nil {
+		err = b.Journal.Advance(&record, operation.StageWorktreeRegistered)
+	}
 	releaseErr := gitLock.Release()
 	if err != nil {
 		return model.Workspace{}, fmt.Errorf("register linked worktree: %w", err)
 	}
 	if releaseErr != nil {
 		return model.Workspace{}, releaseErr
-	}
-	if err = b.Journal.Advance(&record, operation.StageWorktreeRegistered); err != nil {
-		return model.Workspace{}, err
 	}
 	if err = failpoint.Check("after-register"); err != nil {
 		return model.Workspace{}, err
@@ -314,31 +325,28 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		return model.Workspace{}, err
 	}
 
-	id, err := state.NewID()
-	if err != nil {
-		return model.Workspace{}, err
-	}
 	now := time.Now().UTC()
 	workspace = model.Workspace{
-		Version:            2,
-		ID:                 id,
-		Name:               spec.Name,
-		Status:             model.WorkspaceReady,
-		RepositoryRoot:     b.Project.Repository.Root,
-		CommonGitDir:       b.Project.Repository.CommonGitDir,
-		BaseCommit:         prepared.Commit,
-		BaseRef:            spec.Ref,
-		Branch:             spec.Branch,
-		Path:               spec.Path,
-		Requested:          spec.Materializer,
-		CloneMode:          cloneMode,
-		PreparedIndex:      preparedIndex,
-		Ephemeral:          spec.Ephemeral,
-		CreatedAt:          now,
-		LastUsedAt:         now,
-		LayerIDs:           layerResult.IDs,
-		EnvironmentReady:   layerResult.Ready,
-		EnvironmentMissing: layerResult.Missing,
+		Version:               2,
+		ID:                    workspaceID,
+		Name:                  spec.Name,
+		Status:                model.WorkspaceReady,
+		RepositoryRoot:        b.Project.Repository.Root,
+		CommonGitDir:          b.Project.Repository.CommonGitDir,
+		BaseCommit:            prepared.Commit,
+		BaseRef:               spec.Ref,
+		Branch:                spec.Branch,
+		Path:                  spec.Path,
+		Requested:             spec.Materializer,
+		CloneMode:             cloneMode,
+		PreparedIndex:         preparedIndex,
+		Ephemeral:             spec.Ephemeral,
+		CreatedAt:             now,
+		LastUsedAt:            now,
+		LayerIDs:              layerResult.IDs,
+		EnvironmentReady:      layerResult.Ready,
+		EnvironmentMissing:    layerResult.Missing,
+		EnvironmentUnverified: layerResult.Unverified,
 	}
 	if err = b.Registry.Save(workspace); err != nil {
 		return model.Workspace{}, err
@@ -356,44 +364,49 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 }
 
 func (b *Backend) Remove(ctx context.Context, name string, force, deleteBranch bool) (err error) {
-	workspace, err := b.Registry.Load(name)
-	if err != nil {
-		return err
-	}
 	lock, err := lockfile.AcquireContext(ctx, filepath.Join(b.Project.LocksDir(), "workspace-"+slug(name)+".lock"))
 	if err != nil {
 		return err
 	}
 	defer lock.Release()
+	// Metadata can change while waiting for the workspace lock. Never remove
+	// a replacement workspace based on a snapshot read before taking it.
+	workspace, err := b.Registry.Load(name)
+	if err != nil {
+		return err
+	}
+	gitLock, err := lockfile.AcquireContext(ctx, filepath.Join(b.Project.LocksDir(), "git-admin.lock"))
+	if err != nil {
+		return err
+	}
+	defer gitLock.Release()
+	worktreeDir, err := b.claimWorktree(ctx, workspace.Path, workspace.Branch, workspace.ID)
+	if err != nil {
+		return err
+	}
+	if !force {
+		clean, status, err := b.Project.Repository.IsClean(ctx, workspace.Path)
+		if err != nil {
+			return err
+		}
+		if !clean {
+			return fmt.Errorf("workspace %q has uncommitted or untracked changes; use --force to discard them:\n%s", name, status)
+		}
+	}
 	record, err := b.Journal.Begin(operation.KindRemove, workspace.Name, workspace.Branch, workspace.Path, workspace.BaseCommit)
 	if err != nil {
 		return err
 	}
+	record.WorkspaceID = workspace.ID
+	record.WorktreeDir = worktreeDir
 	record.Force = force
 	record.DeleteBranch = deleteBranch
 	if err := b.Journal.Save(record); err != nil {
 		return err
 	}
-	sideEffect := false
-	defer func() {
-		if err == nil || errors.Is(err, failpoint.ErrInjectedCrash) || sideEffect {
-			return
-		}
-		_ = b.Journal.Delete(record.ID)
-	}()
-	gitLock, lockErr := lockfile.AcquireContext(ctx, filepath.Join(b.Project.LocksDir(), "git-admin.lock"))
-	if lockErr != nil {
-		return lockErr
-	}
-	err = b.Project.Repository.WorktreeRemove(ctx, workspace.Path, force)
-	releaseErr := gitLock.Release()
-	if err != nil {
+	if err = b.Project.Repository.WorktreeRemove(ctx, workspace.Path, force); err != nil {
 		return err
 	}
-	if releaseErr != nil {
-		return releaseErr
-	}
-	sideEffect = true
 	if err = b.Journal.Advance(&record, operation.StageWorktreeRemoved); err != nil {
 		return err
 	}
@@ -411,129 +424,25 @@ func (b *Backend) Remove(ctx context.Context, name string, force, deleteBranch b
 	return b.Journal.Delete(record.ID)
 }
 
+// Recover uses the same workspace -> Git lock order as create and remove.
+// Active operations are skipped rather than being mistaken for crashed ones.
 func (b *Backend) Recover(ctx context.Context, dryRun bool) ([]RecoveryAction, error) {
-	var gitLock *lockfile.Lock
-	var err error
-	if !dryRun {
-		gitLock, err = lockfile.AcquireContext(ctx, filepath.Join(b.Project.LocksDir(), "git-admin.lock"))
-		if err != nil {
-			return nil, err
-		}
-		defer gitLock.Release()
-	}
 	records, err := b.Journal.List()
 	if err != nil {
 		return nil, err
 	}
 	actions := make([]RecoveryAction, 0, len(records))
-	for _, record := range records {
-		action := RecoveryAction{OperationID: record.ID, Kind: string(record.Kind), Name: record.Name}
-		switch record.Kind {
-		case operation.KindCreate:
-			exists, loadErr := b.Registry.Exists(record.Name)
-			if loadErr != nil {
-				return actions, loadErr
-			}
-			if exists {
-				action.Action = "finalize"
-				action.Status = "resolved"
-				action.Message = "workspace metadata exists; removed stale operation record"
-				if !dryRun {
-					if err := b.Journal.Delete(record.ID); err != nil {
-						return actions, err
-					}
-				}
-				actions = append(actions, action)
-				continue
-			}
-			branchExists, branchErr := b.Project.Repository.BranchExists(ctx, record.Branch)
-			if branchErr != nil {
-				return actions, branchErr
-			}
-			if branchExists {
-				commit, commitErr := b.Project.Repository.BranchCommit(ctx, record.Branch)
-				if commitErr != nil {
-					return actions, commitErr
-				}
-				if commit != record.BaseCommit {
-					action.Action = "protect"
-					action.Status = "blocked"
-					action.Message = fmt.Sprintf("branch advanced to %s; refusing automatic deletion", commit)
-					actions = append(actions, action)
-					continue
-				}
-			}
-			action.Action = "rollback"
-			action.Status = "resolved"
-			if !dryRun {
-				registered, regErr := b.Project.Repository.IsWorktreeRegistered(ctx, record.Path)
-				if regErr != nil {
-					return actions, regErr
-				}
-				if registered {
-					if err := b.Project.Repository.WorktreeRemove(ctx, record.Path, true); err != nil {
-						return actions, fmt.Errorf("recover worktree %s: %w", record.Path, err)
-					}
-				} else {
-					_ = os.RemoveAll(record.Path)
-				}
-				if branchExists {
-					if err := b.Project.Repository.DeleteBranch(ctx, record.Branch, true); err != nil {
-						return actions, err
-					}
-				}
-				if err := b.Journal.Delete(record.ID); err != nil {
-					return actions, err
-				}
-			}
-			action.Message = "removed incomplete linked worktree and unadvanced branch"
-		case operation.KindRemove:
-			action.Action = "finish-remove"
-			registered, regErr := b.Project.Repository.IsWorktreeRegistered(ctx, record.Path)
-			if regErr != nil {
-				return actions, regErr
-			}
-			if !dryRun && registered {
-				if err := b.Project.Repository.WorktreeRemove(ctx, record.Path, record.Force); err != nil {
-					action.Status = "blocked"
-					action.Message = err.Error()
-					actions = append(actions, action)
-					continue
-				}
-			}
-			if !dryRun {
-				if err := b.Registry.Delete(record.Name); err != nil {
-					return actions, err
-				}
-				if record.DeleteBranch {
-					exists, err := b.Project.Repository.BranchExists(ctx, record.Branch)
-					if err != nil {
-						return actions, err
-					}
-					if exists {
-						if err := b.Project.Repository.DeleteBranch(ctx, record.Branch, record.Force); err != nil {
-							action.Status = "blocked"
-							action.Message = err.Error()
-							actions = append(actions, action)
-							continue
-						}
-					}
-				}
-				if err := b.Journal.Delete(record.ID); err != nil {
-					return actions, err
-				}
-			}
-			action.Status = "resolved"
-			action.Message = "completed interrupted removal"
-		default:
-			action.Action = "inspect"
-			action.Status = "blocked"
-			action.Message = fmt.Sprintf("unknown operation kind %q", record.Kind)
+	for _, snapshot := range records {
+		if err := ctx.Err(); err != nil {
+			return actions, err
 		}
-		actions = append(actions, action)
-	}
-	if !dryRun {
-		_ = b.Project.Repository.WorktreePrune(ctx)
+		action, present, err := b.recoverOperation(ctx, snapshot, dryRun)
+		if err != nil {
+			return actions, err
+		}
+		if present {
+			actions = append(actions, action)
+		}
 	}
 	return actions, nil
 }

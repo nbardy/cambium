@@ -1,4 +1,4 @@
-.PHONY: build test test-race vet fmt fmt-check check install system-test integration-test benchmark benchmark-apfs clean
+.PHONY: build test test-race vet fmt fmt-check check install system-test integration-test workflow-test workflow-smoke benchmark benchmark-apfs clean
 
 build:
 	mkdir -p bin
@@ -32,6 +32,14 @@ system-test: build
 
 integration-test: build
 	CAMBIUM_BIN=$$(pwd)/bin/cambium scripts/integration-test.sh
+
+workflow-test:
+	python3 scripts/test-workflow-benchmark.py
+
+workflow-smoke: build workflow-test
+	@mkdir -p dist
+	python3 scripts/workflow-benchmark.py --fixture npm --count 2 --cambium-bin $$(pwd)/bin/cambium --output dist/workflow-npm-smoke.json --overwrite
+	python3 scripts/workflow-benchmark.py --fixture cargo --count 2 --cambium-bin $$(pwd)/bin/cambium --output dist/workflow-cargo-smoke.json --overwrite
 
 benchmark: build
 	CAMBIUM_BIN=$$(pwd)/bin/cambium \

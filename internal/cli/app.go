@@ -401,7 +401,7 @@ func (a *App) runReconcile(ctx context.Context, args []string) error {
 
 func (a *App) runEnvironment(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: cambium env <explain|capture> WORKSPACE")
+		return errors.New("usage: cambium env <explain|validate|capture> WORKSPACE")
 	}
 	set := a.flagSet("env " + args[0])
 	jsonOutput := set.Bool("json", false, "emit JSON")
@@ -410,26 +410,35 @@ func (a *App) runEnvironment(ctx context.Context, args []string) error {
 		return err
 	}
 	if set.NArg() != 1 {
-		return errors.New("usage: cambium env <explain|capture> [flags] WORKSPACE")
+		return errors.New("usage: cambium env <explain|validate|capture> [flags] WORKSPACE")
 	}
 	manager, err := a.manager(ctx)
 	if err != nil {
 		return err
 	}
 	var value workspace.EnvironmentExplanation
+	validationRequested := args[0] == "validate" || args[0] == "check"
 	switch args[0] {
 	case "explain", "show":
 		value, err = manager.ExplainEnvironment(ctx, set.Arg(0))
 	case "capture", "publish":
 		value, err = manager.CaptureEnvironment(ctx, set.Arg(0), *source)
+	case "validate", "check":
+		value, err = manager.ValidateEnvironment(ctx, set.Arg(0))
 	default:
 		return fmt.Errorf("unknown env command %q", args[0])
 	}
-	if err != nil {
+	if err != nil && (!validationRequested || value.Workspace == "") {
 		return err
 	}
+	if validationRequested && err == nil && !value.Ready {
+		err = errors.New("environment has missing or unverified paths")
+	}
 	if *jsonOutput {
-		return writeJSON(a.Stdout, value)
+		if outputErr := writeJSON(a.Stdout, value); outputErr != nil {
+			return outputErr
+		}
+		return err
 	}
 	fmt.Fprintf(a.Stdout, "workspace: %s\nsource: %s\nready: %t\n", value.Workspace, value.SourceRef, value.Ready)
 	for _, item := range value.Paths {
@@ -438,7 +447,10 @@ func (a *App) runEnvironment(ctx context.Context, args []string) error {
 	if len(value.Missing) > 0 {
 		fmt.Fprintf(a.Stdout, "missing: %s\n", strings.Join(value.Missing, ", "))
 	}
-	return nil
+	if len(value.Unverified) > 0 {
+		fmt.Fprintf(a.Stdout, "unverified: %s\n", strings.Join(value.Unverified, ", "))
+	}
+	return err
 }
 
 func (a *App) runCheckpoint(ctx context.Context, args []string) error {
@@ -1015,13 +1027,13 @@ func (a *App) runBenchmark(ctx context.Context, args []string) error {
 	}
 	fmt.Fprintf(a.Stdout, "platform: %s\nfilesystem: %s\n", report.Platform, report.Filesystem)
 	writer := tabwriter.NewWriter(a.Stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(writer, "METHOD\tREADY\tPREPARE\tCREATE\tSTATUS1\tSTATUS2\tPHYSICAL\tENV")
+	fmt.Fprintln(writer, "METHOD\tMATERIALIZED\tPREPARE\tCREATE\tSTATUS1\tSTATUS2\tPHYSICAL\tENV")
 	for _, result := range report.Results {
 		if !result.Available {
 			fmt.Fprintf(writer, "%s\tSKIP\t-\t-\t-\t-\t-\t%s\n", result.Method, result.SkipReason)
 			continue
 		}
-		fmt.Fprintf(writer, "%s\t%d/%d\t%.3fs\t%.3fs\t%.3fs\t%.3fs\t%s\t%s\n", result.Method, result.EnvironmentReady, result.WorkspaceCount, result.PrepareSeconds, result.CreateSeconds, result.FirstStatusSeconds, result.WarmStatusSeconds, humanBytes(result.PhysicalAddedBytes), result.Semantics)
+		fmt.Fprintf(writer, "%s\t%d/%d\t%.3fs\t%.3fs\t%.3fs\t%.3fs\t%s\t%s\n", result.Method, result.EnvironmentMaterialized, result.WorkspaceCount, result.PrepareSeconds, result.CreateSeconds, result.FirstStatusSeconds, result.WarmStatusSeconds, humanBytes(result.PhysicalAddedBytes), result.Semantics)
 	}
 	return writer.Flush()
 }
@@ -1064,7 +1076,7 @@ Usage:
   cambium path NAME
   cambium adopt NAME PATH
   cambium reconcile [--dry-run] [--json]
-  cambium env <explain|capture> WORKSPACE
+  cambium env <explain|validate|capture> WORKSPACE
   cambium remove [--force] [--delete-branch] NAME
   cambium gc [flags]
   cambium recover [--dry-run] [--json]
@@ -1092,6 +1104,9 @@ func printWorkspace(writer io.Writer, value model.Workspace) {
 	fmt.Fprintf(writer, "name: %s\nstatus: %s\npath: %s\nbranch: %s\nbase: %s\nmode: %s\nprepared index: %t\nenvironment ready: %t\n", value.Name, value.Status, value.Path, value.Branch, value.BaseCommit, value.CloneMode, value.PreparedIndex, value.EnvironmentReady)
 	if len(value.EnvironmentMissing) > 0 {
 		fmt.Fprintf(writer, "environment missing: %s\n", strings.Join(value.EnvironmentMissing, ", "))
+	}
+	if len(value.EnvironmentUnverified) > 0 {
+		fmt.Fprintf(writer, "environment unverified: %s\n", strings.Join(value.EnvironmentUnverified, ", "))
 	}
 	if value.SpeculativeRoot != "" {
 		fmt.Fprintf(writer, "speculative root: %s\n", value.SpeculativeRoot)

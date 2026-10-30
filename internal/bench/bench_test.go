@@ -26,7 +26,7 @@ func TestRunComparesGitAndPreparedEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.Version != 1 || len(report.Results) != 3 {
+	if report.Version != 2 || len(report.Results) != 3 {
 		t.Fatalf("unexpected report: %#v", report)
 	}
 	gitResult := report.Results[0]
@@ -35,16 +35,16 @@ func TestRunComparesGitAndPreparedEnvironment(t *testing.T) {
 	if !gitResult.Available || !gitReadyResult.Available || !cambiumResult.Available {
 		t.Fatalf("required methods unavailable: %#v", report.Results)
 	}
-	if gitResult.EnvironmentReady != 0 {
+	if gitResult.EnvironmentMaterialized != 0 {
 		t.Fatalf("plain Git unexpectedly materialized ignored environment: %#v", gitResult)
 	}
-	if gitReadyResult.EnvironmentReady != 2 {
+	if gitReadyResult.EnvironmentMaterialized != 2 {
 		t.Fatalf("Git copied-environment control was not ready: %#v", gitReadyResult)
 	}
 	if gitReadyResult.Semantics != "git-linked-worktree+copied-environment" {
 		t.Fatalf("wrong Git control semantics label: %q", gitReadyResult.Semantics)
 	}
-	if cambiumResult.EnvironmentReady != 2 {
+	if cambiumResult.EnvironmentMaterialized != 2 {
 		t.Fatalf("Cambium did not prepare each environment: %#v", cambiumResult)
 	}
 	if cambiumResult.Semantics != "git-linked-worktree+prepared-environment" {

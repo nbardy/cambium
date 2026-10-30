@@ -38,7 +38,7 @@
 - [ ] Measure prepared index on/off.
 - [ ] Compare recursive per-file clone with controlled root cloning of a private
   immutable baseline.
-- [ ] Add guarded real-repository benchmark mode.
+- [x] Add guarded real-repository benchmark mode with builds, edits, and cleanup.
 
 ## Optional filesystem and storage research
 

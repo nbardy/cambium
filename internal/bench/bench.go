@@ -57,7 +57,7 @@ type MethodResult struct {
 	RemoveSeconds            float64         `json:"remove_seconds"`
 	PhysicalAddedBytes       int64           `json:"physical_added_bytes"`
 	PhysicalAfterRemoveBytes int64           `json:"physical_after_remove_bytes"`
-	EnvironmentReady         int             `json:"environment_ready"`
+	EnvironmentMaterialized  int             `json:"environment_materialized"`
 	WorkspaceCount           int             `json:"workspace_count"`
 	Notes                    []string        `json:"notes,omitempty"`
 }
@@ -107,7 +107,7 @@ func Run(ctx context.Context, options Options) (Report, error) {
 		}
 	}
 
-	report := Report{Version: 1, CreatedAt: time.Now().UTC(), Platform: platformName(), Options: options}
+	report := Report{Version: 2, CreatedAt: time.Now().UTC(), Platform: platformName(), Options: options}
 	if fs, err := filesystemName(options.Scratch); err == nil {
 		report.Filesystem = fs
 	}
@@ -193,7 +193,7 @@ func runMethod(ctx context.Context, root, method string, options Options) (Metho
 
 	for _, path := range paths {
 		if _, err := os.Stat(filepath.Join(path, "deps", "0000", "00000000.bin")); err == nil {
-			result.EnvironmentReady++
+			result.EnvironmentMaterialized++
 		}
 	}
 	statusStart := time.Now()

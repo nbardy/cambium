@@ -1,6 +1,6 @@
 # Cambium
 
-**Cheap, ready-to-run Git worktrees for parallel coding agents.**
+**Cheap, isolated Git worktrees for parallel coding agents.**
 
 Running several agents on one repository means one worktree each. A plain
 `git worktree add` writes a full copy of every tracked file, and then each
@@ -9,17 +9,13 @@ can fill a laptop disk in days.
 
 Cambium creates the same **real Git worktrees**, but on copy-on-write
 filesystems (APFS, btrfs, XFS) they share disk with each other until a file
-actually changes:
-
-| Measured on an 802 MB, 16k-file repo (APFS) | Disk |
-|---|---|
-| `git worktree add` | ~810 MB each |
-| Cambium, first worktree at a new commit | ~10 MB for a small diff |
-| Cambium, another worktree at the same commit | ~10 MB |
-| New worktree with a 609 MB `node_modules`, ready to run | ~25 MB |
+actually changes.
 
 After creation it is ordinary Git: branches, `git status`, editors, and package
 managers all work normally, and the worktree survives uninstalling Cambium.
+Dependency folders can provide a warm start. Cambium distinguishes missing,
+copied-but-unverified, and validated environments; it does not infer runnable
+dependencies from the existence of a directory.
 
 ## Quick start
 
@@ -29,10 +25,12 @@ go install github.com/nbardy/cambium/cmd/git-cambium@latest
 
 cd my-repo
 cambium init                                  # optional; writes local settings
-git cambium add -b agent/auth ../agent-auth main
-cd ../agent-auth && npm test                  # deps are already there
+git cambium add -b agent/auth --name agent-auth ../agent-auth main
+cambium env explain agent-auth                # inspect missing/unverified paths
+cd ../agent-auth                              # run your normal install/build checks
 
-cambium remove --delete-branch agent/auth     # when the agent is done
+cd -                                         # return to the original checkout
+cambium remove --delete-branch agent-auth     # when the agent is done
 cambium prune                                 # drop old, unused caches
 ```
 
@@ -46,7 +44,30 @@ cambium prune                                 # drop old, unused caches
   hold absolute paths). Only paths Git ignores *and* a rule names are touched;
   `.env`, logs, and databases never are. Defaults cover JS/TS, Python, Rust,
   JVM, Go, and more.
-- **No CoW filesystem?** It falls back to a normal Git checkout.
+- **No CoW filesystem?** Tracked files use a normal Git checkout. Managed
+  dependency folders use ordinary copies, including a cached copy; this can
+  cost more space than plain worktrees on a non-CoW filesystem.
+
+## Environment readiness
+
+`status: ready` means the Git workspace was created successfully.
+`environment_ready` describes the last observation of its declared environment
+policies. A copied dependency directory without a successful validation hook is
+reported in `environment_unverified`, and the environment is not marked ready.
+Missing required dependencies appear in `environment_missing`.
+
+Cambium refuses to snapshot a dependency folder against committed inputs when
+the source checkout's live declared inputs differ. Even a clean checkout can
+contain stale dependencies, so copying alone never establishes validation.
+
+Projects can define a reviewed `validate` command in their path policy and opt
+in locally. Validation runs in the destination workspace under its current
+runtime; cached validation is not a substitute. `cambium env validate NAME`
+explicitly reruns these checks. `env explain` does not run policy validation
+commands.
+Validation is a point-in-time observation, not a guarantee after later edits.
+Build caches using `seed`, including Rust `target`, remain advisory: run the
+owning compiler/build tool. See [environment receipts](docs/ENVIRONMENT_RECEIPTS.md).
 
 ## Configuration
 
@@ -94,6 +115,19 @@ exercises both against real git.
   [Ecosystem defaults](docs/ECOSYSTEM_DEFAULTS.md) ·
   [Security model](docs/SECURITY_MODEL.md) ·
   [Comparisons](COMPARISONS.md) · [Roadmap](docs/ROADMAP.md)
+
+## Measure your workflow
+
+The synthetic benchmark measures file materialization, not successful builds.
+The [workflow benchmark](docs/WORKFLOW_BENCHMARKS.md) runs real npm/Cargo
+commands, changes source and dependencies, reruns verification, and measures
+cleanup and retained caches. It compares equal preparation and verification
+steps against Git worktrees with copied environments. Raw reports include the
+machine, toolchains, source revisions, and physical free-space observations.
+
+Historical APFS measurements are described in the architecture document; they
+do not establish post-build savings for another repository. Published results
+and their limitations belong with the benchmark recipe and raw report.
 
 Develop with `make check test-race system-test`. Apache-2.0, Go, no runtime
 dependencies.

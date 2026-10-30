@@ -1,0 +1,4353 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "--verify",
+        "202794065c925e7f4dcab436150e8a24b360a697^{commit}"
+      ],
+      "cwd": "/tmp/cambium-clsx-benchmark-source-v3",
+      "elapsed_seconds": 0.003608168999562622,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0000-setup-resolve.log",
+      "method": "setup",
+      "phase": "resolve",
+      "started_at": "2026-10-30T04:38:51.244779+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "--verify",
+        "202794065c925e7f4dcab436150e8a24b360a697^{tree}"
+      ],
+      "cwd": "/tmp/cambium-clsx-benchmark-source-v3",
+      "elapsed_seconds": 0.003485053000076732,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0001-setup-resolve.log",
+      "method": "setup",
+      "phase": "resolve",
+      "started_at": "2026-10-30T04:38:51.250570+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "--get",
+        "remote.origin.url"
+      ],
+      "cwd": "/tmp/cambium-clsx-benchmark-source-v3",
+      "elapsed_seconds": 0.0014375609998751315,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0002-setup-resolve.log",
+      "method": "setup",
+      "phase": "resolve",
+      "started_at": "2026-10-30T04:38:51.255799+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "--quiet",
+        "--no-local",
+        "--no-checkout",
+        "/tmp/cambium-clsx-benchmark-source-v3",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy",
+      "elapsed_seconds": 0.015639473000192083,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0003-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:51.268348+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "checkout",
+        "--quiet",
+        "--detach",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0034490690004531643,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0004-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:51.285833+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "user.name",
+        "Cambium Workflow Benchmark"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0014978919998611673,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0005-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:51.291056+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "user.email",
+        "benchmark@example.invalid"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0013541349999286467,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0006-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:51.294284+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "npm",
+        "ci",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.41489457600073365,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0007-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:51.297350+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.2645573230001901,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0008-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:51.714875+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.2643430139996781,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0009-git-env-copy-reference_verify.log",
+      "method": "git-env-copy",
+      "phase": "reference_verify",
+      "started_at": "2026-10-30T04:38:51.981883+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.314967137000167,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0010-git-env-copy-reference_verify.log",
+      "method": "git-env-copy",
+      "phase": "reference_verify",
+      "started_at": "2026-10-30T04:38:52.249161+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=normal"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.003675900999951409,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0011-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:52.566941+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--",
+        "node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0015920349997031735,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0012-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:52.572883+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "check-ignore",
+        "-q",
+        "--",
+        "node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0014433500000450294,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0013-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:52.576708+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--",
+        "dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0014480469999398338,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0014-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:52.581374+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "check-ignore",
+        "-q",
+        "--",
+        "dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0014132739997876342,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0015-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:38:52.584583+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0001",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0075607079998007976,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0016-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.595690+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/node_modules",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001/node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.03197032099978969,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0017-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.605472+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/dist",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001/dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0035527549998732866,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0018-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.640121+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0002",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.01578055099980702,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0019-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.645876+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/node_modules",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002/node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.031796238999959314,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0020-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.664236+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/dist",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002/dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0036035619996255264,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0021-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.699081+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0003",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.015713699999651,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0022-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.705013+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/node_modules",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003/node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.031794937000086065,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0023-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.723291+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/dist",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003/dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0035074670004178188,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0024-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.757991+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0004",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.015651746999537863,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0025-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.763774+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/node_modules",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004/node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.03181593800036353,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0026-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.782082+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/dist",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004/dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.003620948000389035,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0027-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.816774+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0005",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.015682989000197267,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0028-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.822829+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/node_modules",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005/node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.03178454099997907,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0029-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.841128+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference/dist",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005/dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0035261450002508354,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0030-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:38:52.875848+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.26445954500013613,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0031-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:52.904194+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.26484082600018155,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0032-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:53.171674+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.003512995000164665,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0033-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:53.439536+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.2643253289998029,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0034-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:53.445813+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.2644722559998627,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0035-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:53.713415+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0036193460000504274,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0036-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:53.981098+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.264355770000293,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0037-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:53.987829+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.3154684540004382,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0038-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:54.255589+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.0038097429996923893,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0039-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:54.574573+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.31444537900006253,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0040-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:54.581457+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.3150937390000763,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0041-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:54.899271+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.003796163000515662,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0042-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:55.217815+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.26455522000014753,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0043-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:55.224863+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.2645719370002553,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0044-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:55.492793+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.003791506000197842,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0045-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:38:55.760726+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0036594860002878704,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0046-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:55.787173+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.3190035429997806,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0047-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:55.793911+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.26464453500011587,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0048-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:56.117212+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0036863969999103574,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0049-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:56.385481+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0034779329998855246,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0050-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:56.392479+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.26433141800043813,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0051-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:56.399193+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.26452871699984826,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0052-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:56.666916+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0035838920002788655,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0053-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:56.935096+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.0013642009998875437,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0054-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:56.941804+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.26427626500026236,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0055-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:56.946364+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.2644127009998556,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0056-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:57.214290+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003654063999420032,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0057-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:57.482348+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0014433599999392754,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0058-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:57.489255+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.26434938999955193,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0059-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:57.494055+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.2644399219998377,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0060-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:57.762072+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0035867769993274123,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0061-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:58.030658+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0035647929998958716,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0062-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:58.037395+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.26465347500015923,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0063-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:58.044347+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.26457607700012886,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0064-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:58.312850+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0035543379999580793,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0065-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:38:58.581274+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0035064960002273438,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0066-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:38:58.607326+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.4148168790006821,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0067-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:38:58.614296+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.2644413240004724,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0068-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:38:59.033457+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.26447552499939775,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0069-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:38:59.302078+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0036722760005432065,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0070-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:38:59.570896+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0013884870004403638,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0071-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:38:59.578238+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.414582084000358,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0072-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:38:59.583373+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.2645000369993795,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0073-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:00.002028+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.2647375309998097,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0074-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:00.271297+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0036406179997356958,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0075-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:00.541231+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003518282999721123,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0076-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:00.549269+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.41580365800018626,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0077-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:00.557067+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.2650000329995237,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0078-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:00.977634+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.26445327700002963,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0079-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:01.248844+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003994101999523991,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0080-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:01.522237+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.003547917999640049,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0081-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:01.530541+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.4147653869995338,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0082-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:01.538426+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.26453536300050473,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0083-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:01.957742+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.2646197209996899,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0084-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:02.227083+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.00371433899999829,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0085-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:02.496468+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0016295700006594416,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0086-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:02.504146+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.4148608499999682,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0087-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:02.509685+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.26480571200045233,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0088-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:02.929892+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.26475758900051005,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0089-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:03.199443+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0037007079999966663,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0090-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:03.468858+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.007639776999894821,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0091-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.495875+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0001"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0035432310005489853,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0092-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.507355+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.007517162000112876,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0093-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.514851+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0002"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0034833999998227227,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0094-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.526343+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.007545585000116262,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0095-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.533782+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0003"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0034809670005415683,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0096-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.545550+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.007608179000271775,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0097-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.553068+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0004"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0036894719996780623,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0098-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.564672+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.007615010000336042,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0099-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.572310+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0005"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0035308630003783037,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0100-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:03.583825+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "prune"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0013798039999528555,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0101-git-env-copy-prune.log",
+      "method": "git-env-copy",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:39:03.598039+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "list",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/git-env-copy/reference",
+      "elapsed_seconds": 0.0013378899993767845,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0102-git-env-copy-prune.log",
+      "method": "git-env-copy",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:39:03.603247+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "--quiet",
+        "--no-local",
+        "--no-checkout",
+        "/tmp/cambium-clsx-benchmark-source-v3",
+        "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto",
+      "elapsed_seconds": 0.03176700299991353,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0103-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:03.619113+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "checkout",
+        "--quiet",
+        "--detach",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.0036177829997541266,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0104-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:03.655110+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "user.name",
+        "Cambium Workflow Benchmark"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.0034759099999064347,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0105-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:03.663066+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "user.email",
+        "benchmark@example.invalid"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.0013883560004614992,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0106-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:03.670540+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "npm",
+        "ci",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.41488212300009764,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0107-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:03.675956+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.3154656470005648,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0108-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:04.096192+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.264672440999675,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0109-cambium-auto-reference_verify.log",
+      "method": "cambium-auto",
+      "phase": "reference_verify",
+      "started_at": "2026-10-30T04:39:04.417543+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.31475956099984614,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0110-cambium-auto-reference_verify.log",
+      "method": "cambium-auto",
+      "phase": "reference_verify",
+      "started_at": "2026-10-30T04:39:04.687415+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=normal"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.003730628999619512,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0111-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:05.007309+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--",
+        "node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.0014418470000236994,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0112-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:05.015911+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "check-ignore",
+        "-q",
+        "--",
+        "node_modules"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.0014790539999012253,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0113-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:05.021758+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--",
+        "dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.001519995000307972,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0114-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:05.027752+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "check-ignore",
+        "-q",
+        "--",
+        "dist"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.0014628999997512437,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0115-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:05.033782+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0001",
+        "-b",
+        "workflow-0001",
+        "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.16425538800012873,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0116-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:05.050364+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0002",
+        "-b",
+        "workflow-0002",
+        "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.11410634999992908,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0117-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:05.219692+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0003",
+        "-b",
+        "workflow-0003",
+        "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.11435735400027625,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0118-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:05.339680+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0004",
+        "-b",
+        "workflow-0004",
+        "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.11397555300027307,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0119-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:05.459315+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0005",
+        "-b",
+        "workflow-0005",
+        "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+        "202794065c925e7f4dcab436150e8a24b360a697"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.11405860300055792,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0120-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:05.578341+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.2643890069994086,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0121-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:05.729460+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.2644229280003856,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0122-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:05.999162+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.003681729999698291,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0123-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:06.268987+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.26425717399979476,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0124-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:06.277452+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.26434850099940377,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0125-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:06.547200+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0036016090007251478,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0126-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:06.817490+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.26427558100022,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0127-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:06.826100+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.31467566399987845,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0128-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:07.095941+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003757784999834257,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0129-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:07.416684+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.2643112360001396,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0130-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:07.425460+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.31462582899985136,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0131-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:07.695381+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0036331259998405585,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0132-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:08.015829+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.2642600069993932,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0133-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:08.024485+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.31446989300002315,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0134-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:08.294296+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.003590512000300805,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0135-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:08.614447+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0036187740006425884,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0136-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:08.649032+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.26430289299969445,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0137-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:08.657999+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.2643483809997633,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0138-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:08.928328+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0036039730002812576,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0139-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:09.198669+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0013690080004380434,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0140-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:09.207790+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.26430320300005405,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0141-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:09.214765+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.26439651399959985,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0142-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:09.484835+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.00356227999964176,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0143-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:09.755166+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.0034863149994635023,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0144-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:09.764411+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.2644047860003411,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0145-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:09.773593+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.3147078479996708,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0146-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:10.044170+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.0038453070001196465,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0147-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:10.365922+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0035627160004878533,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0148-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:10.375516+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.31450639400009095,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0149-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:10.384786+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.3147777889998906,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0150-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:10.705701+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0036990059998061042,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0151-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:11.026827+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "src/index.js"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0014715319994138554,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0152-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:11.036088+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.26450803199986694,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0153-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:11.043282+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.3147250439997151,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0154-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:11.314257+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.00371092499972292,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0155-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:39:11.635620+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.003588348999983282,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0156-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:11.670875+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.464743169999565,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0157-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:11.680256+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.2645856540002569,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0158-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:12.151349+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.26462793799964857,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0159-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:12.422497+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.003662440999505634,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0160-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:12.693831+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0014579819999198662,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0161-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:12.703591+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.4147608319999563,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0162-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:12.711167+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.2644640709995656,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0163-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:13.132518+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.2643526829997427,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0164-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:13.403740+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.003636773000835092,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0165-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:13.675070+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.001465132999328489,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0166-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:13.684585+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.41469316399980016,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0167-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:13.692294+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.26463370700002997,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0168-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:14.113807+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.26460436200068216,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0169-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:14.385504+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003760608999982651,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0170-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:14.657305+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0036080989993934054,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0171-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:14.667444+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.3647588450003241,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0172-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:14.677308+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.2645090080004593,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0173-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:15.048827+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.2645483129999775,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0174-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:15.320387+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0037120359993423335,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0175-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:15.592219+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "package.json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0015119429999685963,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0176-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:15.602239+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.41482426800030225,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0177-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:15.610106+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.26446886299982,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0178-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:16.032440+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.26443895700049325,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0179-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:16.304177+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0036760010007128585,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0180-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:39:16.576090+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0001"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.03179417499995907,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0181-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:16.610131+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0002"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.03171300299982249,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0182-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:16.648454+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0003"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.03179571799955738,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0183-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:16.687080+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0004"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.03169971199986321,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0184-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:16.725648+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0005"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.03171509500043612,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0185-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:39:16.764116+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "prune",
+        "--older-than",
+        "1ns",
+        "--json"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.01572594899971591,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0186-cambium-auto-prune.log",
+      "method": "cambium-auto",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:39:16.816078+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "prune"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.0036667570002464345,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0187-cambium-auto-prune.log",
+      "method": "cambium-auto",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:39:16.839229+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "list",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+      "elapsed_seconds": 0.003522210000483028,
+      "exit_code": 0,
+      "log": "clsx-verified-logs-bcrp4ktq/0188-cambium-auto-prune.log",
+      "method": "cambium-auto",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:39:16.850066+00:00",
+      "status": "ok",
+      "workspace_index": null
+    }
+  ],
+  "completed_at": "2026-10-30T04:39:16.869952+00:00",
+  "format_version": 1,
+  "host": {
+    "benchmark_script_sha256": "59230c95b4c095c8ab4803a0fd2eeb1a68e6a2e7f012b29baf9b7bc9640474e8",
+    "cambium_binary_sha256": "e17e639ef5e5a4f2c04c5ac73830823bb0d63a7f763baa7540b288a179821f71",
+    "cpu_count": 9,
+    "external_tool_caches": {
+      "CARGO_HOME": "/tmp/cambium-cargo",
+      "NPM_CONFIG_CACHE": "/tmp/cambium-npm-cache",
+      "RUSTUP_HOME": "/tmp/cambium-rustup",
+      "npm_config_cache": "/tmp/cambium-npm-cache"
+    },
+    "filesystem": {
+      "argv": [
+        "stat",
+        "-f",
+        "-c",
+        "%T",
+        "/tmp/cambium-workflow-pv_i229s"
+      ],
+      "exit_code": 0,
+      "output": "overlayfs"
+    },
+    "hardware": {
+      "argv": [
+        "lscpu"
+      ],
+      "exit_code": 0,
+      "output": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           46 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  9\nOn-line CPU(s) list:                     0-8\nVendor ID:                               AuthenticAMD\nModel name:                              AMD EPYC 9V74 80-Core Processor\nBIOS Model name:                           CPU @ 0.0GHz\nBIOS CPU family:                         0\nCPU family:                              25\nModel:                                   17\nThread(s) per core:                      1\nCore(s) per socket:                      9\nSocket(s):                               1\nStepping:                                1\nBogoMIPS:                                5192.26\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx512_bf16 clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm arch_capabilities\nHypervisor vendor:                       KVM\nVirtualization type:                     full\nL1d cache:                               160 KiB (5 instances)\nL1i cache:                               160 KiB (5 instances)\nL2 cache:                                5 MiB (5 instances)\nL3 cache:                                32 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-8\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Vulnerable\nVulnerability Spec store bypass:         Vulnerable\nVulnerability Spectre v1:                Vulnerable: __user pointer sanitization and usercopy barriers only; no swapgs barriers\nVulnerability Spectre v2:                Vulnerable; STIBP: disabled; PBRSB-eIBRS: Not affected; BHI: Not affected\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Vulnerable\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected"
+    },
+    "machine": "x86_64",
+    "memory_bytes": 10451439616,
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+    "scratch_device": 27,
+    "system": "Linux",
+    "versions": {
+      "cambium": {
+        "argv": [
+          "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+          "version"
+        ],
+        "exit_code": 0,
+        "output": "cambium 0.5.0"
+      },
+      "cargo": {
+        "argv": [
+          "cargo",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "cargo 1.99.1 (5f94df478 2026-08-27)"
+      },
+      "git": {
+        "argv": [
+          "git",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "git version 2.51.1"
+      },
+      "node": {
+        "argv": [
+          "node",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "v18.20.8"
+      },
+      "npm": {
+        "argv": [
+          "npm",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "10.8.2"
+      },
+      "rustc": {
+        "argv": [
+          "rustc",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+      }
+    }
+  },
+  "measurement_notes": [
+    "Every method starts with a separately cloned, built and tested reference at the same recorded commit. Prepare costs are reported separately from warm-workspace overhead.",
+    "Physical figures are signed filesystem free-space deltas, including Cambium baselines/layers retained in .git. Ambient activity and same-volume tool-cache writes can affect them; negative deltas are not hidden.",
+    "Logical and st_blocks-derived tree sizes are diagnostic only: shared CoW extents can be counted repeatedly and these sizes do not establish physical savings.",
+    "Toolchain/package-manager global caches are shared and warmed during each reference preparation; their external paths are recorded when explicitly configured. Caches on other volumes are outside these physical measurements.",
+    "Initial, source-edit and dependency-edit verification runs actual recipe build/test commands. Cambium's own readiness metadata is recorded separately and is not treated as proof of runnable state.",
+    "Workspaces are tested sequentially. This harness measures space, relocation and incremental rebuild behavior; it does not claim concurrent throughput or statistical significance."
+  ],
+  "method_order": [
+    "git-env-copy",
+    "cambium-auto"
+  ],
+  "recipe": {
+    "allow_policy_commands": false,
+    "dependency_edits": [
+      {
+        "new": "\"uvu\": \"0.5.6\"",
+        "old": "\"uvu\": \"0.5.4\"",
+        "path": "package.json"
+      }
+    ],
+    "dependency_prepare": [
+      [
+        "npm",
+        "install",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ]
+    ],
+    "environment_paths": [
+      "node_modules",
+      "dist"
+    ],
+    "name": "clsx",
+    "prepare": [
+      [
+        "npm",
+        "ci",
+        "--offline",
+        "--ignore-scripts",
+        "--no-audit",
+        "--no-fund"
+      ],
+      [
+        "npm",
+        "run",
+        "build"
+      ]
+    ],
+    "provenance": {
+      "description": "Upstream clsx plus a pinned lockfile; Node 18 legacy test loader, all 32 upstream tests. Source comment edit and uvu 0.5.4 to 0.5.6 test-runner change. Small library, not a monorepo-scale claim.",
+      "upstream_commit": "925494cf31bcd97d3337aacd34e659e80cae7fe2",
+      "upstream_url": "https://github.com/lukeed/clsx.git"
+    },
+    "ref": "202794065c925e7f4dcab436150e8a24b360a697",
+    "source": "/tmp/cambium-clsx-benchmark-source-v3",
+    "source_edits": [
+      {
+        "new": "// Workspace {index} source edit.\nfunction toVal(mix) {",
+        "old": "function toVal(mix) {",
+        "path": "src/index.js"
+      }
+    ],
+    "verify": [
+      [
+        "npm",
+        "run",
+        "build"
+      ],
+      [
+        "npm",
+        "test"
+      ]
+    ],
+    "version": 1
+  },
+  "resolved_source_commit": "202794065c925e7f4dcab436150e8a24b360a697",
+  "resolved_source_tree": "f543660fe901d9872bfff4476d8de888d090e0b0",
+  "results": [
+    {
+      "before_clone": {
+        "at": "2026-10-30T04:38:51.267235+00:00",
+        "cambium_state": {
+          "files": 0,
+          "logical_file_bytes": 0,
+          "referenced_allocated_file_bytes": 0
+        },
+        "tree": {
+          "files": 0,
+          "logical_file_bytes": 0,
+          "referenced_allocated_file_bytes": 0
+        },
+        "volume_free_bytes": 30862270464,
+        "volume_total_bytes": 33770192896
+      },
+      "method": "git-env-copy",
+      "phases": [
+        {
+          "elapsed_seconds": 1.3196348350002154,
+          "measurement": {
+            "at": "2026-10-30T04:38:52.591276+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 209,
+              "logical_file_bytes": 4514909,
+              "referenced_allocated_file_bytes": 5070848
+            },
+            "volume_free_bytes": 30856880128,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 5390336
+          },
+          "name": "prepare_reference",
+          "started_at": "2026-10-30T04:38:51.267369+00:00",
+          "status": "ok"
+        },
+        {
+          "create_p50_seconds": 0.05900443300015468,
+          "create_p95_seconds": 0.0591026559995953,
+          "elapsed_seconds": 0.28625873100008903,
+          "measurement": {
+            "at": "2026-10-30T04:38:52.890123+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 1174,
+              "logical_file_bytes": 26797769,
+              "referenced_allocated_file_bytes": 29913088
+            },
+            "volume_free_bytes": 30830739456,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 31531008,
+            "volume_used_delta_from_warm_reference_bytes": 26140672
+          },
+          "name": "create",
+          "started_at": "2026-10-30T04:38:52.594558+00:00",
+          "status": "ok"
+        },
+        {
+          "elapsed_seconds": 2.863613145000272,
+          "measurement": {
+            "at": "2026-10-30T04:38:55.770066+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 1174,
+              "logical_file_bytes": 26937884,
+              "referenced_allocated_file_bytes": 30035968
+            },
+            "volume_free_bytes": 30830559232,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 31711232,
+            "volume_used_delta_from_warm_reference_bytes": 26320896
+          },
+          "name": "initial_build_test",
+          "started_at": "2026-10-30T04:38:52.903029+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "elapsed_seconds": 0.5353455009999379,
+              "git_status": "",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 0.5352855020000788,
+              "git_status": "",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 0.5867541099996743,
+              "git_status": "",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 0.6363635939997039,
+              "git_status": "",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 0.5358917130006375,
+              "git_status": "",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 2.8012158050005382,
+          "measurement": {
+            "at": "2026-10-30T04:38:58.590061+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 1174,
+              "logical_file_bytes": 26950799,
+              "referenced_allocated_file_bytes": 30056448
+            },
+            "volume_free_bytes": 30830444544,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 31825920,
+            "volume_used_delta_from_warm_reference_bytes": 26435584
+          },
+          "name": "source_edit_build_test",
+          "started_at": "2026-10-30T04:38:55.785826+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "edits": [
+                {
+                  "after_sha256": "aadca0944d02337577cc5956b2d2ca3c2f9d6b2715e533404cebeba954f0f0a6",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.598325723999551,
+              "git_status": " M src/index.js\n",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c6c0d8c8540d0f0ab63d6ee8230b7cf89d5036621ba700652d184ba055967fac",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.5426518120002584,
+              "git_status": " M src/index.js\n",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "fa48092d892bf9384c024579a809d8b215c1dd10e6fc966b72af5de25738c908",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.540549127000304,
+              "git_status": " M src/index.js\n",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "360503b61ea14c223b26612f2c0a5c0c8fa2776b463009f7e1fd4c8cf14a6d5c",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.5414080680002371,
+              "git_status": " M src/index.js\n",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "b9a94642f074caecc4718e7762bb96392f70d5de13af6a0052f743325ae82b2f",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.5438799769999605,
+              "git_status": " M src/index.js\n",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 4.8691135359995315,
+          "measurement": {
+            "at": "2026-10-30T04:39:03.479801+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 1174,
+              "logical_file_bytes": 26954364,
+              "referenced_allocated_file_bytes": 30056448
+            },
+            "volume_free_bytes": 30830317568,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 31952896,
+            "volume_used_delta_from_warm_reference_bytes": 26562560
+          },
+          "name": "dependency_edit_build_test",
+          "started_at": "2026-10-30T04:38:58.605805+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.963571385999785,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.9629941899993355,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.9729731450006511,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.9659293790000447,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.9647171879996677,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 0.0953333899997233,
+          "measurement": {
+            "at": "2026-10-30T04:39:03.592051+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 209,
+              "logical_file_bytes": 4514909,
+              "referenced_allocated_file_bytes": 5070848
+            },
+            "volume_free_bytes": 30856527872,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 5742592,
+            "volume_used_delta_from_warm_reference_bytes": 352256
+          },
+          "name": "remove_worktrees",
+          "started_at": "2026-10-30T04:39:03.493930+00:00",
+          "status": "ok"
+        },
+        {
+          "elapsed_seconds": 0.012052461999701336,
+          "measurement": {
+            "at": "2026-10-30T04:39:03.610637+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 209,
+              "logical_file_bytes": 4514909,
+              "referenced_allocated_file_bytes": 5070848
+            },
+            "volume_free_bytes": 30856523776,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 5746688,
+            "volume_used_delta_from_warm_reference_bytes": 356352
+          },
+          "name": "prune",
+          "started_at": "2026-10-30T04:39:03.596232+00:00",
+          "status": "ok"
+        }
+      ],
+      "status": "ok",
+      "warm_reference_volume_free_bytes": 30856880128,
+      "workspace_count": 5,
+      "workspaces": [
+        {
+          "branch": "workflow-0001",
+          "create_seconds": 0.05014892399958626,
+          "index": 1,
+          "name": "workflow-0001",
+          "path": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0001"
+        },
+        {
+          "branch": "workflow-0002",
+          "create_seconds": 0.0591026559995953,
+          "index": 2,
+          "name": "workflow-0002",
+          "path": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0002"
+        },
+        {
+          "branch": "workflow-0003",
+          "create_seconds": 0.0587273399996775,
+          "index": 3,
+          "name": "workflow-0003",
+          "path": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0003"
+        },
+        {
+          "branch": "workflow-0004",
+          "create_seconds": 0.05901899000036792,
+          "index": 4,
+          "name": "workflow-0004",
+          "path": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0004"
+        },
+        {
+          "branch": "workflow-0005",
+          "create_seconds": 0.05900443300015468,
+          "index": 5,
+          "name": "workflow-0005",
+          "path": "/tmp/cambium-workflow-pv_i229s/git-env-copy/worktrees/workflow-0005"
+        }
+      ]
+    },
+    {
+      "before_clone": {
+        "at": "2026-10-30T04:39:03.617022+00:00",
+        "cambium_state": {
+          "files": 0,
+          "logical_file_bytes": 0,
+          "referenced_allocated_file_bytes": 0
+        },
+        "tree": {
+          "files": 0,
+          "logical_file_bytes": 0,
+          "referenced_allocated_file_bytes": 0
+        },
+        "volume_free_bytes": 30856515584,
+        "volume_total_bytes": 33770192896
+      },
+      "method": "cambium-auto",
+      "phases": [
+        {
+          "elapsed_seconds": 1.4208549390004919,
+          "measurement": {
+            "at": "2026-10-30T04:39:05.043350+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 209,
+              "logical_file_bytes": 4514909,
+              "referenced_allocated_file_bytes": 5070848
+            },
+            "volume_free_bytes": 30851145728,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 5369856
+          },
+          "name": "prepare_reference",
+          "started_at": "2026-10-30T04:39:03.617169+00:00",
+          "status": "ok"
+        },
+        {
+          "create_p50_seconds": 0.11957340999924781,
+          "create_p95_seconds": 0.16926691600019694,
+          "elapsed_seconds": 0.6475386089996391,
+          "measurement": {
+            "at": "2026-10-30T04:39:05.708933+00:00",
+            "cambium_state": {
+              "files": 171,
+              "logical_file_bytes": 4416633,
+              "referenced_allocated_file_bytes": 4861952
+            },
+            "tree": {
+              "files": 1350,
+              "logical_file_bytes": 31214487,
+              "referenced_allocated_file_bytes": 34795520
+            },
+            "volume_free_bytes": 30819868672,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 36646912,
+            "volume_used_delta_from_warm_reference_bytes": 31277056
+          },
+          "name": "create",
+          "started_at": "2026-10-30T04:39:05.048178+00:00",
+          "status": "ok"
+        },
+        {
+          "elapsed_seconds": 2.894518266999512,
+          "measurement": {
+            "at": "2026-10-30T04:39:08.625334+00:00",
+            "cambium_state": {
+              "files": 171,
+              "logical_file_bytes": 4416633,
+              "referenced_allocated_file_bytes": 4861952
+            },
+            "tree": {
+              "files": 1350,
+              "logical_file_bytes": 31354602,
+              "referenced_allocated_file_bytes": 34918400
+            },
+            "volume_free_bytes": 30819692544,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 36823040,
+            "volume_used_delta_from_warm_reference_bytes": 31453184
+          },
+          "name": "initial_build_test",
+          "started_at": "2026-10-30T04:39:05.727060+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "elapsed_seconds": 0.5395599080002285,
+              "git_status": "",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 0.5400435379997361,
+              "git_status": "",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 0.590588709000258,
+              "git_status": "",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 0.590373434999492,
+              "git_status": "",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 0.5899961949999124,
+              "git_status": "",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 2.9961190439998973,
+          "measurement": {
+            "at": "2026-10-30T04:39:11.646699+00:00",
+            "cambium_state": {
+              "files": 171,
+              "logical_file_bytes": 4416633,
+              "referenced_allocated_file_bytes": 4861952
+            },
+            "tree": {
+              "files": 1350,
+              "logical_file_bytes": 31367517,
+              "referenced_allocated_file_bytes": 34938880
+            },
+            "volume_free_bytes": 30819577856,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 36937728,
+            "volume_used_delta_from_warm_reference_bytes": 31567872
+          },
+          "name": "source_edit_build_test",
+          "started_at": "2026-10-30T04:39:08.646489+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "edits": [
+                {
+                  "after_sha256": "aadca0944d02337577cc5956b2d2ca3c2f9d6b2715e533404cebeba954f0f0a6",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.5496390189991871,
+              "git_status": " M src/index.js\n",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c6c0d8c8540d0f0ab63d6ee8230b7cf89d5036621ba700652d184ba055967fac",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.5473787149994678,
+              "git_status": " M src/index.js\n",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "fa48092d892bf9384c024579a809d8b215c1dd10e6fc966b72af5de25738c908",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.6015084809996551,
+              "git_status": " M src/index.js\n",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "360503b61ea14c223b26612f2c0a5c0c8fa2776b463009f7e1fd4c8cf14a6d5c",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.6513420789997326,
+              "git_status": " M src/index.js\n",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "b9a94642f074caecc4718e7762bb96392f70d5de13af6a0052f743325ae82b2f",
+                  "before_sha256": "a577c500f65ed167cea489dd39c149c36880f959fc6ca24e4e1cc545cb7a53e1",
+                  "path": "src/index.js",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.5995167480004966,
+              "git_status": " M src/index.js\n",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 4.915308725999239,
+          "measurement": {
+            "at": "2026-10-30T04:39:16.588319+00:00",
+            "cambium_state": {
+              "files": 171,
+              "logical_file_bytes": 4416633,
+              "referenced_allocated_file_bytes": 4861952
+            },
+            "tree": {
+              "files": 1350,
+              "logical_file_bytes": 31371082,
+              "referenced_allocated_file_bytes": 34938880
+            },
+            "volume_free_bytes": 30819454976,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 37060608,
+            "volume_used_delta_from_warm_reference_bytes": 31690752
+          },
+          "name": "dependency_edit_build_test",
+          "started_at": "2026-10-30T04:39:11.668002+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 1.0229577080008312,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.9714829169997756,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.9727230540001983,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.9247777540003881,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "c9cdb107973f7c6867ca21f64655b7f83c9f0c2df7c52a3bdd3fbb7c6a098835",
+                  "before_sha256": "a5e616b9883177fb47c1fca22b6a4ab42be1c3ed6ffae8595a5c7d88630eeec2",
+                  "path": "package.json",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 0.973853446999783,
+              "git_status": " M package-lock.json\n M package.json\n M src/index.js\n",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 0.19247240999993664,
+          "measurement": {
+            "at": "2026-10-30T04:39:16.803350+00:00",
+            "cambium_state": {
+              "files": 166,
+              "logical_file_bytes": 4411873,
+              "referenced_allocated_file_bytes": 4841472
+            },
+            "tree": {
+              "files": 375,
+              "logical_file_bytes": 8926782,
+              "referenced_allocated_file_bytes": 9912320
+            },
+            "volume_free_bytes": 30845710336,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 10805248,
+            "volume_used_delta_from_warm_reference_bytes": 5435392
+          },
+          "name": "remove_worktrees",
+          "started_at": "2026-10-30T04:39:16.606974+00:00",
+          "status": "ok"
+        },
+        {
+          "elapsed_seconds": 0.044348385000375856,
+          "measurement": {
+            "at": "2026-10-30T04:39:16.860994+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 209,
+              "logical_file_bytes": 4514909,
+              "referenced_allocated_file_bytes": 5070848
+            },
+            "volume_free_bytes": 30850748416,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 5767168,
+            "volume_used_delta_from_warm_reference_bytes": 397312
+          },
+          "name": "prune",
+          "prune_result": {
+            "protected": 0,
+            "removed": [
+              {
+                "age_seconds": 11.222728038,
+                "id": "5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc",
+                "kind": "layer",
+                "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git/cambium/layers/5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc"
+              },
+              {
+                "age_seconds": 11.222629479,
+                "id": "e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7",
+                "kind": "layer",
+                "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git/cambium/layers/e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7"
+              }
+            ],
+            "retained": 0,
+            "selected": [
+              {
+                "age_seconds": 11.222728038,
+                "id": "5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc",
+                "kind": "layer",
+                "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git/cambium/layers/5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc"
+              },
+              {
+                "age_seconds": 11.222629479,
+                "id": "e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7",
+                "kind": "layer",
+                "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git/cambium/layers/e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7"
+              }
+            ]
+          },
+          "started_at": "2026-10-30T04:39:16.812922+00:00",
+          "status": "ok"
+        }
+      ],
+      "status": "ok",
+      "warm_reference_volume_free_bytes": 30851145728,
+      "workspace_count": 5,
+      "workspaces": [
+        {
+          "branch": "workflow-0001",
+          "cambium_creation": {
+            "base_commit": "202794065c925e7f4dcab436150e8a24b360a697",
+            "base_ref": "202794065c925e7f4dcab436150e8a24b360a697",
+            "branch": "workflow-0001",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:39:05.196428959Z",
+            "environment_ready": false,
+            "environment_unverified": [
+              "node_modules"
+            ],
+            "ephemeral": false,
+            "id": "6f368be9031b824f",
+            "last_used_at": "2026-10-30T04:39:05.196428959Z",
+            "layer_ids": [
+              "5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc",
+              "e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7"
+            ],
+            "name": "workflow-0001",
+            "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.16926691600019694,
+          "index": 1,
+          "name": "workflow-0001",
+          "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0001"
+        },
+        {
+          "branch": "workflow-0002",
+          "cambium_creation": {
+            "base_commit": "202794065c925e7f4dcab436150e8a24b360a697",
+            "base_ref": "202794065c925e7f4dcab436150e8a24b360a697",
+            "branch": "workflow-0002",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:39:05.313462875Z",
+            "environment_ready": false,
+            "environment_unverified": [
+              "node_modules"
+            ],
+            "ephemeral": false,
+            "id": "25e803330ab74d11",
+            "last_used_at": "2026-10-30T04:39:05.313462875Z",
+            "layer_ids": [
+              "5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc",
+              "e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7"
+            ],
+            "name": "workflow-0002",
+            "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.11988282400034223,
+          "index": 2,
+          "name": "workflow-0002",
+          "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0002"
+        },
+        {
+          "branch": "workflow-0003",
+          "cambium_creation": {
+            "base_commit": "202794065c925e7f4dcab436150e8a24b360a697",
+            "base_ref": "202794065c925e7f4dcab436150e8a24b360a697",
+            "branch": "workflow-0003",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:39:05.429626627Z",
+            "environment_ready": false,
+            "environment_unverified": [
+              "node_modules"
+            ],
+            "ephemeral": false,
+            "id": "9588bd7f998fdcc3",
+            "last_used_at": "2026-10-30T04:39:05.429626627Z",
+            "layer_ids": [
+              "5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc",
+              "e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7"
+            ],
+            "name": "workflow-0003",
+            "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.11957340999924781,
+          "index": 3,
+          "name": "workflow-0003",
+          "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0003"
+        },
+        {
+          "branch": "workflow-0004",
+          "cambium_creation": {
+            "base_commit": "202794065c925e7f4dcab436150e8a24b360a697",
+            "base_ref": "202794065c925e7f4dcab436150e8a24b360a697",
+            "branch": "workflow-0004",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:39:05.550115716Z",
+            "environment_ready": false,
+            "environment_unverified": [
+              "node_modules"
+            ],
+            "ephemeral": false,
+            "id": "ab5bde788d6124f6",
+            "last_used_at": "2026-10-30T04:39:05.550115716Z",
+            "layer_ids": [
+              "5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc",
+              "e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7"
+            ],
+            "name": "workflow-0004",
+            "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.1189738409993879,
+          "index": 4,
+          "name": "workflow-0004",
+          "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0004"
+        },
+        {
+          "branch": "workflow-0005",
+          "cambium_creation": {
+            "base_commit": "202794065c925e7f4dcab436150e8a24b360a697",
+            "base_ref": "202794065c925e7f4dcab436150e8a24b360a697",
+            "branch": "workflow-0005",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:39:05.665188811Z",
+            "environment_ready": false,
+            "environment_unverified": [
+              "node_modules"
+            ],
+            "ephemeral": false,
+            "id": "760961783360c4a9",
+            "last_used_at": "2026-10-30T04:39:05.665188811Z",
+            "layer_ids": [
+              "5e378fe11b7ea4b2d7b05bff4639372e5b8fb1bc269bc9f18d4b5b350fd834fc",
+              "e0983568ce1aebe8632f46c6c22a7dc496289fcaf53beb64af426a04ea7413c7"
+            ],
+            "name": "workflow-0005",
+            "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-pv_i229s/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.11935507100042742,
+          "index": 5,
+          "name": "workflow-0005",
+          "path": "/tmp/cambium-workflow-pv_i229s/cambium-auto/worktrees/workflow-0005"
+        }
+      ]
+    }
+  ],
+  "scratch": "/tmp/cambium-workflow-pv_i229s",
+  "scratch_retained": false,
+  "source_origin": "https://github.com/lukeed/clsx.git",
+  "started_at": "2026-10-30T04:38:51.109225+00:00",
+  "status": "ok"
+}

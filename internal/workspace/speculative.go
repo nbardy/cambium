@@ -83,11 +83,12 @@ func (m *Manager) Checkpoint(ctx context.Context, workspaceName string, options 
 	if err := store.SaveRef(ctx, checkpoint.Root, checkpoint.Ref); err != nil {
 		return CheckpointResult{}, fmt.Errorf("attach environments to checkpoint: %w", err)
 	}
-	ready, missing := environmentReadiness(layers)
+	ready, missing, unverified := environmentReadiness(layers)
 	workspaceValue.SpeculativeRoot = checkpoint.Root.ID.String()
 	workspaceValue.LayerIDs = environmentIDs
 	workspaceValue.EnvironmentReady = ready
 	workspaceValue.EnvironmentMissing = missing
+	workspaceValue.EnvironmentUnverified = unverified
 	workspaceValue.LastUsedAt = time.Now().UTC()
 	if err := m.Registry.Save(workspaceValue); err != nil {
 		return CheckpointResult{}, fmt.Errorf("record workspace speculative root: %w", err)
@@ -174,6 +175,7 @@ func (m *Manager) Fork(ctx context.Context, source string, spec CreateSpec) (res
 		created.LayerIDs = result.IDs
 		created.EnvironmentReady = result.Ready
 		created.EnvironmentMissing = result.Missing
+		created.EnvironmentUnverified = result.Unverified
 	}
 	created.SpeculativeRoot = rootID.String()
 	created.LastUsedAt = time.Now().UTC()
@@ -184,16 +186,26 @@ func (m *Manager) Fork(ctx context.Context, source string, spec CreateSpec) (res
 	return ForkResult{Root: rootID, Tree: root.Tree, Workspace: created, Applied: applied}, nil
 }
 
-func environmentReadiness(layers []native.LayerSnapshot) (bool, []string) {
+func environmentReadiness(layers []native.LayerSnapshot) (bool, []string, []string) {
 	ready := true
 	missing := make([]string, 0)
+	unverified := make([]string, 0)
 	for _, layer := range layers {
-		if (layer.Rule.Mode == "clone" || layer.Rule.Mode == "recreate") && !layer.Present && (layer.Expected || layer.Rule.Required) {
+		if layer.Rule.Mode == "share" && layer.Rule.Required && !layer.Present {
 			ready = false
 			missing = append(missing, layer.Rule.Path)
 		}
+		if layer.Rule.Mode == "clone" || layer.Rule.Mode == "recreate" {
+			if !layer.Present && (layer.Expected || layer.Rule.Required) {
+				ready = false
+				missing = append(missing, layer.Rule.Path)
+			} else if layer.Present && !layer.Validated {
+				ready = false
+				unverified = append(unverified, layer.Rule.Path)
+			}
+		}
 	}
-	return ready, missing
+	return ready, missing, unverified
 }
 
 func (m *Manager) RootGC(ctx context.Context, olderThan time.Duration, dryRun bool) (speculative.GCResult, error) {

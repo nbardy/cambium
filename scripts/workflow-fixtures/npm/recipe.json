@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "name": "offline-npm-workflow",
+  "environment_paths": ["node_modules"],
+  "prepare": [["npm", "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund"]],
+  "verify": [["npm", "run", "build"], ["npm", "test"]],
+  "source_edits": [
+    {"path":"src.mjs","old":"`baseline:","new":"`agent-{index}:"},
+    {"path":"test.mjs","old":"'baseline:dependency-v1'","new":"'agent-{index}:dependency-v1'"}
+  ],
+  "dependency_edits": [
+    {"path":"package.json","old":"file:./packages/helper-v1","new":"file:./packages/helper-v2"},
+    {"path":"test.mjs","old":"dependency-v1","new":"dependency-v2"}
+  ],
+  "dependency_prepare": [["npm", "install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund"]],
+  "allow_policy_commands": true,
+  "provenance": {"type":"offline-smoke-fixture","description":"Real npm installation of a local package, built module and Node tests; not representative of monorepo scale."}
+}
