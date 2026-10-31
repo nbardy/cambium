@@ -499,18 +499,19 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 		return LayerSnapshot{}, err
 	}
 	defer lock.Release()
+	var previous *LayerSnapshot
 	if layer, ok := loadLayer(finalRoot); ok {
 		if !(upgradeMissing && sourcePresent && !layer.Present) {
 			return layer, nil
 		}
-		if err := os.RemoveAll(finalRoot); err != nil {
+		previous = &layer
+	}
+	if previous == nil {
+		if _, err := os.Stat(finalRoot); err == nil {
+			return LayerSnapshot{}, fmt.Errorf("incomplete layer exists at %s; run `cambium doctor --repair`", finalRoot)
+		} else if !errors.Is(err, os.ErrNotExist) {
 			return LayerSnapshot{}, err
 		}
-	}
-	if _, err := os.Stat(finalRoot); err == nil {
-		return LayerSnapshot{}, fmt.Errorf("incomplete layer exists at %s; run `cambium doctor --repair`", finalRoot)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return LayerSnapshot{}, err
 	}
 
 	temporary, err := os.MkdirTemp(project.LayersDir(), ".layer-"+id+"-*")
@@ -544,6 +545,39 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 	layer := LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Present: present, Expected: expectedLayer(rule, inputs, sourceRoot, sourcePresent), SourceRef: sourceRef, Inputs: inputs, Validated: validated, CreatedAt: time.Now().UTC()}
 	if present {
 		layer.Payload = filepath.Join(finalRoot, "payload")
+	}
+	if previous != nil {
+		if !present {
+			// The source vanished during preparation. Its existing absence
+			// receipt remains valid, and no upgrade has anything to publish.
+			return *previous, nil
+		}
+		// Keep the canonical directory and ready marker available throughout
+		// the upgrade. Old readers continue to observe the missing receipt;
+		// new readers may use the payload only after the metadata switch.
+		// A unique generation also avoids overwriting payloads left by an
+		// interrupted upgrade. Unreferenced generations are removed with the
+		// cache entry when it is eventually pruned.
+		layer.Payload = filepath.Join(finalRoot, "payload-"+filepath.Base(temporary))
+		if err := ensureAbsent(layer.Payload); err != nil {
+			return LayerSnapshot{}, err
+		}
+		if err := fsx.PublishDir(payload, layer.Payload); err != nil {
+			return LayerSnapshot{}, err
+		}
+		layer.CreatedAt = previous.CreatedAt
+		metadata, err := json.MarshalIndent(layer, "", "  ")
+		if err != nil {
+			return LayerSnapshot{}, err
+		}
+		if err := fsx.WriteFileAtomic(filepath.Join(finalRoot, "metadata.json"), append(metadata, '\n'), 0o644); err != nil {
+			// WriteFileAtomic can report a directory-sync failure after its
+			// rename committed. Retain the payload so either metadata version
+			// remains usable; deleting it here could corrupt the new receipt.
+			return LayerSnapshot{}, err
+		}
+		_ = touchCacheEntry(finalRoot)
+		return layer, nil
 	}
 	metadata, err := json.MarshalIndent(layer, "", "  ")
 	if err != nil {
@@ -767,10 +801,19 @@ func loadLayer(root string) (LayerSnapshot, bool) {
 	layer.Rule.Builtin = layer.RuleBuiltin
 	layer.Rule.Origin = layer.RuleOrigin
 	if layer.Present && (layer.Rule.Mode == config.LayerClone || layer.Rule.Mode == config.LayerSeed) {
-		if _, err := os.Lstat(filepath.Join(root, "payload")); err != nil {
+		payloadName := "payload"
+		if layer.Payload != "" {
+			payloadName = filepath.Base(layer.Payload)
+		}
+		if payloadName != "payload" && !strings.HasPrefix(payloadName, "payload-") {
 			return LayerSnapshot{}, false
 		}
-		layer.Payload = filepath.Join(root, "payload")
+		// Resolve only a payload basename inside this receipt. Persisted
+		// absolute paths may refer to a former location of the Git repository.
+		layer.Payload = filepath.Join(root, payloadName)
+		if _, err := os.Lstat(layer.Payload); err != nil {
+			return LayerSnapshot{}, false
+		}
 	}
 	return layer, true
 }

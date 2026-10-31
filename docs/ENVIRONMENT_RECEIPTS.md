@@ -41,6 +41,13 @@ successful validation command is explicitly unverified.
 Version 5 receipts are not reused by version 6. A previously cached absence can
 be replaced when the source environment later becomes available.
 
+An absence upgrade keeps the existing receipt readable while validation and
+copying run. The completed payload is published as a new generation inside the
+receipt, then an atomic metadata replacement makes it visible. Validation or
+copy failures leave existing workspace and checkpoint references intact. An
+interrupted publication can leave an unreferenced payload generation; pruning
+the unused receipt removes these generations together.
+
 ## Payload and metadata
 
 - `clone` and `seed` receipts may contain an immutable payload directory/file.
