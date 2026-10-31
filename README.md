@@ -19,6 +19,10 @@ dependencies from the existence of a directory.
 
 ## Quick start
 
+Requires Git 2.36 or newer. Cambium uses Git's
+[NUL-delimited worktree listing](https://git-scm.com/docs/git-worktree/2.36.0)
+to preserve paths containing newlines and other unusual characters.
+
 ```bash
 go install github.com/nbardy/cambium/cmd/cambium@latest
 go install github.com/nbardy/cambium/cmd/git-cambium@latest

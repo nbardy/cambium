@@ -1,7 +1,6 @@
 package gitx
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -39,7 +38,7 @@ func Discover(ctx context.Context, path string, runner execx.Runner) (Repository
 	if err != nil {
 		return Repository{}, fmt.Errorf("discover Git repository from %s: %w", absolute, err)
 	}
-	root := strings.TrimSpace(rootResult.Stdout)
+	root := gitPathOutput(rootResult.Stdout)
 	if root == "" {
 		return Repository{}, errors.New("git returned an empty repository root")
 	}
@@ -51,7 +50,7 @@ func Discover(ctx context.Context, path string, runner execx.Runner) (Repository
 	if err != nil {
 		return Repository{}, fmt.Errorf("discover common Git directory: %w", err)
 	}
-	common := strings.TrimSpace(commonResult.Stdout)
+	common := gitPathOutput(commonResult.Stdout)
 	if !filepath.IsAbs(common) {
 		common = filepath.Join(root, common)
 	}
@@ -60,6 +59,12 @@ func Discover(ctx context.Context, path string, runner execx.Runner) (Repository
 		return Repository{}, err
 	}
 	return Repository{Root: filepath.Clean(root), CommonGitDir: filepath.Clean(common), Runner: runner}, nil
+}
+
+// Git's single-path commands append one LF record terminator. Any preceding
+// whitespace, including CR or another LF, belongs to the path on Unix.
+func gitPathOutput(output string) string {
+	return strings.TrimSuffix(output, "\n")
 }
 
 func (r Repository) ResolveCommit(ctx context.Context, ref string) (string, error) {
@@ -143,23 +148,23 @@ func (r Repository) WorktreePrune(ctx context.Context) error {
 }
 
 func (r Repository) ListWorktrees(ctx context.Context) ([]Worktree, error) {
-	result, err := r.runCommon(ctx, "worktree", "list", "--porcelain")
+	result, err := r.runCommon(ctx, "worktree", "list", "--porcelain", "-z")
 	if err != nil {
 		return nil, err
 	}
 	var values []Worktree
 	var current *Worktree
-	scanner := bufio.NewScanner(strings.NewReader(result.Stdout))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
+	// Git emits paths verbatim. A newline may belong to a path or lock reason,
+	// so use its NUL-delimited porcelain format for fields and record boundaries.
+	for _, field := range strings.Split(result.Stdout, "\x00") {
+		if field == "" {
 			if current != nil {
 				values = append(values, *current)
 				current = nil
 			}
 			continue
 		}
-		key, value, _ := strings.Cut(line, " ")
+		key, value, _ := strings.Cut(field, " ")
 		switch key {
 		case "worktree":
 			if current != nil {
@@ -191,9 +196,6 @@ func (r Repository) ListWorktrees(ctx context.Context) ([]Worktree, error) {
 				current.Prunable = true
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
 	}
 	if current != nil {
 		values = append(values, *current)
@@ -273,7 +275,7 @@ func (r Repository) GitPath(ctx context.Context, worktree, name string) (string,
 	if err != nil {
 		return "", err
 	}
-	path := strings.TrimSpace(result.Stdout)
+	path := gitPathOutput(result.Stdout)
 	if !filepath.IsAbs(path) {
 		path = filepath.Join(worktree, path)
 	}
