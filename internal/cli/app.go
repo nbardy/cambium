@@ -808,7 +808,7 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 	child.Stderr = a.Stderr
 	child.Env = append(os.Environ(), "CAMBIUM_WORKSPACE="+value.Name, "CAMBIUM_WORKSPACE_PATH="+value.Path, "CAMBIUM_REPOSITORY="+value.RepositoryRoot)
 	runErr := child.Run()
-	_ = manager.Touch(name)
+	_ = manager.TouchIf(ctx, name, value.ID)
 	if runErr != nil {
 		var exitErr *exec.ExitError
 		if errors.As(runErr, &exitErr) {
@@ -816,12 +816,16 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 		}
 		return 1, runErr
 	}
-	if *discard {
-		if err := manager.Remove(ctx, name, true, *deleteBranch); err != nil {
-			return 1, err
-		}
-	} else if *cleanup {
-		if err := manager.Remove(ctx, name, false, *deleteBranch); err != nil {
+	if *discard || *cleanup {
+		// A child may outlive its workspace. Another operation can reuse the
+		// same name and path while it runs, so authorize cleanup by identity
+		// under the removal locks rather than by the original name alone.
+		if err := manager.Native.RemoveIf(ctx, name, *discard, *deleteBranch, func(current model.Workspace) error {
+			if current.ID != value.ID {
+				return fmt.Errorf("workspace %q was replaced while the command ran; leaving the replacement untouched", name)
+			}
+			return nil
+		}); err != nil {
 			return 1, err
 		}
 	}
