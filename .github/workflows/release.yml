@@ -49,10 +49,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
+          digest-mismatch: error
       - run: sha256sum dist/*.tar.gz > dist/SHA256SUMS
       - uses: softprops/action-gh-release@v3
         with:
