@@ -79,6 +79,11 @@ func (m *Manager) Adopt(ctx context.Context, name, path string) (model.Workspace
 		return model.Workspace{}, errors.New("the primary worktree cannot be adopted as an agent workspace")
 	}
 
+	cacheLock, err := m.lockEnvironmentCache(ctx)
+	if err != nil {
+		return model.Workspace{}, err
+	}
+	defer cacheLock.Release()
 	layers, err := native.CaptureWorkspaceLayers(ctx, m.Project, absolute, found.head, m.Native.Cloner, m.Project.Config.RequireCoW)
 	if err != nil {
 		return model.Workspace{}, fmt.Errorf("capture adopted workspace environment: %w", err)

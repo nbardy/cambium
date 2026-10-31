@@ -71,6 +71,11 @@ func (m *Manager) Checkpoint(ctx context.Context, workspaceName string, options 
 	if err != nil {
 		return CheckpointResult{}, err
 	}
+	cacheLock, err := m.lockEnvironmentCache(ctx)
+	if err != nil {
+		return CheckpointResult{}, err
+	}
+	defer cacheLock.Release()
 	layers, err := native.CaptureWorkspaceLayers(ctx, m.Project, workspaceValue.Path, checkpoint.Root.ID.String(), m.Native.Cloner, m.Project.Config.RequireCoW)
 	if err != nil {
 		return CheckpointResult{}, fmt.Errorf("capture workspace environments: %w", err)
