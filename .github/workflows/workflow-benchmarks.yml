@@ -18,18 +18,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: '1.23.x'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
+          package-manager-cache: false
       - name: Select Rust toolchain
         run: rustup default stable
       - name: Real offline npm and Cargo workflows
         run: make workflow-smoke
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: offline-workflows-${{ runner.os }}
@@ -48,14 +49,15 @@ jobs:
       CARGO_BUILD_JOBS: '4'
       NPM_CONFIG_CACHE: ${{ github.workspace }}/.workflow-npm-cache
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: '1.23.x'
       # The pinned clsx tests use the legacy esm loader and need Node 18.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '18.20.8'
+          package-manager-cache: false
       - name: Select Rust toolchain
         run: rustup default stable
       - name: Build Cambium
@@ -78,7 +80,7 @@ jobs:
             --count 5 --methods "$methods" \
             --cambium-bin "$PWD/bin/cambium" \
             --output "dist/workflow-${{ matrix.project }}-${{ runner.os }}.json"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: project-workflow-${{ matrix.project }}-${{ runner.os }}
