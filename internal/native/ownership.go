@@ -16,6 +16,53 @@ import (
 // cancellation or an unrelated Git/filesystem failure the same way.
 var ErrWorktreeOwnership = errors.New("worktree ownership cannot be verified")
 
+// checkWorktreeGitFile distinguishes a broken checkout from an operational Git
+// failure before invoking Git. A missing .git file otherwise makes discovery
+// fail (or walk up into a different repository). Do not classify every Git exit
+// 128 as missing ownership: configuration, permission, and execution errors must
+// still reach the caller.
+func checkWorktreeGitFile(path string) error {
+	gitfile := filepath.Join(path, ".git")
+	info, err := os.Stat(gitfile)
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("%w: checkout Git file %s is missing", ErrWorktreeOwnership, gitfile)
+	}
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() || info.Size() > 1<<20 {
+		return fmt.Errorf("%w: %s is not a valid linked-worktree Git file", ErrWorktreeOwnership, gitfile)
+	}
+	data, err := os.ReadFile(gitfile)
+	if errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("%w: checkout Git file %s disappeared", ErrWorktreeOwnership, gitfile)
+	}
+	if err != nil {
+		return err
+	}
+	// Git strips terminal CR/LF from gitfiles, but spaces can belong to the
+	// pathname. Relative gitdir paths are relative to the checkout directory.
+	gitDir, ok := strings.CutPrefix(strings.TrimRight(string(data), "\r\n"), "gitdir: ")
+	if !ok || gitDir == "" || strings.ContainsRune(gitDir, '\x00') {
+		return fmt.Errorf("%w: checkout Git file %s has invalid contents", ErrWorktreeOwnership, gitfile)
+	}
+	if !filepath.IsAbs(gitDir) {
+		gitDir = filepath.Join(path, gitDir)
+	}
+	info, err = os.Stat(gitDir)
+	if errors.Is(err, os.ErrNotExist) || (err == nil && !info.IsDir()) {
+		return fmt.Errorf("%w: checkout Git file points to a missing administration directory", ErrWorktreeOwnership)
+	}
+	if err != nil {
+		return err
+	}
+	info, err = os.Lstat(filepath.Join(gitDir, "HEAD"))
+	if errors.Is(err, os.ErrNotExist) || (err == nil && !info.Mode().IsRegular() && info.Mode()&os.ModeSymlink == 0) {
+		return fmt.Errorf("%w: checkout Git directory has no valid HEAD file", ErrWorktreeOwnership)
+	}
+	return err
+}
+
 func readWorktreeOwner(marker string) (string, error) {
 	info, err := os.Lstat(marker)
 	if err != nil {

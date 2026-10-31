@@ -52,12 +52,21 @@ func (b *Backend) claimWorktree(ctx context.Context, path, branch, workspaceID s
 }
 
 func (b *Backend) ownerMarker(ctx context.Context, path string) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	canonical, err := canonicalCreationPath(path)
 	if err != nil {
 		return "", err
 	}
 	if canonical != filepath.Clean(path) {
 		return "", fmt.Errorf("%w: workspace path %s now resolves to %s; refusing cleanup", ErrWorktreeOwnership, path, canonical)
+	}
+	if err := checkWorktreeGitFile(path); err != nil {
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
+		return "", err
 	}
 	marker, err := b.Project.Repository.GitPath(ctx, path, worktreeOwnerFile)
 	if err != nil {
