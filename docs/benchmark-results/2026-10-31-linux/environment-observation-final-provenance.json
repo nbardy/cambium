@@ -1,0 +1,146 @@
+{
+  "baseline": {
+    "binary_path": "/workspace/scratch/6128bae5a461/performance-verification/cambium-before-2937f5b",
+    "binary_sha256": "ec4769a2b01af8578a2a4c64025b3fd1f8383e3030b82b1e4b52622476fca6c0",
+    "build_command": [
+      "go",
+      "build",
+      "-trimpath",
+      "-buildvcs=false",
+      "-o",
+      "/workspace/scratch/6128bae5a461/performance-verification/cambium-before-2937f5b",
+      "./cmd/cambium"
+    ],
+    "cli_version": "cambium 0.5.0",
+    "go_build_info": [
+      "\tpath\tgithub.com/nbardy/cambium/cmd/cambium",
+      "\tmod\tgithub.com/nbardy/cambium\t(devel)\t",
+      "\tbuild\t-buildmode=exe",
+      "\tbuild\t-compiler=gc",
+      "\tbuild\t-trimpath=true",
+      "\tbuild\tCGO_ENABLED=1",
+      "\tbuild\tGOARCH=amd64",
+      "\tbuild\tGOOS=linux",
+      "\tbuild\tGOAMD64=v1"
+    ],
+    "source_clean": true,
+    "source_commit": "2937f5bf70d392d38498897a986f1f78c2d29f18",
+    "source_tree": "ffa569c3d0db30769b9527e0cdf59b91aa360b0b"
+  },
+  "baseline_archive": {
+    "path": "../2026-10-30-linux/environment-observation.json",
+    "rebuilt_binary_sha256_identical": true
+  },
+  "canonical_equivalence": {
+    "checks": [
+      "GitHub commit metadata",
+      "local Git commit tree IDs",
+      "git diff --exit-code between commits",
+      "clean detached merged-source rebuild with recorded Go toolchain and flags"
+    ],
+    "clean_rebuild_binary_sha256_identical": true,
+    "source_trees_identical": true,
+    "verified_at": "2026-10-31T18:17:15.506279+00:00"
+  },
+  "canonical_merged_source": {
+    "binary_path": "/workspace/scratch/6128bae5a461/performance-verification/cambium-merged-3bb586b",
+    "binary_sha256": "f28f64e9fd52ec674ca3e3c991204c109ac3a38309ab8fa44b1cdadcdc268ca4",
+    "build_command": [
+      "go",
+      "build",
+      "-trimpath",
+      "-buildvcs=false",
+      "-o",
+      "/workspace/scratch/6128bae5a461/performance-verification/cambium-merged-3bb586b",
+      "./cmd/cambium"
+    ],
+    "cli_version": "cambium 0.5.0",
+    "commit_url": "https://github.com/nbardy/cambium/commit/3bb586bcbbb84c542f2e677469d88a031e13485d",
+    "go_build_info": [
+      "\tpath\tgithub.com/nbardy/cambium/cmd/cambium",
+      "\tmod\tgithub.com/nbardy/cambium\t(devel)\t",
+      "\tbuild\t-buildmode=exe",
+      "\tbuild\t-compiler=gc",
+      "\tbuild\t-trimpath=true",
+      "\tbuild\tCGO_ENABLED=1",
+      "\tbuild\tGOARCH=amd64",
+      "\tbuild\tGOOS=linux",
+      "\tbuild\tGOAMD64=v1"
+    ],
+    "source_clean": true,
+    "source_commit": "3bb586bcbbb84c542f2e677469d88a031e13485d",
+    "source_tree": "c9a22da1daeabdab3b9270d63d2a199682e86a1c"
+  },
+  "harness": {
+    "path": "scripts/benchmark-unverified-environments.py",
+    "sha256": "b1b99a7a3ace101f35b7078244c1d7229e85cfb8e4b11371a13f43f11c7fd843",
+    "source_commit": "c8bd732e414f6f6d72398c9130a005f7dac4c08d"
+  },
+  "measured_candidate": {
+    "binary_path": "/workspace/scratch/6128bae5a461/performance-verification/cambium-final-c8bd732",
+    "binary_sha256": "f28f64e9fd52ec674ca3e3c991204c109ac3a38309ab8fa44b1cdadcdc268ca4",
+    "build_command": [
+      "go",
+      "build",
+      "-trimpath",
+      "-buildvcs=false",
+      "-o",
+      "/workspace/scratch/6128bae5a461/performance-verification/cambium-final-c8bd732",
+      "./cmd/cambium"
+    ],
+    "cli_version": "cambium 0.5.0",
+    "go_build_info": [
+      "\tpath\tgithub.com/nbardy/cambium/cmd/cambium",
+      "\tmod\tgithub.com/nbardy/cambium\t(devel)\t",
+      "\tbuild\t-buildmode=exe",
+      "\tbuild\t-compiler=gc",
+      "\tbuild\t-trimpath=true",
+      "\tbuild\tCGO_ENABLED=1",
+      "\tbuild\tGOARCH=amd64",
+      "\tbuild\tGOOS=linux",
+      "\tbuild\tGOAMD64=v1"
+    ],
+    "source_clean": true,
+    "source_commit": "c8bd732e414f6f6d72398c9130a005f7dac4c08d",
+    "source_tree": "c9a22da1daeabdab3b9270d63d2a199682e86a1c"
+  },
+  "measurement_execution": {
+    "command": [
+      "python3",
+      "scripts/benchmark-unverified-environments.py",
+      "--before-bin",
+      "/workspace/scratch/6128bae5a461/performance-verification/cambium-before-2937f5b",
+      "--after-bin",
+      "/workspace/scratch/6128bae5a461/performance-verification/cambium-final-c8bd732",
+      "--files",
+      "10000",
+      "--layers",
+      "8",
+      "--repetitions",
+      "7",
+      "--output",
+      "docs/benchmark-results/2026-10-31-linux/environment-observation-final.json"
+    ],
+    "completed_at": "2026-10-31T18:13:30.121356+00:00",
+    "local_build_and_test_jobs_stopped": true,
+    "note": "Root performed remote GitHub API publication only while timing ran. No dedicated-host isolation is claimed.",
+    "started_at": "2026-10-31T18:08:31.320477+00:00"
+  },
+  "measurement_plan": {
+    "files": 10000,
+    "layers": 8,
+    "missing_required_layers": 1,
+    "physical_allocation_method": "Signed whole-volume free-space differences using os.sync and statvfs; unrelated writes may affect deltas.",
+    "repetitions": 7,
+    "source_bytes_per_file": 1024,
+    "timing_order": "Alternating before/after pairs per operation; Trace2 and cleanup are untimed."
+  },
+  "prepared_at": "2026-10-31T18:05:43.664643+00:00",
+  "python_version": "3.12.14",
+  "raw_report": {
+    "path": "environment-observation-final.json",
+    "sha256": "8c5e0751d327e0281f1dc1740d19356c5d96f68b430b97a394f8cdd11ea9cea4"
+  },
+  "toolchain": "go version go1.23.2 linux/amd64",
+  "version": 1
+}
