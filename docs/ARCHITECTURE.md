@@ -149,6 +149,48 @@ User-relative revisions are resolved in the invoking worktree. Subsequent
 common Git administration runs from the stable common Git directory, including
 when the command removes its own invoking worktree.
 
+Adoption identifies the primary checkout by its Git administration directory,
+not by the directory from which the command runs. A linked checkout may adopt
+itself. Existing workspace paths or branches, pending operation claims, and
+orphaned ownership receipts are rejected rather than registered under another
+name. Adoption shares the workspace-name, cache, and Git administration locks
+with lifecycle operations. It publishes a `cambium-owner` receipt containing
+the new workspace ID before saving metadata and captured environment references.
+If metadata publication fails or the process stops between these writes, the
+receipt is retained for inspection; adoption never deletes the pre-existing
+worktree as rollback. Retrying cannot silently claim an orphaned receipt.
+
+Reconciliation matches linked worktrees by the workspace ID in their ownership
+receipt, including after a move and branch rename. Paths, branches, and Git
+administration directory names can all be reused after ordinary Git removal;
+none proves ownership without a matching receipt. The recorded Git directory
+is a locator. Older metadata with a matching receipt remains usable and gains
+the locator during reconciliation. Missing, malformed, or mismatched receipts
+leave the old record broken, and removal refuses to proceed even with `--force`.
+Removal and reconciliation never create ownership evidence retroactively.
+The main checkout is excluded using
+Git's worktree-list ordering, independent of the invoking checkout. A dry run
+computes the same repairs, including missing-directory failures, without saving
+metadata. Applying repairs first acquires the discovered workspace locks in a
+stable order, deduplicating names that share a lock path, then the common Git
+lock. It rereads both Git and registry state and verifies each workspace ID
+before saving, so a concurrent removal or same-name replacement cannot be
+undone by an older discovery result. Reconciliation never holds the adoption
+lock while waiting for workspace locks.
+
+Legacy records without a receipt require manual inspection. Stop concurrent
+Cambium operations, inspect `git worktree list --porcelain`, and back up local
+work before deciding which checkout is intended. Archive the exact stale
+workspace JSON (identified by its `name` and `id`) outside
+`<common-git-dir>/cambium/workspace-meta`; leave the checkout and branches in
+place. Resolve pending operations first. An orphaned receipt from an interrupted
+adoption must also be inspected and archived before retrying; it is located by
+`git -C <worktree> rev-parse --git-path cambium-owner`. Once those old claims are
+explicitly resolved, `cambium adopt NAME PATH` establishes a fresh receipt and
+metadata together. Do not manufacture a receipt from an old record merely to
+bypass an ownership failure. Ordinary Git removal remains a manual option after
+inspection when the checkout is no longer wanted.
+
 ## Package map
 
 ```text

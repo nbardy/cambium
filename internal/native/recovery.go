@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/nbardy/cambium/internal/fsx"
 	"github.com/nbardy/cambium/internal/gitx"
@@ -19,8 +18,8 @@ import (
 const worktreeOwnerFile = "cambium-owner"
 
 // claimWorktree records identity inside this linked worktree's Git admin dir,
-// never inside tracked source. Only explicit create/remove calls may establish
-// ownership; recovery must verify an existing claim instead of inventing one.
+// never inside tracked source. Only explicit create/adopt calls may establish
+// ownership; removal and recovery must verify an existing claim.
 // The caller holds the workspace and common Git administration locks.
 func (b *Backend) claimWorktree(ctx context.Context, path, branch, workspaceID string) (string, error) {
 	if workspaceID == "" {
@@ -37,9 +36,9 @@ func (b *Backend) claimWorktree(ctx context.Context, path, branch, workspaceID s
 	if err != nil {
 		return "", err
 	}
-	owner, err := os.ReadFile(marker)
+	owner, err := readWorktreeOwner(marker)
 	if err == nil {
-		if strings.TrimSpace(string(owner)) != workspaceID {
+		if owner != workspaceID {
 			return "", fmt.Errorf("worktree at %s belongs to another workspace; refusing cleanup", path)
 		}
 	} else if errors.Is(err, os.ErrNotExist) {
@@ -53,14 +52,41 @@ func (b *Backend) claimWorktree(ctx context.Context, path, branch, workspaceID s
 }
 
 func (b *Backend) ownerMarker(ctx context.Context, path string) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	canonical, err := canonicalCreationPath(path)
 	if err != nil {
 		return "", err
 	}
 	if canonical != filepath.Clean(path) {
-		return "", fmt.Errorf("workspace path %s now resolves to %s; refusing cleanup", path, canonical)
+		return "", fmt.Errorf("%w: workspace path %s now resolves to %s; refusing cleanup", ErrWorktreeOwnership, path, canonical)
 	}
-	return b.Project.Repository.GitPath(ctx, path, worktreeOwnerFile)
+	if err := checkWorktreeGitFile(path); err != nil {
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
+		return "", err
+	}
+	marker, err := b.Project.Repository.GitPath(ctx, path, worktreeOwnerFile)
+	if err != nil {
+		return "", err
+	}
+	gitDir, err := canonicalCreationPath(filepath.Dir(marker))
+	if err != nil {
+		return "", err
+	}
+	commonDir, err := canonicalCreationPath(b.Project.Repository.CommonGitDir)
+	if err != nil {
+		return "", err
+	}
+	if gitDir == commonDir {
+		return "", fmt.Errorf("%w: the primary worktree cannot be owned as an agent workspace", ErrWorktreeOwnership)
+	}
+	if filepath.Dir(gitDir) != filepath.Join(commonDir, "worktrees") {
+		return "", fmt.Errorf("%w: worktree Git directory is outside this repository's linked worktree administration", ErrWorktreeOwnership)
+	}
+	return filepath.Join(gitDir, worktreeOwnerFile), nil
 }
 
 func (b *Backend) registeredWorktree(ctx context.Context, path string) (gitx.Worktree, bool, error) {
@@ -83,18 +109,14 @@ func (b *Backend) verifyWorktreeOwner(ctx context.Context, record operation.Reco
 	if worktree.Bare || worktree.Branch != record.Branch {
 		return fmt.Errorf("worktree registration belongs to branch %q, not recorded branch %q", worktree.Branch, record.Branch)
 	}
-	marker, err := b.ownerMarker(ctx, record.Path)
+	gitDir, owner, err := b.ReadWorktreeOwner(ctx, record.Path)
 	if err != nil {
 		return err
 	}
-	if record.WorktreeDir != "" && filepath.Dir(marker) != record.WorktreeDir {
+	if record.WorktreeDir != "" && gitDir != record.WorktreeDir {
 		return errors.New("worktree Git administration directory changed; ownership is uncertain")
 	}
-	owner, err := os.ReadFile(marker)
-	if err != nil {
-		return fmt.Errorf("cannot verify worktree ownership: %w", err)
-	}
-	if strings.TrimSpace(string(owner)) != record.WorkspaceID {
+	if owner != record.WorkspaceID {
 		return errors.New("worktree ownership changed; refusing to remove a replacement workspace")
 	}
 	return nil

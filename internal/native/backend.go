@@ -60,6 +60,12 @@ func New(project *project.Project) *Backend {
 	}
 }
 
+// LockWorkspace serializes lifecycle operations on the same workspace name.
+// Composition paths such as adoption must use the same lock as create/remove.
+func (b *Backend) LockWorkspace(ctx context.Context, name string) (*lockfile.Lock, error) {
+	return lockfile.AcquireContext(ctx, b.workspaceLockPath(name))
+}
+
 func (b *Backend) Prepare(ctx context.Context, ref string, requested model.Materializer, requireCoW bool) (PrepareResult, error) {
 	lock, err := lockfile.AcquireContext(ctx, filepath.Join(b.Project.LocksDir(), "cache-admin.lock"))
 	if err != nil {
@@ -153,7 +159,7 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return model.Workspace{}, err
 	}
-	lock, err := lockfile.AcquireContext(ctx, filepath.Join(b.Project.LocksDir(), "workspace-"+slug(spec.Name)+".lock"))
+	lock, err := b.LockWorkspace(ctx, spec.Name)
 	if err != nil {
 		return model.Workspace{}, err
 	}
@@ -333,6 +339,7 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		Status:                model.WorkspaceReady,
 		RepositoryRoot:        b.Project.Repository.Root,
 		CommonGitDir:          b.Project.Repository.CommonGitDir,
+		WorktreeGitDir:        record.WorktreeDir,
 		BaseCommit:            prepared.Commit,
 		BaseRef:               spec.Ref,
 		Branch:                spec.Branch,
@@ -364,7 +371,7 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 }
 
 func (b *Backend) Remove(ctx context.Context, name string, force, deleteBranch bool) (err error) {
-	lock, err := lockfile.AcquireContext(ctx, filepath.Join(b.Project.LocksDir(), "workspace-"+slug(name)+".lock"))
+	lock, err := b.LockWorkspace(ctx, name)
 	if err != nil {
 		return err
 	}
@@ -380,7 +387,7 @@ func (b *Backend) Remove(ctx context.Context, name string, force, deleteBranch b
 		return err
 	}
 	defer gitLock.Release()
-	worktreeDir, err := b.claimWorktree(ctx, workspace.Path, workspace.Branch, workspace.ID)
+	worktreeDir, err := b.VerifyWorkspaceOwnership(ctx, workspace)
 	if err != nil {
 		return err
 	}
