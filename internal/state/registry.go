@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/nbardy/cambium/internal/fsx"
 	"github.com/nbardy/cambium/internal/model"
@@ -107,15 +106,6 @@ func (r Registry) List() ([]model.Workspace, error) {
 		return workspaces[i].CreatedAt.Before(workspaces[j].CreatedAt)
 	})
 	return workspaces, nil
-}
-
-func (r Registry) Touch(name string) error {
-	workspace, err := r.Load(name)
-	if err != nil {
-		return err
-	}
-	workspace.LastUsedAt = time.Now().UTC()
-	return r.Save(workspace)
 }
 
 func (r Registry) Delete(name string) error {

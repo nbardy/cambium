@@ -53,22 +53,30 @@ func (m *Manager) Prepare(ctx context.Context, ref string, materializer model.Ma
 }
 
 func (m *Manager) Load(ctx context.Context, name string, refresh bool) (model.Workspace, error) {
+	if !refresh {
+		return m.Registry.Load(name)
+	}
+	lock, err := m.Native.LockWorkspace(ctx, name)
+	if err != nil {
+		return model.Workspace{}, err
+	}
+	defer lock.Release()
+	return m.loadWorkspaceLocked(ctx, name)
+}
+
+// loadWorkspaceLocked refreshes metadata after taking the named workspace
+// lock. Mutating callers retain that lock through their final registry write;
+// locking only this read would still let a later save resurrect a removal.
+func (m *Manager) loadWorkspaceLocked(ctx context.Context, name string) (model.Workspace, error) {
 	value, err := m.Registry.Load(name)
 	if err != nil {
 		return model.Workspace{}, err
 	}
-	if !refresh {
-		return value, nil
-	}
-	registered, regErr := m.Project.Repository.IsWorktreeRegistered(ctx, value.Path)
-	if regErr != nil {
-		return model.Workspace{}, regErr
-	}
-	_, statErr := os.Stat(value.Path)
-	ready := registered && statErr == nil
 	status := model.WorkspaceReady
-	if !ready {
+	if _, err := m.Native.VerifyWorkspaceOwnership(ctx, value); errors.Is(err, native.ErrWorktreeOwnership) {
 		status = model.WorkspaceBroken
+	} else if err != nil {
+		return model.Workspace{}, err
 	}
 	if value.Status != status {
 		value.Status = status
@@ -77,6 +85,27 @@ func (m *Manager) Load(ctx context.Context, name string, refresh bool) (model.Wo
 		}
 	}
 	return value, nil
+}
+
+func (m *Manager) loadReadyWorkspaceLocked(ctx context.Context, name string) (model.Workspace, error) {
+	value, err := m.loadWorkspaceLocked(ctx, name)
+	if err != nil {
+		return model.Workspace{}, err
+	}
+	if value.Status != model.WorkspaceReady {
+		return model.Workspace{}, fmt.Errorf("workspace %q is not ready; inspect or reconcile its Git worktree", name)
+	}
+	return value, nil
+}
+
+// saveWorkspaceLocked rejects an ownership change made by ordinary Git or a
+// trusted policy command, neither of which participates in Cambium's locks.
+// The caller already holds the name lock across the original read and work.
+func (m *Manager) saveWorkspaceLocked(ctx context.Context, value model.Workspace) error {
+	if _, err := m.Native.VerifyWorkspaceOwnership(ctx, value); err != nil {
+		return fmt.Errorf("workspace changed before metadata publication: %w", err)
+	}
+	return m.Registry.Save(value)
 }
 
 func (m *Manager) List(ctx context.Context, refresh bool) ([]model.Workspace, error) {
@@ -100,7 +129,29 @@ func (m *Manager) Remove(ctx context.Context, name string, force, deleteBranch b
 	return m.Native.Remove(ctx, name, force, deleteBranch)
 }
 
-func (m *Manager) Touch(name string) error { return m.Registry.Touch(name) }
+func (m *Manager) Touch(name string) error {
+	return m.TouchIf(context.Background(), name, "")
+}
+
+// TouchIf records use only after rereading under the lifecycle lock. An
+// expected ID prevents a command that outlived its workspace from touching a
+// same-name replacement. An empty ID explicitly selects the current record.
+func (m *Manager) TouchIf(ctx context.Context, name, expectedID string) error {
+	lock, err := m.Native.LockWorkspace(ctx, name)
+	if err != nil {
+		return err
+	}
+	defer lock.Release()
+	value, err := m.Registry.Load(name)
+	if err != nil {
+		return err
+	}
+	if expectedID != "" && value.ID != expectedID {
+		return fmt.Errorf("workspace %q was replaced before recording its use", name)
+	}
+	value.LastUsedAt = time.Now().UTC()
+	return m.Registry.Save(value)
+}
 
 func (m *Manager) Recover(ctx context.Context, dryRun bool) ([]native.RecoveryAction, error) {
 	return m.Native.Recover(ctx, dryRun)
@@ -140,27 +191,46 @@ func (m *Manager) GC(ctx context.Context, options GCOptions) (GCResult, error) {
 	cutoff := time.Now().UTC().Add(-options.OlderThan)
 	result := GCResult{}
 	for _, value := range values {
-		if options.EphemeralOnly && !value.Ephemeral {
-			continue
-		}
-		lastUsed := value.LastUsedAt
-		if lastUsed.IsZero() {
-			lastUsed = value.CreatedAt
-		}
-		if options.OlderThan > 0 && lastUsed.After(cutoff) {
+		if workspaceGCIneligible(value, options, cutoff) != "" {
 			continue
 		}
 		result.Selected = append(result.Selected, value.Name)
 		if options.DryRun {
 			continue
 		}
-		if err := m.Remove(ctx, value.Name, options.Force, options.DeleteBranches); err != nil {
+		// Selection precedes the lifecycle lock and may be arbitrarily old
+		// after another removal or a long-running validator. Recheck both
+		// identity and eligibility on the record actually being removed.
+		guard := func(current model.Workspace) error {
+			if current.ID != value.ID {
+				return fmt.Errorf("workspace %q was replaced after garbage collection selected it", value.Name)
+			}
+			if reason := workspaceGCIneligible(current, options, cutoff); reason != "" {
+				return errors.New(reason)
+			}
+			return nil
+		}
+		if err := m.Native.RemoveIf(ctx, value.Name, options.Force, options.DeleteBranches, guard); err != nil {
 			result.Skipped = append(result.Skipped, GCSkip{Name: value.Name, Reason: err.Error()})
 			continue
 		}
 		result.Removed = append(result.Removed, value.Name)
 	}
 	return result, nil
+}
+
+func workspaceGCIneligible(value model.Workspace, options GCOptions, cutoff time.Time) string {
+	if options.EphemeralOnly && !value.Ephemeral {
+		return "workspace is no longer ephemeral"
+	}
+	lastUsed := value.LastUsedAt
+	if lastUsed.IsZero() {
+		lastUsed = value.CreatedAt
+	}
+	if options.OlderThan > 0 && lastUsed.After(cutoff) {
+		return "workspace has been used since the garbage collection cutoff"
+	}
+	return ""
 }
 
 func (m *Manager) Doctor(ctx context.Context) []model.DoctorCheck {
