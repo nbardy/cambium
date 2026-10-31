@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/nbardy/cambium/internal/lockfile"
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/native"
 	"github.com/nbardy/cambium/internal/speculative"
+	"github.com/nbardy/cambium/internal/state"
 )
 
 type CheckpointOptions struct {
@@ -160,15 +163,43 @@ func (m *Manager) Fork(ctx context.Context, source string, spec CreateSpec) (res
 	rollback := true
 	defer func() {
 		if rollback {
-			_ = m.Remove(context.Background(), created.Name, true, true)
+			if cleanupErr := m.removeFailedFork(context.Background(), created); cleanupErr != nil && !errors.Is(cleanupErr, state.ErrWorkspaceNotFound) {
+				err = errors.Join(err, fmt.Errorf("clean up failed fork: %w", cleanupErr))
+			}
 		}
 	}()
+	workspaceLock, err := m.Native.LockWorkspace(ctx, created.Name)
+	if err != nil {
+		return ForkResult{}, err
+	}
+	// Registered after rollback so this lock is released before conditional
+	// removal reacquires it. The ID check still protects that handoff.
+	defer workspaceLock.Release()
+	current, err := m.Registry.Load(created.Name)
+	if err != nil {
+		return ForkResult{}, err
+	}
+	if current.ID != created.ID {
+		return ForkResult{}, fmt.Errorf("workspace %q was replaced before fork restoration", created.Name)
+	}
+	created = current
+	if _, err := m.Native.VerifyWorkspaceOwnership(ctx, created); err != nil {
+		return ForkResult{}, fmt.Errorf("verify fork workspace before restoration: %w", err)
+	}
 
 	applied, err := store.Restore(ctx, root, created.Path)
 	if err != nil {
 		return ForkResult{}, err
 	}
 	if sourceRef != nil && len(sourceRef.EnvironmentIDs) > 0 {
+		// The source checkpoint can be dropped while its environment is being
+		// restored. Hold workspace -> cache until the final metadata save gives
+		// these receipts a new owner, so pruning cannot remove an active source.
+		cacheLock, err := lockfile.AcquireContext(ctx, filepath.Join(m.Project.LocksDir(), "cache-admin.lock"))
+		if err != nil {
+			return ForkResult{}, err
+		}
+		defer cacheLock.Release()
 		layers, err := native.LoadLayers(m.Project, sourceRef.EnvironmentIDs)
 		if err != nil {
 			return ForkResult{}, err
@@ -184,11 +215,18 @@ func (m *Manager) Fork(ctx context.Context, source string, spec CreateSpec) (res
 	}
 	created.SpeculativeRoot = rootID.String()
 	created.LastUsedAt = time.Now().UTC()
+	if _, err := m.Native.VerifyWorkspaceOwnership(ctx, created); err != nil {
+		return ForkResult{}, fmt.Errorf("verify fork workspace before publication: %w", err)
+	}
 	if err := m.Registry.Save(created); err != nil {
 		return ForkResult{}, err
 	}
 	rollback = false
 	return ForkResult{Root: rootID, Tree: root.Tree, Workspace: created, Applied: applied}, nil
+}
+
+func (m *Manager) removeFailedFork(ctx context.Context, created model.Workspace) error {
+	return m.Native.RemoveCreated(ctx, created)
 }
 
 func environmentReadiness(layers []native.LayerSnapshot) (bool, []string, []string) {

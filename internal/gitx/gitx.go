@@ -230,7 +230,7 @@ func (r Repository) DeleteBranch(ctx context.Context, branch string, force bool)
 	return err
 }
 
-// DeleteBranchIfUnchanged is used only for recovery. Its compare-and-delete
+// DeleteBranchIfUnchanged is used for automatic cleanup. Its compare-and-delete
 // protects commits made by ordinary Git clients, which do not take Cambium's
 // administration lock, between our inspection and the ref update.
 func (r Repository) DeleteBranchIfUnchanged(ctx context.Context, branch, expected string) error {

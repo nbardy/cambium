@@ -370,7 +370,39 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 	return workspace, nil
 }
 
-func (b *Backend) Remove(ctx context.Context, name string, force, deleteBranch bool) (err error) {
+func (b *Backend) Remove(ctx context.Context, name string, force, deleteBranch bool) error {
+	return b.RemoveIf(ctx, name, force, deleteBranch, nil)
+}
+
+// RemoveIf rechecks a caller's selection against fresh metadata while holding
+// the workspace and Git administration locks. The guard may read Git, but must
+// not acquire workspace, Git administration, or cache locks itself.
+func (b *Backend) RemoveIf(ctx context.Context, name string, force, deleteBranch bool, guard func(model.Workspace) error) error {
+	return b.remove(ctx, name, force, deleteBranch, guard, "")
+}
+
+// RemoveCreated rolls back only the newly created workspace instance. It
+// preserves an advanced branch, including an update racing the final deletion.
+func (b *Backend) RemoveCreated(ctx context.Context, created model.Workspace) error {
+	if created.ID == "" || created.BaseCommit == "" {
+		return errors.New("created workspace identity and base commit are required for cleanup")
+	}
+	return b.remove(ctx, created.Name, true, true, func(current model.Workspace) error {
+		if current.ID != created.ID {
+			return fmt.Errorf("workspace %q was replaced; refusing fork cleanup", created.Name)
+		}
+		head, err := b.Project.Repository.BranchCommit(ctx, current.Branch)
+		if err != nil {
+			return err
+		}
+		if head != created.BaseCommit {
+			return fmt.Errorf("workspace %q branch advanced; leaving its worktree and metadata intact", created.Name)
+		}
+		return nil
+	}, created.BaseCommit)
+}
+
+func (b *Backend) remove(ctx context.Context, name string, force, deleteBranch bool, guard func(model.Workspace) error, expectedBranchTip string) (err error) {
 	lock, err := b.LockWorkspace(ctx, name)
 	if err != nil {
 		return err
@@ -387,6 +419,11 @@ func (b *Backend) Remove(ctx context.Context, name string, force, deleteBranch b
 		return err
 	}
 	defer gitLock.Release()
+	if guard != nil {
+		if err := guard(workspace); err != nil {
+			return err
+		}
+	}
 	worktreeDir, err := b.VerifyWorkspaceOwnership(ctx, workspace)
 	if err != nil {
 		return err
@@ -424,7 +461,12 @@ func (b *Backend) Remove(ctx context.Context, name string, force, deleteBranch b
 		return err
 	}
 	if deleteBranch {
-		if err = b.Project.Repository.DeleteBranch(ctx, workspace.Branch, force); err != nil {
+		if expectedBranchTip != "" {
+			err = b.Project.Repository.DeleteBranchIfUnchanged(ctx, workspace.Branch, expectedBranchTip)
+		} else {
+			err = b.Project.Repository.DeleteBranch(ctx, workspace.Branch, force)
+		}
+		if err != nil {
 			return fmt.Errorf("workspace removed, but branch %q was retained: %w", workspace.Branch, err)
 		}
 	}
