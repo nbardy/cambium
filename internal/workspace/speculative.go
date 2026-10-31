@@ -5,11 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/nbardy/cambium/internal/lockfile"
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/native"
 	"github.com/nbardy/cambium/internal/speculative"
@@ -90,9 +88,6 @@ func (m *Manager) Checkpoint(ctx context.Context, workspaceName string, options 
 		environmentIDs = append(environmentIDs, layer.ID)
 	}
 	checkpoint.Ref.EnvironmentIDs = environmentIDs
-	if err := store.SaveRef(ctx, checkpoint.Root, checkpoint.Ref); err != nil {
-		return CheckpointResult{}, fmt.Errorf("attach environments to checkpoint: %w", err)
-	}
 	ready, missing, unverified := environmentReadiness(layers)
 	workspaceValue.SpeculativeRoot = checkpoint.Root.ID.String()
 	workspaceValue.LayerIDs = environmentIDs
@@ -100,8 +95,10 @@ func (m *Manager) Checkpoint(ctx context.Context, workspaceName string, options 
 	workspaceValue.EnvironmentMissing = missing
 	workspaceValue.EnvironmentUnverified = unverified
 	workspaceValue.LastUsedAt = time.Now().UTC()
-	if err := m.saveWorkspaceLocked(ctx, workspaceValue); err != nil {
-		return CheckpointResult{}, fmt.Errorf("record workspace speculative root: %w", err)
+	if err := store.UpdateRefAndPublish(ctx, checkpoint.Root, checkpoint.Ref, func() error {
+		return m.saveWorkspaceLocked(ctx, workspaceValue)
+	}); err != nil {
+		return CheckpointResult{}, fmt.Errorf("publish checkpoint environments and workspace root: %w", err)
 	}
 	return CheckpointResult{
 		Root:           checkpoint.Root.ID,
@@ -189,38 +186,43 @@ func (m *Manager) Fork(ctx context.Context, source string, spec CreateSpec) (res
 		return ForkResult{}, fmt.Errorf("verify fork workspace before restoration: %w", err)
 	}
 
-	applied, err := store.Restore(ctx, root, created.Path)
-	if err != nil {
-		return ForkResult{}, err
-	}
 	if sourceRef != nil && len(sourceRef.EnvironmentIDs) > 0 {
-		// The source checkpoint can be dropped while its environment is being
-		// restored. Hold workspace -> cache until the final metadata save gives
-		// these receipts a new owner, so pruning cannot remove an active source.
-		cacheLock, err := lockfile.AcquireContext(ctx, filepath.Join(m.Project.LocksDir(), "cache-admin.lock"))
+		// Acquire workspace -> cache -> speculative, matching checkpoint and
+		// cache publication. Never wait for the cache while holding a root.
+		cacheLock, err := m.lockEnvironmentCache(ctx)
 		if err != nil {
 			return ForkResult{}, err
 		}
 		defer cacheLock.Release()
-		layers, err := native.LoadLayers(m.Project, sourceRef.EnvironmentIDs)
-		if err != nil {
-			return ForkResult{}, err
-		}
-		result, err := native.ApplyLayersReplacing(ctx, m.Project, created.Path, layers, m.Native.Cloner, spec.RequireCoW || m.Project.Config.RequireCoW)
-		if err != nil {
-			return ForkResult{}, fmt.Errorf("restore checkpoint environments: %w", err)
-		}
-		created.LayerIDs = result.IDs
-		created.EnvironmentReady = result.Ready
-		created.EnvironmentMissing = result.Missing
-		created.EnvironmentUnverified = result.Unverified
 	}
-	created.SpeculativeRoot = rootID.String()
-	created.LastUsedAt = time.Now().UTC()
-	if _, err := m.Native.VerifyWorkspaceOwnership(ctx, created); err != nil {
-		return ForkResult{}, fmt.Errorf("verify fork workspace before publication: %w", err)
-	}
-	if err := m.Registry.Save(created); err != nil {
+	applied := 0
+	if err := store.WithRoot(ctx, root, func() error {
+		var err error
+		applied, err = store.Restore(ctx, root, created.Path)
+		if err != nil {
+			return err
+		}
+		if sourceRef != nil && len(sourceRef.EnvironmentIDs) > 0 {
+			layers, err := native.LoadLayers(m.Project, sourceRef.EnvironmentIDs)
+			if err != nil {
+				return err
+			}
+			result, err := native.ApplyLayersReplacing(ctx, m.Project, created.Path, layers, m.Native.Cloner, spec.RequireCoW || m.Project.Config.RequireCoW)
+			if err != nil {
+				return fmt.Errorf("restore checkpoint environments: %w", err)
+			}
+			created.LayerIDs = result.IDs
+			created.EnvironmentReady = result.Ready
+			created.EnvironmentMissing = result.Missing
+			created.EnvironmentUnverified = result.Unverified
+		}
+		created.SpeculativeRoot = rootID.String()
+		created.LastUsedAt = time.Now().UTC()
+		if _, err := m.Native.VerifyWorkspaceOwnership(ctx, created); err != nil {
+			return fmt.Errorf("verify fork workspace before publication: %w", err)
+		}
+		return m.Registry.Save(created)
+	}); err != nil {
 		return ForkResult{}, err
 	}
 	rollback = false
@@ -254,23 +256,25 @@ func environmentReadiness(layers []native.LayerSnapshot) (bool, []string, []stri
 }
 
 func (m *Manager) RootGC(ctx context.Context, olderThan time.Duration, dryRun bool) (speculative.GCResult, error) {
-	values, err := m.Registry.List()
-	if err != nil {
-		return speculative.GCResult{}, err
-	}
-	protected := make([]speculative.ID, 0, len(values))
-	for _, value := range values {
-		if strings.TrimSpace(value.SpeculativeRoot) == "" {
-			continue
-		}
-		id, err := speculative.ParseID(value.SpeculativeRoot)
-		if err == nil {
-			protected = append(protected, id)
-		}
-	}
 	store, err := m.SpecStore()
 	if err != nil {
 		return speculative.GCResult{}, err
 	}
-	return store.GC(ctx, protected, olderThan, dryRun)
+	return store.GCWithProtections(ctx, func() ([]speculative.ID, error) {
+		values, err := m.Registry.List()
+		if err != nil {
+			return nil, err
+		}
+		protected := make([]speculative.ID, 0, len(values))
+		for _, value := range values {
+			if strings.TrimSpace(value.SpeculativeRoot) == "" {
+				continue
+			}
+			id, err := speculative.ParseID(value.SpeculativeRoot)
+			if err == nil {
+				protected = append(protected, id)
+			}
+		}
+		return protected, nil
+	}, olderThan, dryRun)
 }

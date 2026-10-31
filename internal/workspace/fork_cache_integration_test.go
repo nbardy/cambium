@@ -14,6 +14,7 @@ import (
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/native"
 	"github.com/nbardy/cambium/internal/project"
+	"github.com/nbardy/cambium/internal/speculative"
 )
 
 func TestForkProtectsCheckpointLayerUntilWorkspacePublication(t *testing.T) {
@@ -87,12 +88,39 @@ func TestForkProtectsCheckpointLayerUntilWorkspacePublication(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := store.DropRef(ctx, checkpoint.Ref.Name); err != nil {
-		t.Fatal(err)
-	}
-	gc, err := manager.RootGC(ctx, 0, false)
-	if err != nil || !slices.Contains(gc.ReleasedRoots, checkpoint.Root) {
-		t.Fatalf("source checkpoint did not release its last layer reference: %#v, %v", gc, err)
+	// Both root mutation and GC now wait for the active fork's publication.
+	// Queue them while its actual v2 payload copy remains paused.
+	dropCtx := &metadataWaitContext{Context: ctx, waiting: make(chan struct{})}
+	dropDone := make(chan struct{})
+	var dropErr error
+	go func() {
+		defer close(dropDone)
+		dropErr = store.DropRef(dropCtx, checkpoint.Ref.Name)
+	}()
+	gcCtx := &metadataWaitContext{Context: ctx, waiting: make(chan struct{})}
+	gcDone := make(chan struct{})
+	var gc speculative.GCResult
+	var gcErr error
+	go func() {
+		defer close(gcDone)
+		gc, gcErr = manager.RootGC(gcCtx, 0, false)
+	}()
+	t.Cleanup(func() { runner.release(); cancel(); <-dropDone; <-gcDone })
+	for _, waiter := range []struct {
+		name    string
+		waiting <-chan struct{}
+		done    <-chan struct{}
+	}{
+		{"drop", dropCtx.waiting, dropDone},
+		{"GC", gcCtx.waiting, gcDone},
+	} {
+		select {
+		case <-waiter.waiting:
+		case <-waiter.done:
+			t.Fatalf("root %s finished while fork publication was paused", waiter.name)
+		case <-ctx.Done():
+			t.Fatalf("root %s did not reach the publication lock", waiter.name)
+		}
 	}
 	pruneCtx, cancelPrune := context.WithTimeout(ctx, 300*time.Millisecond)
 	pruned, pruneErr := manager.PruneCaches(pruneCtx, time.Nanosecond, false)
@@ -112,6 +140,11 @@ func TestForkProtectsCheckpointLayerUntilWorkspacePublication(t *testing.T) {
 	}
 	if result.err != nil {
 		t.Fatalf("fork failed after concurrent pruning: %v", result.err)
+	}
+	<-dropDone
+	<-gcDone
+	if dropErr != nil || gcErr != nil || slices.Contains(gc.ReleasedRoots, checkpoint.Root) || !slices.Contains(gc.Protected, checkpoint.Root) {
+		t.Fatalf("queued root collection did not retain the published fork: drop=%v GC=%#v error=%v", dropErr, gc, gcErr)
 	}
 	assertFile(t, filepath.Join(result.value.Workspace.Path, "node_modules", "pkg", "version.txt"), "checkpoint-v2\n")
 	assertFile(t, filepath.Join(result.value.Workspace.Path, "package-lock.json"), "{\"lockfileVersion\":3,\"version\":\"2\"}\n")
