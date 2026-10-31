@@ -135,6 +135,16 @@ provides atomic object/ref writes. Durable create/remove journals allow
 conservative rollback while protecting a branch that advanced after an
 interruption.
 
+Fork restoration and checkpoint publication retain the speculative lock until
+the workspace's root reference is saved. When environments are involved, lock
+order is workspace, cache, then speculative; a root transaction never waits for
+the cache. Root GC gathers workspace protections after taking the speculative
+lock, so a collector waiting behind publication sees the new owner. A fork
+whose source root was already collected fails before restoration even when the
+Git object still exists: the deleted lineage and environment metadata cannot
+be reconstructed from that object alone. These locks coordinate Cambium's root
+references; Git remains responsible for object retention and pruning.
+
 Recovery acquires the workspace lock before the common Git lock, skips live
 operations, and rereads the journal after locking. A `cambium-owner` marker in
 the linked worktree's Git administration directory binds ownership to the

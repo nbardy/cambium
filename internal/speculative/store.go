@@ -151,6 +151,38 @@ func (s *Store) Acquire(ctx context.Context) (*lockfile.Lock, error) {
 	return lockfile.AcquireContext(ctx, filepath.Join(s.LocksDir, "speculative-git.lock"))
 }
 
+// WithRoot keeps an existing root's Git ref and metadata alive through use,
+// including publication of its new workspace owner. A root already collected
+// is rejected even if Git has not pruned its object: recreating only the commit
+// would lose the collected lineage and environment metadata.
+// Callers acquire workspace/cache locks first; use must not acquire those locks
+// or call another Store method that acquires the speculative lock.
+func (s *Store) WithRoot(ctx context.Context, root Root, use func() error) error {
+	lock, err := s.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer lock.Release()
+	if _, err := ParseID(root.ID.String()); err != nil {
+		return err
+	}
+	metadata, err := s.loadRootMetadata(root.ID)
+	if err != nil {
+		return fmt.Errorf("speculative root %s is no longer retained: %w", root.ID, err)
+	}
+	if metadata.Base != root.BaseCommit || metadata.Tree != root.Tree {
+		return fmt.Errorf("speculative root %s metadata changed before use", root.ID)
+	}
+	ref, err := s.Repository.RunCommon(ctx, nil, "rev-parse", "--verify", s.rootRef(root.ID)+"^{commit}")
+	if err != nil {
+		return fmt.Errorf("speculative root %s is no longer retained: %w", root.ID, err)
+	}
+	if strings.TrimSpace(ref.Stdout) != root.ID.String() {
+		return fmt.Errorf("speculative root %s has an inconsistent protective Git ref", root.ID)
+	}
+	return use()
+}
+
 // Capture snapshots the visible source state of worktree. It uses a private
 // copy of the worktree index, so the user's staging area is never changed.
 // Untracked non-ignored files are included; ignored environment layers are not.
@@ -344,6 +376,27 @@ func (s *Store) GetRoot(ctx context.Context, id ID) (Root, error) {
 }
 
 func (s *Store) SaveRef(ctx context.Context, root Root, ref Ref) error {
+	lock, err := s.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer lock.Release()
+	return s.saveRefLocked(ctx, root, ref)
+}
+
+// UpdateRefAndPublish attaches metadata to a retained root and publishes its
+// workspace owner in the same transaction. The callback has WithRoot's locking
+// restrictions. Unlike SaveRef, this cannot resurrect a collected root.
+func (s *Store) UpdateRefAndPublish(ctx context.Context, root Root, ref Ref, publish func() error) error {
+	return s.WithRoot(ctx, root, func() error {
+		if err := s.saveRefLocked(ctx, root, ref); err != nil {
+			return err
+		}
+		return publish()
+	})
+}
+
+func (s *Store) saveRefLocked(ctx context.Context, root Root, ref Ref) error {
 	if err := validateRefName(ref.Name); err != nil {
 		return err
 	}
@@ -364,11 +417,6 @@ func (s *Store) SaveRef(ctx context.Context, root Root, ref Ref) error {
 	if ref.CreatedAt.IsZero() {
 		ref.CreatedAt = time.Now().UTC()
 	}
-	lock, err := s.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer lock.Release()
 	if ref.Parent == root.ID {
 		// Re-checkpointing identical state yields the same deterministic root.
 		// A self edge adds no lineage information, so normalize it away.
@@ -644,11 +692,22 @@ func (s *Store) Restore(ctx context.Context, root Root, worktree string) (int, e
 }
 
 func (s *Store) GC(ctx context.Context, protected []ID, olderThan time.Duration, dryRun bool) (GCResult, error) {
+	return s.GCWithProtections(ctx, func() ([]ID, error) { return protected, nil }, olderThan, dryRun)
+}
+
+// GCWithProtections gathers mutable workspace protections after acquiring the
+// same lock used for root publication, so a waiting collector cannot omit a
+// just-published owner. The callback must not acquire workspace or cache locks.
+func (s *Store) GCWithProtections(ctx context.Context, protections func() ([]ID, error), olderThan time.Duration, dryRun bool) (GCResult, error) {
 	lock, err := s.Acquire(ctx)
 	if err != nil {
 		return GCResult{}, err
 	}
 	defer lock.Release()
+	protected, err := protections()
+	if err != nil {
+		return GCResult{}, err
+	}
 	refs, err := s.listRefsLocked(ctx)
 	if err != nil {
 		return GCResult{}, err
