@@ -149,6 +149,13 @@ User-relative revisions are resolved in the invoking worktree. Subsequent
 common Git administration runs from the stable common Git directory, including
 when the command removes its own invoking worktree.
 
+`cambium run` releases lifecycle locks while its child executes, so the child
+can perform ordinary checkpoint or workspace operations. Post-command activity
+updates and optional cleanup use the original workspace identity. If another
+operation reuses its name, cleanup reports the replacement and leaves it
+untouched; bookkeeping also leaves the replacement's activity time unchanged.
+A failed child's exit status is preserved.
+
 Adoption identifies the primary checkout by its Git administration directory,
 not by the directory from which the command runs. A linked checkout may adopt
 itself. Existing workspace paths or branches, pending operation claims, and
