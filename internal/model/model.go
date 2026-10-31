@@ -31,26 +31,27 @@ const (
 )
 
 type Workspace struct {
-	Version            int             `json:"version"`
-	ID                 string          `json:"id"`
-	Name               string          `json:"name"`
-	Status             WorkspaceStatus `json:"status"`
-	RepositoryRoot     string          `json:"repository_root"`
-	CommonGitDir       string          `json:"common_git_dir"`
-	BaseCommit         string          `json:"base_commit"`
-	BaseRef            string          `json:"base_ref"`
-	Branch             string          `json:"branch"`
-	Path               string          `json:"path"`
-	Requested          Materializer    `json:"requested_materializer"`
-	CloneMode          CloneMode       `json:"clone_mode"`
-	PreparedIndex      bool            `json:"prepared_index"`
-	Ephemeral          bool            `json:"ephemeral"`
-	CreatedAt          time.Time       `json:"created_at"`
-	LastUsedAt         time.Time       `json:"last_used_at"`
-	LayerIDs           []string        `json:"layer_ids,omitempty"`
-	EnvironmentReady   bool            `json:"environment_ready"`
-	EnvironmentMissing []string        `json:"environment_missing,omitempty"`
-	SpeculativeRoot    string          `json:"speculative_root,omitempty"`
+	Version               int             `json:"version"`
+	ID                    string          `json:"id"`
+	Name                  string          `json:"name"`
+	Status                WorkspaceStatus `json:"status"`
+	RepositoryRoot        string          `json:"repository_root"`
+	CommonGitDir          string          `json:"common_git_dir"`
+	BaseCommit            string          `json:"base_commit"`
+	BaseRef               string          `json:"base_ref"`
+	Branch                string          `json:"branch"`
+	Path                  string          `json:"path"`
+	Requested             Materializer    `json:"requested_materializer"`
+	CloneMode             CloneMode       `json:"clone_mode"`
+	PreparedIndex         bool            `json:"prepared_index"`
+	Ephemeral             bool            `json:"ephemeral"`
+	CreatedAt             time.Time       `json:"created_at"`
+	LastUsedAt            time.Time       `json:"last_used_at"`
+	LayerIDs              []string        `json:"layer_ids,omitempty"`
+	EnvironmentReady      bool            `json:"environment_ready"`
+	EnvironmentMissing    []string        `json:"environment_missing,omitempty"`
+	EnvironmentUnverified []string        `json:"environment_unverified,omitempty"`
+	SpeculativeRoot       string          `json:"speculative_root,omitempty"`
 }
 
 type DoctorCheck struct {

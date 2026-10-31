@@ -1,0 +1,4347 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "--verify",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b^{commit}"
+      ],
+      "cwd": "/tmp/cambium-ripgrep-benchmark-source",
+      "elapsed_seconds": 0.003756041999622539,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0000-setup-resolve.log",
+      "method": "setup",
+      "phase": "resolve",
+      "started_at": "2026-10-30T04:39:19.254316+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "--verify",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b^{tree}"
+      ],
+      "cwd": "/tmp/cambium-ripgrep-benchmark-source",
+      "elapsed_seconds": 0.003797213999860105,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0001-setup-resolve.log",
+      "method": "setup",
+      "phase": "resolve",
+      "started_at": "2026-10-30T04:39:19.260518+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "--get",
+        "remote.origin.url"
+      ],
+      "cwd": "/tmp/cambium-ripgrep-benchmark-source",
+      "elapsed_seconds": 0.0037259870005073026,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0002-setup-resolve.log",
+      "method": "setup",
+      "phase": "resolve",
+      "started_at": "2026-10-30T04:39:19.266115+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "--quiet",
+        "--no-local",
+        "--no-checkout",
+        "/tmp/cambium-ripgrep-benchmark-source",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/reference"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy",
+      "elapsed_seconds": 0.06398738999996567,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0003-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:19.274983+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "checkout",
+        "--quiet",
+        "--detach",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.06398060099945724,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0004-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:19.340739+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "user.name",
+        "Cambium Workflow Benchmark"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.003844695999760006,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0005-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:19.407148+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "user.email",
+        "benchmark@example.invalid"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.003577442000278097,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0006-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:19.412781+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 7.372537761000785,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0007-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:19.418114+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.032038403999649745,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0008-git-env-copy-reference_verify.log",
+      "method": "git-env-copy",
+      "phase": "reference_verify",
+      "started_at": "2026-10-30T04:39:26.793163+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 3.936679217999881,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0009-git-env-copy-reference_verify.log",
+      "method": "git-env-copy",
+      "phase": "reference_verify",
+      "started_at": "2026-10-30T04:39:26.827186+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=normal"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.015826111000023957,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0010-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:30.766403+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--",
+        "target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.0036541580002449336,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0011-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:30.784629+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "check-ignore",
+        "-q",
+        "--",
+        "target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.0014618779996453668,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0012-git-env-copy-prepare.log",
+      "method": "git-env-copy",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:39:30.790295+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0001",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.03182857200044964,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0013-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:30.960686+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/reference/target",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001/target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.36472866399981285,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0014-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:30.994988+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0002",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.032408903000032296,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0015-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:31.362427+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/reference/target",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002/target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.4651460510003744,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0016-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:31.397529+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0003",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.032240198999716085,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0017-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:31.866552+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/reference/target",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003/target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.36593915299999935,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0018-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:31.901873+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0004",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.032088790000671,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0019-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:32.280545+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/reference/target",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004/target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.5655194729997675,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0020-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:32.384692+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "add",
+        "-b",
+        "workflow-0005",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.03189538799961156,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0021-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:32.971315+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cp",
+        "--reflink=never",
+        "-a",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/reference/target",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005/target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.9690328300002875,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0022-git-env-copy-create.log",
+      "method": "git-env-copy",
+      "phase": "create",
+      "started_at": "2026-10-30T04:39:33.005975+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 3.4444730499999423,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0023-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:34.279234+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 3.783918053999514,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0024-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:37.726692+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.01575052600037452,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0025-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:41.513913+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 3.2839312910000444,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0026-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:41.532187+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 3.8851841039995634,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0027-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:44.819097+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.01617024000006495,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0028-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:48.708871+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 3.3839079580002362,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0029-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:48.727816+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 3.7823139879992596,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0030-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:52.115115+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.016120859999318782,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0031-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:55.901034+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 3.3388683089997357,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0032-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:55.920215+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 3.84730707899962,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0033-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:39:59.287947+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.01613104099942575,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0034-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:40:03.140065+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 3.4878994479995526,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0035-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:40:03.158867+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 3.843812486999923,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0036-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:40:06.651436+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.015863780000472616,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0037-git-env-copy-initial_build_test.log",
+      "method": "git-env-copy",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:40:10.498392+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.003783914999985427,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0038-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:10.935339+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.8158453579999332,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0039-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:10.942369+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 1.2688705219998155,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0040-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:11.761306+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0036325660003058147,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0041-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:13.033487+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0034817890000340412,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0042-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:13.040032+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.8230440409997755,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0043-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:13.046358+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 1.319537775999379,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0044-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:13.872745+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.003625627001383691,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0045-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:15.195638+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.0036726180005643982,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0046-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:15.201957+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.8190928120002354,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0047-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:15.208601+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 1.3183130019988312,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0048-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:16.030960+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003753328999664518,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0049-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:17.352814+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.001395266999679734,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0050-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:17.359653+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.8168192809989705,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0051-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:17.364462+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 1.3695322639996448,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0052-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:18.184872+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.008190260999981547,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0053-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:19.559329+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0036530569996102713,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0054-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:19.570582+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.9192510419998143,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0055-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:19.577780+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 1.2685937719998037,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0056-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:20.500569+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0037105339997651754,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0057-git-env-copy-source_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:40:21.773120+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.003681090998725267,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0058-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:22.065176+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 2.524574273998951,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0059-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:22.072402+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.03183967400036636,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0060-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:24.601125+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 2.4825388780009234,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0061-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:24.636796+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0036786469991056947,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0062-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:27.124042+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0014370709996001096,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0063-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:27.131109+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 2.633369555000172,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0064-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:27.136014+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.06402154399984283,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0065-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:29.773649+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 2.476035697000043,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0066-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:29.841579+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002",
+      "elapsed_seconds": 0.003581098999347887,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0067-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:32.321714+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003575021000870038,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0068-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:32.328942+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 2.621574242000861,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0069-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:32.336287+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.03181200099970738,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0070-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:34.961905+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 2.5314893550003035,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0071-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:34.997660+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003",
+      "elapsed_seconds": 0.008119624999380903,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0072-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:37.536528+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0027014810002583545,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0073-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:37.549507+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 2.8351572859992302,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0074-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:37.557516+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.03196649200071988,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0075-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:40.397909+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 2.5295090600011463,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0076-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:40.434106+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0035871889995178208,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0077-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:42.968106+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.0014384229998540832,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0078-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:42.975457+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 2.6808346420002636,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0079-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:42.981360+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.03192168500027037,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0080-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:45.666571+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 2.5288855159997183,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0081-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:45.702601+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005",
+      "elapsed_seconds": 0.003550010998878861,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0082-git-env-copy-dependency_edit_build_test.log",
+      "method": "git-env-copy",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:40:48.235994+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.16424152800027514,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0083-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:48.564076+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0001"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.003609710998716764,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0084-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:48.732575+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.16418679100024747,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0085-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:48.740326+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0002"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.003689732000566437,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0086-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:48.910249+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.16411093900023843,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0087-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:48.918183+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0003"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.0036460969986364944,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0088-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:49.086940+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.1641741359999287,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0089-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:49.094587+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0004"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.0037189770009717904,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0090-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:49.263566+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "remove",
+        "--force",
+        "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.16435196500060556,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0091-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:49.271443+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "branch",
+        "-D",
+        "workflow-0005"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.003715430999363889,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0092-git-env-copy-remove.log",
+      "method": "git-env-copy",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:40:49.440211+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "prune"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.0036858359999314416,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0093-git-env-copy-prune.log",
+      "method": "git-env-copy",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:40:49.477494+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "list",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/git-env-copy/reference",
+      "elapsed_seconds": 0.0035936980002588825,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0094-git-env-copy-prune.log",
+      "method": "git-env-copy",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:40:49.485167+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "clone",
+        "--quiet",
+        "--no-local",
+        "--no-checkout",
+        "/tmp/cambium-ripgrep-benchmark-source",
+        "/tmp/cambium-workflow-k83il19r/cambium-auto/reference"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto",
+      "elapsed_seconds": 0.06404965600086143,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0095-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:40:49.523266+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "checkout",
+        "--quiet",
+        "--detach",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.03191480199893704,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0096-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:40:49.592203+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "user.name",
+        "Cambium Workflow Benchmark"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.003602101000069524,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0097-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:40:49.628651+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "config",
+        "user.email",
+        "benchmark@example.invalid"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.0014236500010156306,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0098-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:40:49.636657+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 7.160027690999414,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0099-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:40:49.642358+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.032264322000628454,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0100-cambium-auto-reference_verify.log",
+      "method": "cambium-auto",
+      "phase": "reference_verify",
+      "started_at": "2026-10-30T04:40:56.808125+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 3.9942215549999673,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0101-cambium-auto-reference_verify.log",
+      "method": "cambium-auto",
+      "phase": "reference_verify",
+      "started_at": "2026-10-30T04:40:56.845286+00:00",
+      "status": "ok",
+      "workspace_index": 0
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=normal"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.01600388299993938,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0102-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:41:00.845013+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--",
+        "target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.0014348069998959545,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0103-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:41:00.865589+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "check-ignore",
+        "-q",
+        "--",
+        "target"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.004170930000327644,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0104-cambium-auto-prepare.log",
+      "method": "cambium-auto",
+      "phase": "prepare",
+      "started_at": "2026-10-30T04:41:00.871539+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0001",
+        "-b",
+        "workflow-0001",
+        "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 1.5179201000009925,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0105-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:41:01.051727+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0002",
+        "-b",
+        "workflow-0002",
+        "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.5656406569996761,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0106-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:41:02.575355+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0003",
+        "-b",
+        "workflow-0003",
+        "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.8665048000002571,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0107-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:41:03.146696+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0004",
+        "-b",
+        "workflow-0004",
+        "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.46513926799889305,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0108-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:41:04.018864+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "add",
+        "--json",
+        "--materializer",
+        "auto",
+        "--name",
+        "workflow-0005",
+        "-b",
+        "workflow-0005",
+        "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+        "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.4657674019999831,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0109-cambium-auto-create.log",
+      "method": "cambium-auto",
+      "phase": "create",
+      "started_at": "2026-10-30T04:41:04.489586+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 3.3401346130012826,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0110-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:05.321045+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 3.737122956001258,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0111-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:08.667060+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.015916148000542307,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0112-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:12.409594+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 3.3810425529991335,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0113-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:12.430486+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 3.699117494999882,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0114-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:15.817178+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.01592636399982439,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0115-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:19.522402+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 3.4409621319991857,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0116-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:19.543602+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 4.044470532999185,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0117-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:22.990308+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.015959704000124475,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0118-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:27.041361+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 3.386945995000133,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0119-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:27.062905+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 3.793421534001027,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0120-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:30.507471+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.015879611999480403,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0121-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:34.341098+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 3.4257421439997415,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0122-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:34.362286+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 3.7364434959999926,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0123-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:37.794079+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.03255739199994423,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0124-cambium-auto-initial_build_test.log",
+      "method": "cambium-auto",
+      "phase": "initial_build_test",
+      "started_at": "2026-10-30T04:41:41.538716+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0037076400003570598,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0125-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:42.077270+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.9163651529997878,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0126-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:42.087150+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 1.3186027510000713,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0127-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:43.009830+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0035899419999623206,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0128-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:44.334521+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.0036148489998595323,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0129-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:44.343789+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.9165123260008841,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0130-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:44.352968+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 1.376546433999465,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0131-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:45.275886+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.008283541001219419,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0132-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:46.659254+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003600619000280858,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0133-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:46.673125+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 1.0694342229999165,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0134-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:46.682925+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 1.3186576579992106,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0135-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:47.758522+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.003777435000301921,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0136-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:49.083354+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0014265740010159789,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0137-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:49.092874+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.9175780509995093,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0138-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:49.100150+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 1.270587118999174,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0139-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:50.023902+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.003613127000789973,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0140-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:51.300847+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/core/main.rs"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.003653728001154377,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0141-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:51.310330+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.8700538559987763,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0142-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:51.320329+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 1.270109336999667,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0143-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:52.196719+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.003612004999013152,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0144-cambium-auto-source_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "source_edit_build_test",
+      "started_at": "2026-10-30T04:41:53.473542+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.0035876990004908293,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0145-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:41:53.804239+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 2.4274717810003494,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0146-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:41:53.813861+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.03186779999850842,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0147-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:41:56.248329+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 2.3733258329993987,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0148-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:41:56.286202+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+      "elapsed_seconds": 0.008354796998901293,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0149-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:41:58.667474+00:00",
+      "status": "ok",
+      "workspace_index": 1
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.00359894499888469,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0150-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:41:58.681746+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 2.4722071189989947,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0151-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:41:58.691447+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.03186948199981998,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0152-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:01.170020+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 2.47633499100084,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0153-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:01.208206+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+      "elapsed_seconds": 0.007976476999829174,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0154-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:03.691649+00:00",
+      "status": "ok",
+      "workspace_index": 2
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.008698788000401692,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0155-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:03.705890+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 2.5285190739996324,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0156-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:03.721104+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.06420221499865875,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0157-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:06.257366+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 2.4811667899994063,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0158-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:06.328076+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+      "elapsed_seconds": 0.008479596001052414,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0159-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:08.818096+00:00",
+      "status": "ok",
+      "workspace_index": 3
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.0035450530012894887,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0160-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:08.832917+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 2.4251318850001553,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0161-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:08.842993+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.031918361000862205,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0162-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:11.274836+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 2.5806348090009124,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0163-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:11.316848+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+      "elapsed_seconds": 0.008238742000685306,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0164-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:13.905448+00:00",
+      "status": "ok",
+      "workspace_index": 4
+    },
+    {
+      "argv": [
+        "git",
+        "ls-files",
+        "--error-unmatch",
+        "--",
+        "crates/searcher/Cargo.toml"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.003563771999324672,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0165-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:13.921141+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 2.525629697000113,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0166-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:13.931162+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.031984600000214414,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0167-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:16.464245+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 2.4303958210002747,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0168-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:16.503659+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+      "elapsed_seconds": 0.003658884999822476,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0169-cambium-auto-dependency_edit_build_test.log",
+      "method": "cambium-auto",
+      "phase": "dependency_edit_build_test",
+      "started_at": "2026-10-30T04:42:18.941130+00:00",
+      "status": "ok",
+      "workspace_index": 5
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0001"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.21466852300000028,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0170-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:42:19.529823+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0002"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.164521736000097,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0171-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:42:19.751319+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0003"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.16415167699960875,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0172-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:42:19.922664+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0004"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.1642403909991117,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0173-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:42:20.094108+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "remove",
+        "--force",
+        "--delete-branch",
+        "workflow-0005"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.1642254779999348,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0174-cambium-auto-remove.log",
+      "method": "cambium-auto",
+      "phase": "remove",
+      "started_at": "2026-10-30T04:42:20.265290+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+        "prune",
+        "--older-than",
+        "1ns",
+        "--json"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.11412455999925442,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0175-cambium-auto-prune.log",
+      "method": "cambium-auto",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:42:20.511526+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "prune"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.003641309000158799,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0176-cambium-auto-prune.log",
+      "method": "cambium-auto",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:42:20.632760+00:00",
+      "status": "ok",
+      "workspace_index": null
+    },
+    {
+      "argv": [
+        "git",
+        "worktree",
+        "list",
+        "--porcelain"
+      ],
+      "cwd": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+      "elapsed_seconds": 0.0014170800004649209,
+      "exit_code": 0,
+      "log": "ripgrep-logs-mmyhwksj/0177-cambium-auto-prune.log",
+      "method": "cambium-auto",
+      "phase": "prune",
+      "started_at": "2026-10-30T04:42:20.643022+00:00",
+      "status": "ok",
+      "workspace_index": null
+    }
+  ],
+  "completed_at": "2026-10-30T04:42:20.680216+00:00",
+  "format_version": 1,
+  "host": {
+    "benchmark_script_sha256": "59230c95b4c095c8ab4803a0fd2eeb1a68e6a2e7f012b29baf9b7bc9640474e8",
+    "cambium_binary_sha256": "e17e639ef5e5a4f2c04c5ac73830823bb0d63a7f763baa7540b288a179821f71",
+    "cpu_count": 9,
+    "external_tool_caches": {
+      "CARGO_HOME": "/tmp/cambium-cargo",
+      "NPM_CONFIG_CACHE": "/tmp/cambium-npm-cache",
+      "RUSTUP_HOME": "/tmp/cambium-rustup"
+    },
+    "filesystem": {
+      "argv": [
+        "stat",
+        "-f",
+        "-c",
+        "%T",
+        "/tmp/cambium-workflow-k83il19r"
+      ],
+      "exit_code": 0,
+      "output": "overlayfs"
+    },
+    "hardware": {
+      "argv": [
+        "lscpu"
+      ],
+      "exit_code": 0,
+      "output": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           46 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  9\nOn-line CPU(s) list:                     0-8\nVendor ID:                               AuthenticAMD\nModel name:                              AMD EPYC 9V74 80-Core Processor\nBIOS Model name:                           CPU @ 0.0GHz\nBIOS CPU family:                         0\nCPU family:                              25\nModel:                                   17\nThread(s) per core:                      1\nCore(s) per socket:                      9\nSocket(s):                               1\nStepping:                                1\nBogoMIPS:                                5192.26\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx512_bf16 clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm arch_capabilities\nHypervisor vendor:                       KVM\nVirtualization type:                     full\nL1d cache:                               160 KiB (5 instances)\nL1i cache:                               160 KiB (5 instances)\nL2 cache:                                5 MiB (5 instances)\nL3 cache:                                32 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-8\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Vulnerable\nVulnerability Spec store bypass:         Vulnerable\nVulnerability Spectre v1:                Vulnerable: __user pointer sanitization and usercopy barriers only; no swapgs barriers\nVulnerability Spectre v2:                Vulnerable; STIBP: disabled; PBRSB-eIBRS: Not affected; BHI: Not affected\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Vulnerable\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected"
+    },
+    "machine": "x86_64",
+    "memory_bytes": 10451439616,
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+    "scratch_device": 27,
+    "system": "Linux",
+    "versions": {
+      "cambium": {
+        "argv": [
+          "/workspace/scratch/6128bae5a461/cambium-review/bin/cambium",
+          "version"
+        ],
+        "exit_code": 0,
+        "output": "cambium 0.5.0"
+      },
+      "cargo": {
+        "argv": [
+          "cargo",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "cargo 1.99.1 (5f94df478 2026-08-27)"
+      },
+      "git": {
+        "argv": [
+          "git",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "git version 2.51.1"
+      },
+      "node": {
+        "argv": [
+          "node",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "v18.20.8"
+      },
+      "npm": {
+        "argv": [
+          "npm",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "10.8.2"
+      },
+      "rustc": {
+        "argv": [
+          "rustc",
+          "--version"
+        ],
+        "exit_code": 0,
+        "output": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+      }
+    }
+  },
+  "measurement_notes": [
+    "Every method starts with a separately cloned, built and tested reference at the same recorded commit. Prepare costs are reported separately from warm-workspace overhead.",
+    "Physical figures are signed filesystem free-space deltas, including Cambium baselines/layers retained in .git. Ambient activity and same-volume tool-cache writes can affect them; negative deltas are not hidden.",
+    "Logical and st_blocks-derived tree sizes are diagnostic only: shared CoW extents can be counted repeatedly and these sizes do not establish physical savings.",
+    "Toolchain/package-manager global caches are shared and warmed during each reference preparation; their external paths are recorded when explicitly configured. Caches on other volumes are outside these physical measurements.",
+    "Initial, source-edit and dependency-edit verification runs actual recipe build/test commands. Cambium's own readiness metadata is recorded separately and is not treated as proof of runnable state.",
+    "Workspaces are tested sequentially. This harness measures space, relocation and incremental rebuild behavior; it does not claim concurrent throughput or statistical significance."
+  ],
+  "method_order": [
+    "git-env-copy",
+    "cambium-auto"
+  ],
+  "recipe": {
+    "allow_policy_commands": false,
+    "dependency_edits": [
+      {
+        "new": "version = \"0.1.18\"  #:version",
+        "old": "version = \"0.1.17\"  #:version",
+        "path": "crates/searcher/Cargo.toml"
+      }
+    ],
+    "dependency_prepare": [
+      [
+        "cargo",
+        "build",
+        "--offline"
+      ]
+    ],
+    "environment_paths": [
+      "target"
+    ],
+    "name": "ripgrep",
+    "prepare": [
+      [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ]
+    ],
+    "provenance": {
+      "description": "Pinned ripgrep source; actual rg build and workspace library tests excluding optional PCRE2. Source comment edit and local grep-searcher dependency version bump. CLI integration tests are outside this recipe: f1414_no_require_git failed in the review host before any Cambium use.",
+      "upstream_commit": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+      "upstream_url": "https://github.com/BurntSushi/ripgrep.git"
+    },
+    "ref": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+    "source": "/tmp/cambium-ripgrep-benchmark-source",
+    "source_edits": [
+      {
+        "new": "The main entry point into ripgrep. Workspace {index} source edit.",
+        "old": "The main entry point into ripgrep.",
+        "path": "crates/core/main.rs"
+      }
+    ],
+    "verify": [
+      [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked"
+      ],
+      [
+        "cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--workspace",
+        "--exclude",
+        "grep-pcre2",
+        "--lib",
+        "--quiet"
+      ]
+    ],
+    "version": 1
+  },
+  "resolved_source_commit": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+  "resolved_source_tree": "ff90b90fac80bbec3d418ddda1102a4b247bc146",
+  "results": [
+    {
+      "before_clone": {
+        "at": "2026-10-30T04:39:19.273858+00:00",
+        "cambium_state": {
+          "files": 0,
+          "logical_file_bytes": 0,
+          "referenced_allocated_file_bytes": 0
+        },
+        "tree": {
+          "files": 0,
+          "logical_file_bytes": 0,
+          "referenced_allocated_file_bytes": 0
+        },
+        "volume_free_bytes": 30861492224,
+        "volume_total_bytes": 33770192896
+      },
+      "method": "git-env-copy",
+      "phases": [
+        {
+          "elapsed_seconds": 11.518545129000813,
+          "measurement": {
+            "at": "2026-10-30T04:39:30.931574+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 2664,
+              "logical_file_bytes": 815381033,
+              "referenced_allocated_file_bytes": 820932608
+            },
+            "volume_free_bytes": 30142283776,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 719208448
+          },
+          "name": "prepare_reference",
+          "started_at": "2026-10-30T04:39:19.274016+00:00",
+          "status": "ok"
+        },
+        {
+          "create_p50_seconds": 0.5039864459995442,
+          "create_p95_seconds": 1.007053125999846,
+          "elapsed_seconds": 3.0177780770000027,
+          "measurement": {
+            "at": "2026-10-30T04:39:34.143194+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 15904,
+              "logical_file_bytes": 4888807163,
+              "referenced_allocated_file_bytes": 4921896960
+            },
+            "volume_free_bytes": 26550431744,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 4311060480,
+            "volume_used_delta_from_warm_reference_bytes": 3591852032
+          },
+          "name": "create",
+          "started_at": "2026-10-30T04:39:30.959599+00:00",
+          "status": "ok"
+        },
+        {
+          "elapsed_seconds": 36.2378502900001,
+          "measurement": {
+            "at": "2026-10-30T04:40:10.675568+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 25749,
+              "logical_file_bytes": 6129612196,
+              "referenced_allocated_file_bytes": 6182350848
+            },
+            "volume_free_bytes": 25288863744,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 5572628480,
+            "volume_used_delta_from_warm_reference_bytes": 4853420032
+          },
+          "name": "initial_build_test",
+          "started_at": "2026-10-30T04:39:34.277978+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "elapsed_seconds": 7.234689253999932,
+              "git_status": "",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 7.176663643000211,
+              "git_status": "",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 7.173273647999849,
+              "git_status": "",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 7.219920051000372,
+              "git_status": "",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 7.339531962000365,
+              "git_status": "",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 10.844859842000005,
+          "measurement": {
+            "at": "2026-10-30T04:40:21.837237+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 25749,
+              "logical_file_bytes": 6124975325,
+              "referenced_allocated_file_bytes": 6177701888
+            },
+            "volume_free_bytes": 25443860480,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 5417631744,
+            "volume_used_delta_from_warm_reference_bytes": 4698423296
+          },
+          "name": "source_edit_build_test",
+          "started_at": "2026-10-30T04:40:10.934035+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "edits": [
+                {
+                  "after_sha256": "206fb4e718b3492bf91b8711c5d7e9db34ec2aaccb1b2e6d09b39665efc56f1e",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.0981679780006743,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "b9491a018e699c38e14b657ff3d8a2ae7679c776eaabe2d60d39c62e6e343a3c",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.15560992599967,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "19de7e7f6d8c9424663b404fbef33a95ff1e988762e54f941b0e3a7d2e57f5fd",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.150860301000648,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "af1411a868e94a8ec026a19bdbd02d3153189c470f5ab07cd2508f408b545a86",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.199652645000242,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "7a9a0631d11fc95206b1f482a35050a17ddf75ce1bc8a1adc1463c02d6e3dc82",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.202539498999613,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 26.178318580999985,
+          "measurement": {
+            "at": "2026-10-30T04:40:48.312676+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 29594,
+              "logical_file_bytes": 7341978382,
+              "referenced_allocated_file_bytes": 7401734144
+            },
+            "volume_free_bytes": 24225259520,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 6636232704,
+            "volume_used_delta_from_warm_reference_bytes": 5917024256
+          },
+          "name": "dependency_edit_build_test",
+          "started_at": "2026-10-30T04:40:22.063516+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.058873362999293,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.190606226000455,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.207567925999683,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.418617760999041,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.26056092699946,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 0.8840242979986215,
+          "measurement": {
+            "at": "2026-10-30T04:40:49.451038+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 2664,
+              "logical_file_bytes": 815381033,
+              "referenced_allocated_file_bytes": 820932608
+            },
+            "volume_free_bytes": 30141939712,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 719552512,
+            "volume_used_delta_from_warm_reference_bytes": 344064
+          },
+          "name": "remove_worktrees",
+          "started_at": "2026-10-30T04:40:48.561983+00:00",
+          "status": "ok"
+        },
+        {
+          "elapsed_seconds": 0.01528809900082706,
+          "measurement": {
+            "at": "2026-10-30T04:40:49.494447+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 2664,
+              "logical_file_bytes": 815381033,
+              "referenced_allocated_file_bytes": 820932608
+            },
+            "volume_free_bytes": 30141931520,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 719560704,
+            "volume_used_delta_from_warm_reference_bytes": 352256
+          },
+          "name": "prune",
+          "started_at": "2026-10-30T04:40:49.475389+00:00",
+          "status": "ok"
+        }
+      ],
+      "status": "ok",
+      "warm_reference_volume_free_bytes": 30142283776,
+      "workspace_count": 5,
+      "workspaces": [
+        {
+          "branch": "workflow-0001",
+          "create_seconds": 0.4016822449993924,
+          "index": 1,
+          "name": "workflow-0001",
+          "path": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0001"
+        },
+        {
+          "branch": "workflow-0002",
+          "create_seconds": 0.5039864459995442,
+          "index": 2,
+          "name": "workflow-0002",
+          "path": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0002"
+        },
+        {
+          "branch": "workflow-0003",
+          "create_seconds": 0.41388365700004215,
+          "index": 3,
+          "name": "workflow-0003",
+          "path": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0003"
+        },
+        {
+          "branch": "workflow-0004",
+          "create_seconds": 0.6907299329996022,
+          "index": 4,
+          "name": "workflow-0004",
+          "path": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0004"
+        },
+        {
+          "branch": "workflow-0005",
+          "create_seconds": 1.007053125999846,
+          "index": 5,
+          "name": "workflow-0005",
+          "path": "/tmp/cambium-workflow-k83il19r/git-env-copy/worktrees/workflow-0005"
+        }
+      ]
+    },
+    {
+      "before_clone": {
+        "at": "2026-10-30T04:40:49.520968+00:00",
+        "cambium_state": {
+          "files": 0,
+          "logical_file_bytes": 0,
+          "referenced_allocated_file_bytes": 0
+        },
+        "tree": {
+          "files": 0,
+          "logical_file_bytes": 0,
+          "referenced_allocated_file_bytes": 0
+        },
+        "volume_free_bytes": 30141927424,
+        "volume_total_bytes": 33770192896
+      },
+      "method": "cambium-auto",
+      "phases": [
+        {
+          "elapsed_seconds": 11.360807900999134,
+          "measurement": {
+            "at": "2026-10-30T04:41:01.020511+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 2664,
+              "logical_file_bytes": 815381045,
+              "referenced_allocated_file_bytes": 820932608
+            },
+            "volume_free_bytes": 29422718976,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 719208448
+          },
+          "name": "prepare_reference",
+          "started_at": "2026-10-30T04:40:49.521173+00:00",
+          "status": "ok"
+        },
+        {
+          "create_p50_seconds": 0.5712925910011108,
+          "create_p95_seconds": 1.5236045620004006,
+          "elapsed_seconds": 3.9100138539997715,
+          "measurement": {
+            "at": "2026-10-30T04:41:05.136965+00:00",
+            "cambium_state": {
+              "files": 2421,
+              "logical_file_bytes": 811431146,
+              "referenced_allocated_file_bytes": 816316416
+            },
+            "tree": {
+              "files": 18330,
+              "logical_file_bytes": 5700238466,
+              "referenced_allocated_file_bytes": 5738225664
+            },
+            "volume_free_bytes": 25116557312,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 5025370112,
+            "volume_used_delta_from_warm_reference_bytes": 4306161664
+          },
+          "name": "create",
+          "started_at": "2026-10-30T04:41:01.048630+00:00",
+          "status": "ok"
+        },
+        {
+          "elapsed_seconds": 36.25638009800059,
+          "measurement": {
+            "at": "2026-10-30T04:41:41.735481+00:00",
+            "cambium_state": {
+              "files": 2421,
+              "logical_file_bytes": 811431146,
+              "referenced_allocated_file_bytes": 816316416
+            },
+            "tree": {
+              "files": 28175,
+              "logical_file_bytes": 6941043405,
+              "referenced_allocated_file_bytes": 6998687744
+            },
+            "volume_free_bytes": 23854956544,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 6286970880,
+            "volume_used_delta_from_warm_reference_bytes": 5567762432
+          },
+          "name": "initial_build_test",
+          "started_at": "2026-10-30T04:41:05.318116+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "elapsed_seconds": 7.088558677000037,
+              "git_status": "",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 7.091951426000378,
+              "git_status": "",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 7.497782526999799,
+              "git_status": "",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 7.278247107000425,
+              "git_status": "",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "elapsed_seconds": 7.176396631999523,
+              "git_status": "",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 11.406131359999563,
+          "measurement": {
+            "at": "2026-10-30T04:41:53.541232+00:00",
+            "cambium_state": {
+              "files": 2421,
+              "logical_file_bytes": 811431146,
+              "referenced_allocated_file_bytes": 816316416
+            },
+            "tree": {
+              "files": 28175,
+              "logical_file_bytes": 6936406487,
+              "referenced_allocated_file_bytes": 6994038784
+            },
+            "volume_free_bytes": 24009957376,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 6131970048,
+            "volume_used_delta_from_warm_reference_bytes": 5412761600
+          },
+          "name": "source_edit_build_test",
+          "started_at": "2026-10-30T04:41:42.074729+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "edits": [
+                {
+                  "after_sha256": "206fb4e718b3492bf91b8711c5d7e9db34ec2aaccb1b2e6d09b39665efc56f1e",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.2572651829996175,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "b9491a018e699c38e14b657ff3d8a2ae7679c776eaabe2d60d39c62e6e343a3c",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.3154527099995903,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "19de7e7f6d8c9424663b404fbef33a95ff1e988762e54f941b0e3a7d2e57f5fd",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.410234483999375,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "af1411a868e94a8ec026a19bdbd02d3153189c470f5ab07cd2508f408b545a86",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.2079753880007047,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "7a9a0631d11fc95206b1f482a35050a17ddf75ce1bc8a1adc1463c02d6e3dc82",
+                  "before_sha256": "9c02560a2d6f3ec56386825d5b57573d772bcaf77906f88149da25f7c7801e58",
+                  "path": "crates/core/main.rs",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 2.16319936400032,
+              "git_status": " M crates/core/main.rs\n",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 25.14681113199913,
+          "measurement": {
+            "at": "2026-10-30T04:42:19.062681+00:00",
+            "cambium_state": {
+              "files": 2421,
+              "logical_file_bytes": 811431146,
+              "referenced_allocated_file_bytes": 816316416
+            },
+            "tree": {
+              "files": 32020,
+              "logical_file_bytes": 8153409545,
+              "referenced_allocated_file_bytes": 8218083328
+            },
+            "volume_free_bytes": 22791344128,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 7350583296,
+            "volume_used_delta_from_warm_reference_bytes": 6631374848
+          },
+          "name": "dependency_edit_build_test",
+          "started_at": "2026-10-30T04:41:53.801391+00:00",
+          "status": "ok",
+          "verified_workspaces": 5,
+          "workspaces": [
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 4.863217625999823,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 1,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.009918212999764,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 2,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.112172617000397,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 3,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.072558571000627,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 4,
+              "verification_passed": true
+            },
+            {
+              "edits": [
+                {
+                  "after_sha256": "1b82401b7492fbaa58da49ec7df4f9cf0b99ab5a05fe95e000bd53f000333a34",
+                  "before_sha256": "bfdee262fc02864d20ecb23f9349e4ad0b01d600a4bdebe85383414a74ec9d6c",
+                  "path": "crates/searcher/Cargo.toml",
+                  "replacements": 1
+                }
+              ],
+              "elapsed_seconds": 5.020002103001389,
+              "git_status": " M Cargo.lock\n M crates/core/main.rs\n M crates/searcher/Cargo.toml\n",
+              "index": 5,
+              "verification_passed": true
+            }
+          ]
+        },
+        {
+          "elapsed_seconds": 0.9066360180004267,
+          "measurement": {
+            "at": "2026-10-30T04:42:20.439536+00:00",
+            "cambium_state": {
+              "files": 2416,
+              "logical_file_bytes": 811427021,
+              "referenced_allocated_file_bytes": 816295936
+            },
+            "tree": {
+              "files": 5080,
+              "logical_file_bytes": 1626808066,
+              "referenced_allocated_file_bytes": 1637228544
+            },
+            "volume_free_bytes": 28708126720,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 1433800704,
+            "volume_used_delta_from_warm_reference_bytes": 714592256
+          },
+          "name": "remove_worktrees",
+          "started_at": "2026-10-30T04:42:19.526565+00:00",
+          "status": "ok"
+        },
+        {
+          "elapsed_seconds": 0.1391926260002947,
+          "measurement": {
+            "at": "2026-10-30T04:42:20.651634+00:00",
+            "cambium_state": {
+              "files": 0,
+              "logical_file_bytes": 0,
+              "referenced_allocated_file_bytes": 0
+            },
+            "tree": {
+              "files": 2664,
+              "logical_file_bytes": 815381045,
+              "referenced_allocated_file_bytes": 820932608
+            },
+            "volume_free_bytes": 29422317568,
+            "volume_total_bytes": 33770192896,
+            "volume_used_delta_from_method_start_bytes": 719609856,
+            "volume_used_delta_from_warm_reference_bytes": 401408
+          },
+          "name": "prune",
+          "prune_result": {
+            "protected": 0,
+            "removed": [
+              {
+                "age_seconds": 75.969686087,
+                "id": "7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec",
+                "kind": "layer",
+                "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference/.git/cambium/layers/7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec"
+              }
+            ],
+            "retained": 0,
+            "selected": [
+              {
+                "age_seconds": 75.969686087,
+                "id": "7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec",
+                "kind": "layer",
+                "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference/.git/cambium/layers/7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec"
+              }
+            ]
+          },
+          "started_at": "2026-10-30T04:42:20.508359+00:00",
+          "status": "ok"
+        }
+      ],
+      "status": "ok",
+      "warm_reference_volume_free_bytes": 29422718976,
+      "workspace_count": 5,
+      "workspaces": [
+        {
+          "branch": "workflow-0001",
+          "cambium_creation": {
+            "base_commit": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "base_ref": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "branch": "workflow-0001",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:41:02.522014755Z",
+            "environment_ready": true,
+            "ephemeral": false,
+            "id": "9523915451dfc302",
+            "last_used_at": "2026-10-30T04:41:02.522014755Z",
+            "layer_ids": [
+              "7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec"
+            ],
+            "name": "workflow-0001",
+            "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 1.5236045620004006,
+          "index": 1,
+          "name": "workflow-0001",
+          "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0001"
+        },
+        {
+          "branch": "workflow-0002",
+          "cambium_creation": {
+            "base_commit": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "base_ref": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "branch": "workflow-0002",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:41:03.097173629Z",
+            "environment_ready": true,
+            "ephemeral": false,
+            "id": "dd7c8afa3273f72e",
+            "last_used_at": "2026-10-30T04:41:03.097173629Z",
+            "layer_ids": [
+              "7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec"
+            ],
+            "name": "workflow-0002",
+            "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.5712925910011108,
+          "index": 2,
+          "name": "workflow-0002",
+          "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0002"
+        },
+        {
+          "branch": "workflow-0003",
+          "cambium_creation": {
+            "base_commit": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "base_ref": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "branch": "workflow-0003",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:41:03.995876569Z",
+            "environment_ready": true,
+            "ephemeral": false,
+            "id": "52e0847558ff5950",
+            "last_used_at": "2026-10-30T04:41:03.995876569Z",
+            "layer_ids": [
+              "7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec"
+            ],
+            "name": "workflow-0003",
+            "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.8721195200014336,
+          "index": 3,
+          "name": "workflow-0003",
+          "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0003"
+        },
+        {
+          "branch": "workflow-0004",
+          "cambium_creation": {
+            "base_commit": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "base_ref": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "branch": "workflow-0004",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:41:04.438133446Z",
+            "environment_ready": true,
+            "ephemeral": false,
+            "id": "66a606ce286f4dc0",
+            "last_used_at": "2026-10-30T04:41:04.438133446Z",
+            "layer_ids": [
+              "7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec"
+            ],
+            "name": "workflow-0004",
+            "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.47067250500003865,
+          "index": 4,
+          "name": "workflow-0004",
+          "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0004"
+        },
+        {
+          "branch": "workflow-0005",
+          "cambium_creation": {
+            "base_commit": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "base_ref": "91f5d22ef48bde459d90a8c7dbeab416e97d0f2b",
+            "branch": "workflow-0005",
+            "clone_mode": "git-checkout",
+            "common_git_dir": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference/.git",
+            "created_at": "2026-10-30T04:41:04.911425062Z",
+            "environment_ready": true,
+            "ephemeral": false,
+            "id": "80d44efdee90b140",
+            "last_used_at": "2026-10-30T04:41:04.911425062Z",
+            "layer_ids": [
+              "7fc84c52ba6fc082407ade668c042c6e05ca8880a740ba81ae0ffc32fa83beec"
+            ],
+            "name": "workflow-0005",
+            "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005",
+            "prepared_index": false,
+            "repository_root": "/tmp/cambium-workflow-k83il19r/cambium-auto/reference",
+            "requested_materializer": "auto",
+            "status": "ready",
+            "version": 2
+          },
+          "create_seconds": 0.4714973160007503,
+          "index": 5,
+          "name": "workflow-0005",
+          "path": "/tmp/cambium-workflow-k83il19r/cambium-auto/worktrees/workflow-0005"
+        }
+      ]
+    }
+  ],
+  "scratch": "/tmp/cambium-workflow-k83il19r",
+  "scratch_retained": false,
+  "source_origin": "https://github.com/BurntSushi/ripgrep.git",
+  "started_at": "2026-10-30T04:39:19.035119+00:00",
+  "status": "ok"
+}

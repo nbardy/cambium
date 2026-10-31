@@ -78,6 +78,10 @@ overridden by the clone-local `.git/cambium/config.toml`.
 Receipts hash target-tree input object IDs plus policy/platform semantics.
 Clone/seed payloads publish atomically beneath `.git/cambium/layers`; metadata
 receipts represent recreate/share/empty/skip policies without copying bytes.
+Receipt format 6 checks live declared inputs before capturing a dependency
+payload. Copies without successful validation are unverified warm candidates.
+Validation runs again in each destination workspace; its result is a
+point-in-time observation. See [environment receipts](ENVIRONMENT_RECEIPTS.md).
 
 ## Speculative checkpoint path
 
@@ -130,6 +134,20 @@ names, layer receipts, cache pruning, reconciliation, and speculative refs. Git
 provides atomic object/ref writes. Durable create/remove journals allow
 conservative rollback while protecting a branch that advanced after an
 interruption.
+
+Recovery acquires the workspace lock before the common Git lock, skips live
+operations, and rereads the journal after locking. A `cambium-owner` marker in
+the linked worktree's Git administration directory binds ownership to the
+workspace identity. Recovery verifies the registration, branch, marker, and
+local data before removing anything. Unknown ownership, changed registrations,
+older journals without ownership evidence, or local uncommitted/ignored work
+produce a `blocked` action for inspection. Planned paths alone never authorize
+recursive deletion. Branch deletion uses an expected-value ref update so an
+advanced branch is retained.
+
+User-relative revisions are resolved in the invoking worktree. Subsequent
+common Git administration runs from the stable common Git directory, including
+when the command removes its own invoking worktree.
 
 ## Package map
 

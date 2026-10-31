@@ -33,6 +33,11 @@ Good fits:
 - CocoaPods or vcpkg dependency trees
 
 A workspace write is private even though initial physical blocks may be shared.
+An unvalidated clone is a warm candidate, not a ready dependency environment.
+Without a successful project-defined `validate` command it is reported as
+unverified. Validation is repeated in each destination workspace, including
+when the payload came from a cache. The source's live declared inputs must
+match the target receipt before it can be captured.
 
 ### `seed`
 
@@ -61,6 +66,10 @@ Good fits:
 
 Python virtual environments default to recreate because interpreters and
 scripts commonly embed absolute paths.
+
+Preparation and validation are separate: producing a directory alone does not
+verify its contents. Configure a validator when the project needs a readiness
+claim, and enable policy commands locally after reviewing them.
 
 ### `share`
 

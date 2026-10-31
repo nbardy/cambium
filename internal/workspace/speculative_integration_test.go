@@ -385,8 +385,8 @@ func TestBranchCorrectEnvironmentReceiptAndCompositeFork(t *testing.T) {
 	defer manager.Remove(ctx, forked.Workspace.Name, true, true)
 	assertFile(t, filepath.Join(forked.Workspace.Path, "node_modules", "pkg", "version.txt"), "feature-v2\n")
 	assertFile(t, filepath.Join(forked.Workspace.Path, "package-lock.json"), "{\"lockfileVersion\":3,\"version\":\"2\"}\n")
-	if !forked.Workspace.EnvironmentReady {
-		t.Fatalf("forked environment was not ready: %#v", forked.Workspace.EnvironmentMissing)
+	if forked.Workspace.EnvironmentReady || !strings.Contains(strings.Join(forked.Workspace.EnvironmentUnverified, ","), "node_modules") {
+		t.Fatalf("unvalidated forked dependencies must remain unverified: %#v", forked.Workspace)
 	}
 }
 
@@ -460,8 +460,11 @@ func TestYarnLayoutsWorkThroughGenericTrackedIgnoredFileRules(t *testing.T) {
 			if _, err := os.Stat(filepath.Join(value.Path, "node_modules")); !os.IsNotExist(err) {
 				t.Fatalf("Yarn PnP workspace unexpectedly required node_modules: %v", err)
 			}
-			if !value.EnvironmentReady {
-				t.Fatalf("Yarn PnP workspace was falsely marked unready: %#v", value.EnvironmentMissing)
+			if trackedPnP && !value.EnvironmentReady {
+				t.Fatalf("tracked Yarn PnP workspace unexpectedly required cloned dependencies: %#v", value)
+			}
+			if !trackedPnP && (value.EnvironmentReady || len(value.EnvironmentUnverified) == 0) {
+				t.Fatalf("cloned Yarn PnP map must remain unverified without validation: %#v", value)
 			}
 		})
 	}
@@ -491,6 +494,7 @@ path = ".company-deps"
 policy = "clone"
 inputs = ["company.lock"]
 required = true
+validate = ["grep", "-qx", "shared-v1", ".company-deps/state"]
 
 [[path]]
 path = ".generated-env"
@@ -825,7 +829,7 @@ func TestTargetBranchCambiumPolicyOverridesPrimaryCheckoutPolicy(t *testing.T) {
 	}
 	defer manager.Remove(ctx, featureWorkspace.Name, true, true)
 	assertFile(t, filepath.Join(featureWorkspace.Path, "node_modules", "state"), "prepared\n")
-	if !featureWorkspace.EnvironmentReady {
-		t.Fatalf("target branch policy was not applied: %#v", featureWorkspace.EnvironmentMissing)
+	if featureWorkspace.EnvironmentReady || len(featureWorkspace.EnvironmentUnverified) == 0 {
+		t.Fatalf("target branch clone without validation must remain unverified: %#v", featureWorkspace)
 	}
 }

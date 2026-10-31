@@ -30,10 +30,10 @@ def main() -> None:
     count = int(cambium.get("workspace_count", 0))
     if cambium.get("clone_mode") != "apfs-clone":
         fail(f"wrong clone mode: {cambium.get('clone_mode')!r}")
-    if int(cambium.get("environment_ready", 0)) != count:
-        fail("Cambium workspaces were not all environment-ready")
-    if int(control.get("environment_ready", 0)) != count:
-        fail("Git fairness-control workspaces were not all environment-ready")
+    if int(cambium.get("environment_materialized", cambium.get("environment_ready", 0))) != count:
+        fail("Cambium workspaces did not all materialize the synthetic environment")
+    if int(control.get("environment_materialized", control.get("environment_ready", 0))) != count:
+        fail("Git fairness-control workspaces did not all materialize the synthetic environment")
     control_bytes = int(control.get("physical_added_bytes", 0))
     cambium_bytes = int(cambium.get("physical_added_bytes", 0))
     if control_bytes <= 0 or cambium_bytes <= 0:
@@ -49,7 +49,7 @@ def main() -> None:
     ratio = cambium_bytes / control_bytes
     print(
         f"APFS CoW verified: Cambium used {cambium_bytes} bytes vs "
-        f"{control_bytes} bytes ({ratio:.1%}) for {count} ready workspaces"
+        f"{control_bytes} bytes ({ratio:.1%}) for {count} materialized workspaces"
     )
 
 

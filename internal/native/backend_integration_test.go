@@ -48,8 +48,8 @@ policy = "share"
 	}
 	t.Cleanup(func() { _ = backend.Remove(context.Background(), workspace.Name, true, true) })
 
-	if workspace.Status != model.WorkspaceReady || !workspace.EnvironmentReady {
-		t.Fatalf("workspace was not ready: %#v", workspace)
+	if workspace.Status != model.WorkspaceReady || workspace.EnvironmentReady || len(workspace.EnvironmentUnverified) != 1 || workspace.EnvironmentUnverified[0] != "deps" {
+		t.Fatalf("workspace should be materialized with its cloned dependencies unverified: %#v", workspace)
 	}
 	if len(workspace.LayerIDs) != 3 {
 		t.Fatalf("expected three materialized layer records, got %d", len(workspace.LayerIDs))

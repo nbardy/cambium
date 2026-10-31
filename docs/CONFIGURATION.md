@@ -127,6 +127,30 @@ cambium init --force --allow-policy-commands
 Cambium is not a sandbox. Commands inherit the user's process environment and
 credentials.
 
+### Readiness checks
+
+`validate` is a project-defined check of the actual installed state and any
+relevant runtime/toolchain requirements. Without it, cloned dependency folders
+remain unverified even when their declared input fingerprints match. A clean
+Git checkout is insufficient evidence that the last install succeeded.
+
+For example, a project that supplies its own dependency checker can configure:
+
+```toml
+[[path]]
+path = "node_modules"
+policy = "clone"
+inputs = ["package.json", "package-lock.json", "scripts/check-dependencies.cjs"]
+validate = ["node", "scripts/check-dependencies.cjs"]
+required = true
+```
+
+The project must implement that checker to compare installed dependencies to
+its lockfile and runtime needs. Merely checking that a directory exists does
+not establish compatibility. Cambium runs the check again in each destination;
+`cambium env validate NAME` explicitly repeats it after changes. `env explain`
+only observes state and does not run policy commands.
+
 ## Unknown package managers
 
 No Cambium source change is needed. Describe only their filesystem state:

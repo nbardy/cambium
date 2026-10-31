@@ -197,10 +197,10 @@ func TestCLIBenchmarkProducesComparableResults(t *testing.T) {
 	if report.Results[0].Method != "git" || report.Results[1].Method != "cambium-auto" {
 		t.Fatalf("unexpected methods: %#v", report.Results)
 	}
-	if report.Results[0].EnvironmentReady != 0 {
+	if report.Results[0].EnvironmentMaterialized != 0 {
 		t.Fatalf("plain Git unexpectedly had prepared ignored environment: %#v", report.Results[0])
 	}
-	if report.Results[1].EnvironmentReady != 2 {
+	if report.Results[1].EnvironmentMaterialized != 2 {
 		t.Fatalf("Cambium did not prepare both environments: %#v", report.Results[1])
 	}
 }

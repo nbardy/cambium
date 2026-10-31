@@ -83,7 +83,7 @@ func (m *Manager) Adopt(ctx context.Context, name, path string) (model.Workspace
 	if err != nil {
 		return model.Workspace{}, fmt.Errorf("capture adopted workspace environment: %w", err)
 	}
-	ready, missing := environmentReadiness(layers)
+	ready, missing, unverified := environmentReadiness(layers)
 	layerIDs := make([]string, 0, len(layers))
 	for _, layer := range layers {
 		layerIDs = append(layerIDs, layer.ID)
@@ -100,7 +100,7 @@ func (m *Manager) Adopt(ctx context.Context, name, path string) (model.Workspace
 		BaseCommit: found.head, BaseRef: found.head, Branch: found.branch, Path: absolute,
 		Requested: model.MaterializerGit, CloneMode: model.CloneModeGitCheckout,
 		CreatedAt: now, LastUsedAt: now, LayerIDs: layerIDs,
-		EnvironmentReady: ready, EnvironmentMissing: missing,
+		EnvironmentReady: ready, EnvironmentMissing: missing, EnvironmentUnverified: unverified,
 	}
 	if err := m.Registry.Save(value); err != nil {
 		return model.Workspace{}, err

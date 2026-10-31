@@ -66,7 +66,10 @@ func (r Repository) ResolveCommit(ctx context.Context, ref string) (string, erro
 	if strings.TrimSpace(ref) == "" {
 		ref = "HEAD"
 	}
-	result, err := r.runCommon(ctx, "rev-parse", "--verify", ref+"^{commit}")
+	// HEAD and other worktree-local revision expressions belong to the
+	// invoking checkout. Passing --git-dir=<common dir> here silently resolves
+	// HEAD against the primary checkout when invoked from a linked worktree.
+	result, err := r.runAt(ctx, r.Root, nil, "rev-parse", "--verify", ref+"^{commit}")
 	if err != nil {
 		return "", fmt.Errorf("resolve %q: %w", ref, err)
 	}
@@ -225,6 +228,23 @@ func (r Repository) DeleteBranch(ctx context.Context, branch string, force bool)
 	return err
 }
 
+// DeleteBranchIfUnchanged is used only for recovery. Its compare-and-delete
+// protects commits made by ordinary Git clients, which do not take Cambium's
+// administration lock, between our inspection and the ref update.
+func (r Repository) DeleteBranchIfUnchanged(ctx context.Context, branch, expected string) error {
+	worktrees, err := r.ListWorktrees(ctx)
+	if err != nil {
+		return err
+	}
+	for _, worktree := range worktrees {
+		if worktree.Branch == branch {
+			return fmt.Errorf("branch %q is still checked out at %s", branch, worktree.Path)
+		}
+	}
+	_, err = r.runCommon(ctx, "update-ref", "-d", "refs/heads/"+branch, expected)
+	return err
+}
+
 func (r Repository) ReadTree(ctx context.Context, worktree string) error {
 	_, err := r.runAt(ctx, worktree, nil, "read-tree", "HEAD")
 	return err
@@ -301,7 +321,10 @@ func (r Repository) RunAt(ctx context.Context, worktree string, env map[string]s
 
 func (r Repository) RunCommon(ctx context.Context, env map[string]string, args ...string) (execx.Result, error) {
 	commandArgs := append([]string{"--git-dir=" + r.CommonGitDir}, args...)
-	return r.Runner.Run(ctx, execx.Command{Dir: r.Root, Env: env, Name: "git", Args: commandArgs})
+	// Common administration can outlive the invoking worktree, for example
+	// while deleting its branch after worktree remove has deleted that cwd.
+	// Commands needing worktree context use RunAt/ResolveCommit instead.
+	return r.Runner.Run(ctx, execx.Command{Dir: r.CommonGitDir, Env: env, Name: "git", Args: commandArgs})
 }
 
 func (r Repository) runCommon(ctx context.Context, args ...string) (execx.Result, error) {

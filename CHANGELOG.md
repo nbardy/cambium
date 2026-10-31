@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased — workspace correctness and build evidence
+
+### Fixed
+
+- Resolve `HEAD` and other worktree-relative revisions in the invoking worktree
+  instead of the common Git directory.
+- Recovery skips active operations, rechecks state under the workspace and Git
+  locks, and requires ownership evidence before destructive cleanup.
+- Refuse dependency snapshots whose live declared inputs differ from the
+  target receipt. Unvalidated copied dependencies no longer report ready.
+- Upgrade a cached missing environment after dependencies become available.
+
+### Added
+
+- `environment_unverified` observations and explicit `cambium env validate`.
+- Real-repository regressions for revision context, concurrent recovery, and
+  npm dependency mismatch.
+- A reproducible npm/Cargo workflow benchmark with source/dependency edits,
+  verification, physical allocation observations, and cleanup/cache accounting.
+
+### Changed
+
+- Environment receipt format is version 6; older cache entries are not reused.
+- Synthetic benchmark report schema is version 2. Its former
+  `environment_ready` counter is now `environment_materialized`, because it
+  checks copied fixture files rather than package-manager or build readiness.
+- Readiness is explicitly a point-in-time result of declared policies and
+  validators. Git workspace status and environment readiness are separate.
+
 ## 0.5.0 — transparent worktrees and generic environment receipts
 
 ### Added

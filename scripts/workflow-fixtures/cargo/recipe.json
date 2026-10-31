@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "name": "offline-cargo-workflow",
+  "environment_paths": ["target"],
+  "prepare": [["cargo", "build", "--offline", "--locked"], ["cargo", "test", "--offline", "--locked"]],
+  "verify": [["cargo", "build", "--offline", "--locked"], ["cargo", "test", "--offline", "--locked"]],
+  "source_edits": [
+    {"path":"src/lib.rs","old":"baseline:","new":"agent-{index}:","count":2}
+  ],
+  "dependency_edits": [
+    {"path":"Cargo.toml","old":"fixture-helper = { path = \"helper\", version = \"0.1.0\" }","new":"fixture-helper = { path = \"helper\", version = \"0.2.0\" }"},
+    {"path":"helper/Cargo.toml","old":"version = \"0.1.0\"","new":"version = \"0.2.0\""},
+    {"path":"helper/src/lib.rs","old":"dependency-v1","new":"dependency-v2"},
+    {"path":"src/lib.rs","old":"dependency-v1","new":"dependency-v2"}
+  ],
+  "dependency_prepare": [["cargo", "build", "--offline"]],
+  "allow_policy_commands": false,
+  "provenance": {"type":"offline-smoke-fixture","description":"Real Rust compiler, path-dependency version change and cargo tests; not representative of a large dependency graph."}
+}

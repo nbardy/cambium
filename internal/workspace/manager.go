@@ -199,7 +199,7 @@ func (m *Manager) Doctor(ctx context.Context) []model.DoctorCheck {
 	} else if len(operations) == 0 {
 		checks = append(checks, model.DoctorCheck{Name: "operations", Status: "ok", Message: "no interrupted operations"})
 	} else {
-		checks = append(checks, model.DoctorCheck{Name: "operations", Status: "warn", Message: fmt.Sprintf("%d interrupted operation(s); run cambium recover", len(operations))})
+		checks = append(checks, model.DoctorCheck{Name: "operations", Status: "warn", Message: fmt.Sprintf("%d pending operation(s); cambium recover skips active operations and inspects interrupted ones", len(operations))})
 	}
 	values, err := m.Registry.List()
 	if err != nil {

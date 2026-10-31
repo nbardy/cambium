@@ -23,7 +23,7 @@ import (
 	"github.com/nbardy/cambium/internal/project"
 )
 
-const layerVersion = 5
+const layerVersion = 6
 
 var errBuiltinNotManaged = errors.New("built-in path is not ignored or is tracked")
 
@@ -49,10 +49,11 @@ type LayerSnapshot struct {
 }
 
 type LayerApplyResult struct {
-	IDs       []string `json:"ids"`
-	Ready     bool     `json:"ready"`
-	Missing   []string `json:"missing,omitempty"`
-	Recreated []string `json:"recreated,omitempty"`
+	IDs        []string `json:"ids"`
+	Ready      bool     `json:"ready"`
+	Missing    []string `json:"missing,omitempty"`
+	Unverified []string `json:"unverified,omitempty"`
+	Recreated  []string `json:"recreated,omitempty"`
 }
 
 // PrepareLayers resolves branch-correct receipts from the target Git tree. A
@@ -78,7 +79,7 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 	for _, rule := range rules {
 		active, targetInputs := activeRule(rule, targetEntries, filepath.Join(project.Repository.Root, filepath.FromSlash(rule.Path)))
 		id := fingerprintRule(commit, rule, targetInputs)
-		if cached, ok := loadLayer(filepath.Join(project.LayersDir(), id)); ok {
+		if cached, ok := loadLayer(filepath.Join(project.LayersDir(), id)); ok && cached.Present {
 			_ = touchCacheEntry(filepath.Join(project.LayersDir(), id))
 			layers = append(layers, cached)
 			continue
@@ -92,7 +93,7 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 		if sourcePathErr != nil && !errors.Is(sourcePathErr, os.ErrNotExist) {
 			return nil, sourcePathErr
 		}
-		base := LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Expected: rule.Required || sourcePresent, SourceRef: commit, Inputs: targetInputs, CreatedAt: time.Now().UTC()}
+		base := LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Expected: expectedLayer(rule, targetInputs, project.Repository.Root, sourcePresent), SourceRef: commit, Inputs: targetInputs, CreatedAt: time.Now().UTC()}
 		switch rule.Mode {
 		case config.LayerSkip, config.LayerEmpty, config.LayerShare, config.LayerRecreate:
 			layer, err := publishMetadataLayer(ctx, project, base)
@@ -126,7 +127,7 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 				}
 				return nil, err
 			}
-			layer, err := publishLayer(ctx, project, project.Repository.Root, commit, rule, targetInputs, cloner, requireCoW, false)
+			layer, err := publishLayer(ctx, project, project.Repository.Root, commit, rule, targetInputs, cloner, requireCoW, true)
 			if err != nil {
 				return nil, err
 			}
@@ -211,6 +212,16 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 			if err := runRuleCommand(ctx, project, workspacePath, rule.Validate, "validate", rule.Path); err != nil {
 				return LayerApplyResult{}, err
 			}
+			if rule.Mode == config.LayerClone {
+				matches, err := liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, rule, layer.Inputs)
+				if err != nil {
+					return LayerApplyResult{}, err
+				}
+				if len(rule.Validate) == 0 || !matches {
+					result.Ready = false
+					result.Unverified = append(result.Unverified, rule.Path)
+				}
+			}
 		case config.LayerRecreate:
 			if err := removeIfPresent(destination); err != nil {
 				return LayerApplyResult{}, err
@@ -238,7 +249,15 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 			}
 			layer.Present = true
 			layer.Expected = true
-			layer.Validated = len(rule.Validate) > 0
+			matches, err := liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, rule, layer.Inputs)
+			if err != nil {
+				return LayerApplyResult{}, err
+			}
+			layer.Validated = len(rule.Validate) > 0 && matches
+			if !layer.Validated {
+				result.Ready = false
+				result.Unverified = append(result.Unverified, rule.Path)
+			}
 			if _, err := publishMetadataLayer(ctx, project, layer); err != nil {
 				return LayerApplyResult{}, fmt.Errorf("record recreated environment path %s: %w", rule.Path, err)
 			}
@@ -249,6 +268,7 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 		result.IDs = append(result.IDs, layer.ID)
 	}
 	sort.Strings(result.Missing)
+	sort.Strings(result.Unverified)
 	sort.Strings(result.Recreated)
 	return result, nil
 }
@@ -272,20 +292,10 @@ func CaptureWorkspaceLayers(ctx context.Context, project *project.Project, works
 			continue
 		}
 		id := fingerprintRule(sourceRef, rule, inputs)
-		_, pathErr := os.Lstat(filepath.Join(workspacePath, filepath.FromSlash(rule.Path)))
-		base := LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Present: pathErr == nil, Expected: rule.Required || pathErr == nil, SourceRef: sourceRef, Inputs: inputs, CreatedAt: time.Now().UTC()}
+		_, pathErr := statLayerPath(filepath.Join(workspacePath, filepath.FromSlash(rule.Path)), rule)
+		base := LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Present: pathErr == nil, Expected: expectedLayer(rule, inputs, workspacePath, pathErr == nil), SourceRef: sourceRef, Inputs: inputs, CreatedAt: time.Now().UTC()}
 		if pathErr != nil && !errors.Is(pathErr, os.ErrNotExist) {
 			return nil, pathErr
-		}
-		if existing, ok := loadLayer(filepath.Join(project.LayersDir(), id)); ok {
-			if rule.Mode == config.LayerClone || rule.Mode == config.LayerSeed {
-				if !(base.Present && !existing.Present) {
-					layers = append(layers, existing)
-					continue
-				}
-			}
-			// Metadata-only policies merge live presence/validation observations
-			// into the stable receipt instead of returning stale cache metadata.
 		}
 		if err := validateLayerSafetyAt(ctx, project, workspacePath, rule); err != nil {
 			if errors.Is(err, errBuiltinNotManaged) {
@@ -295,17 +305,42 @@ func CaptureWorkspaceLayers(ctx context.Context, project *project.Project, works
 		}
 		switch rule.Mode {
 		case config.LayerClone, config.LayerSeed:
+			matches, err := liveInputsMatch(ctx, project, workspacePath, sourceRef, rule, inputs)
+			if err != nil {
+				return nil, err
+			}
+			if !matches {
+				return nil, fmt.Errorf("live inputs for environment path %s differ from %s; commit or checkpoint those inputs before capturing the environment", rule.Path, sourceRef)
+			}
+			if base.Present {
+				if err := runRuleCommand(ctx, project, workspacePath, rule.Validate, "validate", rule.Path); err != nil {
+					return nil, err
+				}
+			}
+			matches, err = liveInputsMatch(ctx, project, workspacePath, sourceRef, rule, inputs)
+			if err != nil {
+				return nil, err
+			}
+			if !matches {
+				return nil, fmt.Errorf("inputs for environment path %s changed during validation; commit or checkpoint them before capturing", rule.Path)
+			}
 			layer, err := publishLayer(ctx, project, workspacePath, sourceRef, rule, inputs, cloner, requireCoW, true)
 			if err != nil {
 				return nil, err
 			}
+			// Cached validation is historical. Only the validation just performed
+			// against this workspace can establish its current readiness.
+			layer.Validated = base.Present && len(rule.Validate) > 0
 			layers = append(layers, layer)
 		default:
 			if base.Present && len(rule.Validate) > 0 {
 				if err := runRuleCommand(ctx, project, workspacePath, rule.Validate, "validate", rule.Path); err != nil {
 					return nil, err
 				}
-				base.Validated = true
+				base.Validated, err = liveInputsMatch(ctx, project, workspacePath, sourceRef, rule, inputs)
+				if err != nil {
+					return nil, err
+				}
 			}
 			layer, err := publishMetadataLayer(ctx, project, base)
 			if err != nil {
@@ -330,6 +365,52 @@ func LoadLayers(project *project.Project, ids []string) ([]LayerSnapshot, error)
 		layers = append(layers, layer)
 	}
 	return layers, nil
+}
+
+// ObserveWorkspaceLayers describes the live paths, rather than treating cached
+// payload metadata as proof that a workspace still has the same environment.
+// Without runValidation, Validated remains a historical observation and can
+// only be downgraded. Explicit validation executes each hook in the current
+// workspace and runtime; a cached validation result never substitutes for it.
+func ObserveWorkspaceLayers(ctx context.Context, project *project.Project, workspacePath string, layers []LayerSnapshot, runValidation bool) ([]LayerSnapshot, error) {
+	observed := make([]LayerSnapshot, 0, len(layers))
+	var validationErrors []error
+	for _, layer := range layers {
+		_, err := statLayerPath(filepath.Join(workspacePath, filepath.FromSlash(layer.Rule.Path)), layer.Rule)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return nil, err
+		}
+		layer.Present = err == nil
+		layer.Expected = layer.Expected || expectedLayer(layer.Rule, layer.Inputs, workspacePath, layer.Present)
+		matches, err := liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, layer.Rule, layer.Inputs)
+		if err != nil {
+			return nil, err
+		}
+		if !layer.Present || !matches || len(layer.Rule.Validate) == 0 {
+			layer.Validated = false
+		} else if runValidation {
+			layer.Validated = false
+			if err := runRuleCommand(ctx, project, workspacePath, layer.Rule.Validate, "validate", layer.Rule.Path); err != nil {
+				validationErrors = append(validationErrors, err)
+			} else {
+				layer.Validated, err = liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, layer.Rule, layer.Inputs)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+		observed = append(observed, layer)
+	}
+	return observed, errors.Join(validationErrors...)
+}
+
+func statLayerPath(path string, rule config.LayerRule) (os.FileInfo, error) {
+	if rule.Mode == config.LayerShare {
+		// A link is not an available shared environment when its target has
+		// disappeared. Keep observation consistent with ApplyLayers' Stat.
+		return os.Stat(path)
+	}
+	return os.Lstat(path)
 }
 
 func publishMetadataLayer(ctx context.Context, project *project.Project, layer LayerSnapshot) (LayerSnapshot, error) {
@@ -381,9 +462,9 @@ func mergeLayerObservation(existing, observed LayerSnapshot) LayerSnapshot {
 	if !existing.CreatedAt.IsZero() && (merged.CreatedAt.IsZero() || existing.CreatedAt.Before(merged.CreatedAt)) {
 		merged.CreatedAt = existing.CreatedAt
 	}
-	merged.Present = existing.Present || observed.Present
+	merged.Present = observed.Present
 	merged.Expected = existing.Expected || observed.Expected
-	merged.Validated = existing.Validated || observed.Validated
+	merged.Validated = observed.Validated
 	if existing.Payload != "" && merged.Payload == "" {
 		merged.Payload = existing.Payload
 	}
@@ -404,23 +485,33 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 		_ = touchCacheEntry(finalRoot)
 		return layer, nil
 	}
+	if sourcePresent {
+		matches, err := liveInputsMatch(ctx, project, sourceRoot, sourceRef, rule, inputs)
+		if err != nil {
+			return LayerSnapshot{}, err
+		}
+		if !matches {
+			return publishMetadataLayer(ctx, project, LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Expected: expectedLayer(rule, inputs, sourceRoot, sourcePresent), SourceRef: sourceRef, Inputs: inputs, CreatedAt: time.Now().UTC()})
+		}
+	}
 	lock, err := lockfile.AcquireContext(ctx, filepath.Join(project.LocksDir(), "layer-"+id+".lock"))
 	if err != nil {
 		return LayerSnapshot{}, err
 	}
 	defer lock.Release()
+	var previous *LayerSnapshot
 	if layer, ok := loadLayer(finalRoot); ok {
 		if !(upgradeMissing && sourcePresent && !layer.Present) {
 			return layer, nil
 		}
-		if err := os.RemoveAll(finalRoot); err != nil {
+		previous = &layer
+	}
+	if previous == nil {
+		if _, err := os.Stat(finalRoot); err == nil {
+			return LayerSnapshot{}, fmt.Errorf("incomplete layer exists at %s; run `cambium doctor --repair`", finalRoot)
+		} else if !errors.Is(err, os.ErrNotExist) {
 			return LayerSnapshot{}, err
 		}
-	}
-	if _, err := os.Stat(finalRoot); err == nil {
-		return LayerSnapshot{}, fmt.Errorf("incomplete layer exists at %s; run `cambium doctor --repair`", finalRoot)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return LayerSnapshot{}, err
 	}
 
 	temporary, err := os.MkdirTemp(project.LayersDir(), ".layer-"+id+"-*")
@@ -443,10 +534,50 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 		if _, err := cloner.ClonePath(ctx, source, payload, requireCoW); err != nil {
 			return LayerSnapshot{}, fmt.Errorf("snapshot layer %s: %w", rule.Path, err)
 		}
+		matches, err := liveInputsMatch(ctx, project, sourceRoot, sourceRef, rule, inputs)
+		if err != nil {
+			return LayerSnapshot{}, err
+		}
+		if !matches {
+			return LayerSnapshot{}, fmt.Errorf("inputs for environment path %s changed while capturing; retry after the workspace is stable", rule.Path)
+		}
 	}
-	layer := LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Present: present, Expected: rule.Required || sourcePresent, SourceRef: sourceRef, Inputs: inputs, Validated: validated, CreatedAt: time.Now().UTC()}
+	layer := LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Present: present, Expected: expectedLayer(rule, inputs, sourceRoot, sourcePresent), SourceRef: sourceRef, Inputs: inputs, Validated: validated, CreatedAt: time.Now().UTC()}
 	if present {
 		layer.Payload = filepath.Join(finalRoot, "payload")
+	}
+	if previous != nil {
+		if !present {
+			// The source vanished during preparation. Its existing absence
+			// receipt remains valid, and no upgrade has anything to publish.
+			return *previous, nil
+		}
+		// Keep the canonical directory and ready marker available throughout
+		// the upgrade. Old readers continue to observe the missing receipt;
+		// new readers may use the payload only after the metadata switch.
+		// A unique generation also avoids overwriting payloads left by an
+		// interrupted upgrade. Unreferenced generations are removed with the
+		// cache entry when it is eventually pruned.
+		layer.Payload = filepath.Join(finalRoot, "payload-"+filepath.Base(temporary))
+		if err := ensureAbsent(layer.Payload); err != nil {
+			return LayerSnapshot{}, err
+		}
+		if err := fsx.PublishDir(payload, layer.Payload); err != nil {
+			return LayerSnapshot{}, err
+		}
+		layer.CreatedAt = previous.CreatedAt
+		metadata, err := json.MarshalIndent(layer, "", "  ")
+		if err != nil {
+			return LayerSnapshot{}, err
+		}
+		if err := fsx.WriteFileAtomic(filepath.Join(finalRoot, "metadata.json"), append(metadata, '\n'), 0o644); err != nil {
+			// WriteFileAtomic can report a directory-sync failure after its
+			// rename committed. Retain the payload so either metadata version
+			// remains usable; deleting it here could corrupt the new receipt.
+			return LayerSnapshot{}, err
+		}
+		_ = touchCacheEntry(finalRoot)
+		return layer, nil
 	}
 	metadata, err := json.MarshalIndent(layer, "", "  ")
 	if err != nil {
@@ -488,9 +619,85 @@ func activeRule(rule config.LayerRule, entries []gitx.TreeEntry, sourcePath stri
 	return false, inputs
 }
 
+func expectedLayer(rule config.LayerRule, inputs []ReceiptInput, sourceRoot string, present bool) bool {
+	if rule.Required || present {
+		return true
+	}
+	if !rule.Builtin || rule.Path != "node_modules" {
+		return false
+	}
+	// A PnP installation intentionally has no node_modules. Its own paths have
+	// clone policies and must be validated independently.
+	for _, path := range []string{".pnp.cjs", ".pnp.loader.mjs"} {
+		if _, err := os.Lstat(filepath.Join(sourceRoot, path)); err == nil {
+			return false
+		}
+	}
+	// Shared toolchain markers alone do not make a Rust/Python project a Node
+	// project. A manifest or dependency lockfile does make dependencies expected,
+	// including when the first workspace is created before the initial install.
+	for _, input := range inputs {
+		switch filepath.Base(input.Path) {
+		case "package.json", "package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "bun.lock", "bun.lockb":
+			return true
+		}
+	}
+	return false
+}
+
+// liveInputsMatch guards the association between a Git-tree receipt and live
+// build outputs. Equal HEADs do not establish that association when manifests
+// or lockfiles in the checkout have changed. This still does not prove an
+// installation is correct: that requires the path's explicit validation hook.
+func liveInputsMatch(ctx context.Context, project *project.Project, workspacePath, sourceRef string, rule config.LayerRule, inputs []ReceiptInput) (bool, error) {
+	// A hidden checkpoint may include files deliberately left untracked in the
+	// user's real index. Load the target tree into a private index so Git checks
+	// their bytes, modes, and clean-filtered contents against the correct tree.
+	// Neither read-tree nor the comparison may modify the user's staging area.
+	index, err := os.CreateTemp(project.StateDir, ".environment-index-*")
+	if err != nil {
+		return false, err
+	}
+	indexPath := index.Name()
+	defer os.Remove(indexPath)
+	defer os.Remove(indexPath + ".lock")
+	if err := index.Close(); err != nil {
+		return false, err
+	}
+	if err := os.Remove(indexPath); err != nil {
+		return false, err
+	}
+	env := map[string]string{"GIT_INDEX_FILE": indexPath}
+	if _, err := project.Repository.RunAt(ctx, workspacePath, env, "read-tree", sourceRef); err != nil {
+		return false, fmt.Errorf("load receipt inputs for %s: %w", rule.Path, err)
+	}
+	changed, err := project.Repository.RunAt(ctx, workspacePath, env, "diff", "--name-only", "-z", "--no-ext-diff", "--no-textconv", sourceRef, "--")
+	if err != nil {
+		return false, fmt.Errorf("compare live inputs for %s: %w", rule.Path, err)
+	}
+	untracked, err := project.Repository.RunAt(ctx, workspacePath, env, "ls-files", "--others", "--exclude-standard", "-z", "--")
+	if err != nil {
+		return false, fmt.Errorf("inspect live inputs for %s: %w", rule.Path, err)
+	}
+	for _, path := range strings.Split(changed.Stdout+untracked.Stdout, "\x00") {
+		if path == "" {
+			continue
+		}
+		if rule.SourceSensitive || len(inputs) == 0 {
+			return false, nil
+		}
+		for _, pattern := range rule.EffectiveInputs() {
+			if gitx.MatchPath(pattern, path) {
+				return false, nil
+			}
+		}
+	}
+	return true, nil
+}
+
 func fingerprintRule(sourceRef string, rule config.LayerRule, inputs []ReceiptInput) string {
 	hash := sha256.New()
-	_, _ = hash.Write([]byte("cambium-environment-receipt-v5\x00"))
+	_, _ = hash.Write([]byte("cambium-environment-receipt-v6\x00"))
 	_, _ = hash.Write([]byte(runtime.GOOS + "\x00" + runtime.GOARCH + "\x00"))
 	_, _ = hash.Write([]byte(rule.Path + "\x00" + string(rule.Mode) + "\x00"))
 	for _, pattern := range rule.EffectiveInputs() {
@@ -594,10 +801,19 @@ func loadLayer(root string) (LayerSnapshot, bool) {
 	layer.Rule.Builtin = layer.RuleBuiltin
 	layer.Rule.Origin = layer.RuleOrigin
 	if layer.Present && (layer.Rule.Mode == config.LayerClone || layer.Rule.Mode == config.LayerSeed) {
-		if _, err := os.Lstat(filepath.Join(root, "payload")); err != nil {
+		payloadName := "payload"
+		if layer.Payload != "" {
+			payloadName = filepath.Base(layer.Payload)
+		}
+		if payloadName != "payload" && !strings.HasPrefix(payloadName, "payload-") {
 			return LayerSnapshot{}, false
 		}
-		layer.Payload = filepath.Join(root, "payload")
+		// Resolve only a payload basename inside this receipt. Persisted
+		// absolute paths may refer to a former location of the Git repository.
+		layer.Payload = filepath.Join(root, payloadName)
+		if _, err := os.Lstat(layer.Payload); err != nil {
+			return LayerSnapshot{}, false
+		}
 	}
 	return layer, true
 }

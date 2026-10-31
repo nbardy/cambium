@@ -8,6 +8,8 @@ The release gate is:
 make check
 make test-race
 make system-test
+make integration-test
+make workflow-test
 git fsck --strict --no-reflogs
 ```
 
@@ -30,6 +32,13 @@ includes:
 - ordinary Git worktree adoption, moves, removal, and reconciliation;
 - SHA-1 and SHA-256 Git repositories.
 
+The current regression suite also covers real offline npm installs with dirty
+manifests and clean-but-stale installations, missing-cache upgrades, explicit
+revalidation, linked-worktree revision context, recovery overlapping live
+creation/removal, retained local work, and removal from the invoking worktree.
+The npm regression requires Node/npm; CI installs them explicitly. A missing
+runtime is a test skip, not a passed npm integration check.
+
 ## APFS proof
 
 The repository includes a macOS CI job and `make benchmark-apfs`. The matrix
@@ -45,7 +54,7 @@ cow
 ```
 
 Measurements include physical free-space deltas, creation latency, first/warm
-Git status, environment readiness, and cleanup. Logical `du` alone is not used
+Git status, environment materialization, and cleanup. Logical `du` alone is not used
 to claim CoW savings.
 
 The comparison tools are optional. A missing or incompatible binary is reported
@@ -58,6 +67,18 @@ prove APFS savings. Cambium must not claim it is faster than cow or simgit until
 the published APFS result and machine details support that claim.
 
 See [COMPARISONS.md](../COMPARISONS.md) and the APFS benchmark issue.
+
+## Real build workflows
+
+See [WORKFLOW_BENCHMARKS.md](WORKFLOW_BENCHMARKS.md) for reproducible offline
+npm/Cargo fixtures and pinned clsx/ripgrep recipes. The harness runs actual
+builds/tests at initial, source-edit, and dependency-edit phases, then removes
+worktrees and prunes caches. Reports retain command logs, revisions, toolchain
+versions, physical free-space deltas, and residual state.
+
+Synthetic benchmark schema 2 calls its file-existence counter
+`environment_materialized`. It is not a build-readiness measurement. The older
+schema-1 field `environment_ready` had the same synthetic meaning.
 
 ## v0.5.0 pre-publication verification
 

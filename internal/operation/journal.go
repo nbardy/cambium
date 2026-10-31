@@ -39,6 +39,8 @@ type Record struct {
 	Branch       string    `json:"branch"`
 	Path         string    `json:"path"`
 	BaseCommit   string    `json:"base_commit,omitempty"`
+	WorkspaceID  string    `json:"workspace_id,omitempty"`
+	WorktreeDir  string    `json:"worktree_git_dir,omitempty"`
 	LayerIDs     []string  `json:"layer_ids,omitempty"`
 	Force        bool      `json:"force,omitempty"`
 	DeleteBranch bool      `json:"delete_branch,omitempty"`
@@ -107,6 +109,26 @@ func (j Journal) Delete(id string) error {
 	return fsx.RemoveFile(j.path(id))
 }
 
+// Load lets recovery re-read an operation after taking its workspace lock.
+// A snapshot returned by List may already have completed or advanced by then.
+func (j Journal) Load(id string) (Record, error) {
+	bytes, err := os.ReadFile(j.path(id))
+	if err != nil {
+		return Record{}, err
+	}
+	var record Record
+	if err := json.Unmarshal(bytes, &record); err != nil {
+		return Record{}, fmt.Errorf("parse operation %s: %w", id, err)
+	}
+	if record.Version != 1 {
+		return Record{}, fmt.Errorf("operation %s has unsupported version %d", id, record.Version)
+	}
+	if record.ID != id {
+		return Record{}, fmt.Errorf("operation %s has mismatched id %q", id, record.ID)
+	}
+	return record, nil
+}
+
 func (j Journal) List() ([]Record, error) {
 	entries, err := os.ReadDir(j.Root)
 	if errors.Is(err, os.ErrNotExist) {
@@ -120,16 +142,14 @@ func (j Journal) List() ([]Record, error) {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
 			continue
 		}
-		bytes, err := os.ReadFile(filepath.Join(j.Root, entry.Name()))
+		id := entry.Name()[:len(entry.Name())-len(".json")]
+		record, err := j.Load(id)
+		if errors.Is(err, os.ErrNotExist) {
+			// Another process can finish between ReadDir and the read.
+			continue
+		}
 		if err != nil {
 			return nil, err
-		}
-		var record Record
-		if err := json.Unmarshal(bytes, &record); err != nil {
-			return nil, fmt.Errorf("parse operation %s: %w", entry.Name(), err)
-		}
-		if record.Version != 1 {
-			return nil, fmt.Errorf("operation %s has unsupported version %d", entry.Name(), record.Version)
 		}
 		records = append(records, record)
 	}

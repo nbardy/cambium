@@ -28,6 +28,11 @@ common runtime marker files.
 
 There is no `yarn.toml` required from the user.
 
+An applicable missing `node_modules` is reported missing. An existing cloned
+tree is unverified unless a project-defined validation command succeeds. The
+built-ins do not implement a package manager or verify installed packages
+against a lockfile. A later installation can replace an earlier cached absence.
+
 ## Python
 
 Works with uv, pip, Poetry, PDM, Hatch-style projects, tox/nox, and standard
@@ -58,6 +63,12 @@ Inputs include workspace Cargo manifests, `Cargo.lock`, Cargo config, and Rust
 toolchain markers. Cargo's global registry/Git caches remain outside the
 worktree and under Cargo's own management. `target` is disposable because Cargo
 build metadata can contain source-path-sensitive state.
+
+The default `target` receipt is source-sensitive: it includes the exact source
+commit, so a cache from another commit is not automatically used. A copied
+target is only a seed; `cargo build` or `cargo test` still decides what can be
+reused. Measure physical disk usage after divergent builds as well as after
+workspace creation.
 
 ## Clojure and ClojureScript
 
