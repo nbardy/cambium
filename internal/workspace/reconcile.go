@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"time"
 
+	"github.com/nbardy/cambium/internal/failpoint"
+	"github.com/nbardy/cambium/internal/gitx"
 	"github.com/nbardy/cambium/internal/lockfile"
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/native"
@@ -32,11 +33,28 @@ func (m *Manager) Adopt(ctx context.Context, name, path string) (model.Workspace
 	if name == "" {
 		return model.Workspace{}, errors.New("adopted workspace name cannot be empty")
 	}
+	workspaceLock, err := m.Native.LockWorkspace(ctx, name)
+	if err != nil {
+		return model.Workspace{}, err
+	}
+	defer workspaceLock.Release()
 	lock, err := lockfile.AcquireContext(ctx, filepath.Join(m.Project.LocksDir(), "reconcile.lock"))
 	if err != nil {
 		return model.Workspace{}, err
 	}
 	defer lock.Release()
+	// Match creation's cache -> Git lock order. Adoption publishes environment
+	// references and a workspace claim together, before either lock is released.
+	cacheLock, err := m.lockEnvironmentCache(ctx)
+	if err != nil {
+		return model.Workspace{}, err
+	}
+	defer cacheLock.Release()
+	gitLock, err := lockfile.AcquireContext(ctx, filepath.Join(m.Project.LocksDir(), "git-admin.lock"))
+	if err != nil {
+		return model.Workspace{}, err
+	}
+	defer gitLock.Release()
 
 	if exists, err := m.Registry.Exists(name); err != nil {
 		return model.Workspace{}, err
@@ -51,7 +69,7 @@ func (m *Manager) Adopt(ctx context.Context, name, path string) (model.Workspace
 	if err != nil {
 		return model.Workspace{}, err
 	}
-	var found *struct{ head, branch string }
+	var found *gitx.Worktree
 	for _, item := range worktrees {
 		itemPath, canonicalErr := existingCanonicalPath(item.Path)
 		if canonicalErr != nil {
@@ -64,27 +82,20 @@ func (m *Manager) Adopt(ctx context.Context, name, path string) (model.Workspace
 			if item.Branch == "" {
 				return model.Workspace{}, fmt.Errorf("cannot adopt detached worktree %s without an explicit branch", absolute)
 			}
-			found = &struct{ head, branch string }{item.HEAD, item.Branch}
+			item.Path = absolute
+			found = &item
 			break
 		}
 	}
 	if found == nil {
 		return model.Workspace{}, fmt.Errorf("%s is not registered as a Git linked worktree", absolute)
 	}
-	primary, err := existingCanonicalPath(m.Project.Repository.Root)
+	worktreeGitDir, err := m.Native.CheckAdoption(ctx, name, *found)
 	if err != nil {
 		return model.Workspace{}, err
-	}
-	if absolute == primary {
-		return model.Workspace{}, errors.New("the primary worktree cannot be adopted as an agent workspace")
 	}
 
-	cacheLock, err := m.lockEnvironmentCache(ctx)
-	if err != nil {
-		return model.Workspace{}, err
-	}
-	defer cacheLock.Release()
-	layers, err := native.CaptureWorkspaceLayers(ctx, m.Project, absolute, found.head, m.Native.Cloner, m.Project.Config.RequireCoW)
+	layers, err := native.CaptureWorkspaceLayers(ctx, m.Project, absolute, found.HEAD, m.Native.Cloner, m.Project.Config.RequireCoW)
 	if err != nil {
 		return model.Workspace{}, fmt.Errorf("capture adopted workspace environment: %w", err)
 	}
@@ -102,92 +113,90 @@ func (m *Manager) Adopt(ctx context.Context, name, path string) (model.Workspace
 	value := model.Workspace{
 		Version: 2, ID: id, Name: name, Status: model.WorkspaceReady,
 		RepositoryRoot: m.Project.Repository.Root, CommonGitDir: m.Project.Repository.CommonGitDir,
-		BaseCommit: found.head, BaseRef: found.head, Branch: found.branch, Path: absolute,
+		WorktreeGitDir: worktreeGitDir,
+		BaseCommit:     found.HEAD, BaseRef: found.HEAD, Branch: found.Branch, Path: absolute,
 		Requested: model.MaterializerGit, CloneMode: model.CloneModeGitCheckout,
 		CreatedAt: now, LastUsedAt: now, LayerIDs: layerIDs,
 		EnvironmentReady: ready, EnvironmentMissing: missing, EnvironmentUnverified: unverified,
 	}
-	if err := m.Registry.Save(value); err != nil {
+	// Trusted policy commands can invoke ordinary Git, which does not use our
+	// locks. Do not publish the identity observed before such a command changed it.
+	if err := m.Native.ClaimAdoption(ctx, value); err != nil {
 		return model.Workspace{}, err
+	}
+	if err := failpoint.Check("after-adopt-claim"); err != nil {
+		return model.Workspace{}, err
+	}
+	if err := m.Registry.Save(value); err != nil {
+		return model.Workspace{}, fmt.Errorf("save adopted workspace: %w; ownership receipt retained at %s for inspection", err, worktreeGitDir)
 	}
 	return value, nil
 }
 
 func (m *Manager) Reconcile(ctx context.Context, dryRun bool) (ReconcileResult, error) {
-	lock, err := lockfile.AcquireContext(ctx, filepath.Join(m.Project.LocksDir(), "reconcile.lock"))
-	if err != nil {
-		return ReconcileResult{}, err
-	}
-	defer lock.Release()
-
+	// Discovery is observational only. A workspace can be removed or replaced
+	// after this snapshot, so no discovered record may be saved directly.
 	registered, err := m.Registry.List()
 	if err != nil {
 		return ReconcileResult{}, err
 	}
-	gitWorktrees, err := m.Project.Repository.ListWorktrees(ctx)
+	worktrees, err := m.reconcileWorktrees(ctx)
 	if err != nil {
 		return ReconcileResult{}, err
 	}
-	byPath := make(map[string]int, len(gitWorktrees))
-	byBranch := make(map[string]int, len(gitWorktrees))
-	for i, item := range gitWorktrees {
-		byPath[filepath.Clean(item.Path)] = i
-		if item.Branch != "" {
-			byBranch[item.Branch] = i
-		}
-	}
-	managedPaths := map[string]struct{}{filepath.Clean(m.Project.Repository.Root): {}}
 	result := ReconcileResult{DryRun: dryRun}
-	for _, value := range registered {
-		pathKey := filepath.Clean(value.Path)
-		index, pathMatch := byPath[pathKey]
-		if !pathMatch && value.Branch != "" {
-			index, pathMatch = byBranch[value.Branch]
-			if pathMatch && gitWorktrees[index].Path != value.Path {
-				result.Changes = append(result.Changes, ReconcileChange{Name: value.Name, Action: "move", From: value.Path, To: gitWorktrees[index].Path})
-				if !dryRun {
-					value.Path = gitWorktrees[index].Path
-				}
-			}
+	if dryRun {
+		for _, value := range registered {
+			_, changes := reconcileState(value, worktrees)
+			result.Changes = append(result.Changes, changes...)
 		}
-		if !pathMatch {
-			if value.Status != model.WorkspaceBroken {
-				result.Changes = append(result.Changes, ReconcileChange{Name: value.Name, Action: "mark-broken", From: value.Path})
-				if !dryRun {
-					value.Status = model.WorkspaceBroken
-				}
-			}
-		} else {
-			item := gitWorktrees[index]
-			managedPaths[filepath.Clean(item.Path)] = struct{}{}
-			if value.Status != model.WorkspaceReady {
-				result.Changes = append(result.Changes, ReconcileChange{Name: value.Name, Action: "mark-ready", To: item.Path})
-				if !dryRun {
-					value.Status = model.WorkspaceReady
-				}
-			}
-			if !dryRun {
-				value.Branch = item.Branch
-				value.LastUsedAt = time.Now().UTC()
-			}
+	} else {
+		// Take all discovered workspace locks in a stable order, then Git.
+		// Never hold reconcile.lock while waiting for a workspace: adoption
+		// takes its workspace lock before reconcile.lock.
+		names := make([]string, 0, len(registered))
+		identities := make(map[string]string, len(registered))
+		for _, snapshot := range registered {
+			names = append(names, snapshot.Name)
+			identities[snapshot.Name] = snapshot.ID
 		}
-		if !dryRun {
-			if _, statErr := os.Stat(value.Path); statErr != nil && errors.Is(statErr, os.ErrNotExist) {
-				value.Status = model.WorkspaceBroken
+		locks, err := m.Native.LockWorkspaces(ctx, names)
+		if err != nil {
+			return result, err
+		}
+		defer func() {
+			for i := len(locks) - 1; i >= 0; i-- {
+				_ = locks[i].Release()
 			}
-			if err := m.Registry.Save(value); err != nil {
-				return ReconcileResult{}, err
+		}()
+		gitLock, err := lockfile.AcquireContext(ctx, filepath.Join(m.Project.LocksDir(), "git-admin.lock"))
+		if err != nil {
+			return result, err
+		}
+		defer gitLock.Release()
+		// Reread both sources after locking. A completed removal disappears,
+		// and a replacement with the same name retains its different identity.
+		registered, err = m.Registry.List()
+		if err != nil {
+			return result, err
+		}
+		worktrees, err = m.reconcileWorktrees(ctx)
+		if err != nil {
+			return result, err
+		}
+		for i, value := range registered {
+			if id, selected := identities[value.Name]; !selected || value.ID != id {
+				continue
 			}
+			updated, changes := reconcileState(value, worktrees)
+			if err := m.Registry.Save(updated); err != nil {
+				return result, err
+			}
+			registered[i] = updated
+			result.Changes = append(result.Changes, changes...)
 		}
 	}
-	for _, item := range gitWorktrees {
-		if item.Bare {
-			continue
-		}
-		if _, ok := managedPaths[filepath.Clean(item.Path)]; !ok {
-			result.Unmanaged = append(result.Unmanaged, item.Path)
-		}
-	}
+	result.Unmanaged = unmanagedWorktrees(registered, worktrees)
 	sort.Slice(result.Changes, func(i, j int) bool {
 		if result.Changes[i].Name == result.Changes[j].Name {
 			return result.Changes[i].Action < result.Changes[j].Action

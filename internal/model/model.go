@@ -37,6 +37,7 @@ type Workspace struct {
 	Status                WorkspaceStatus `json:"status"`
 	RepositoryRoot        string          `json:"repository_root"`
 	CommonGitDir          string          `json:"common_git_dir"`
+	WorktreeGitDir        string          `json:"worktree_git_dir,omitempty"`
 	BaseCommit            string          `json:"base_commit"`
 	BaseRef               string          `json:"base_ref"`
 	Branch                string          `json:"branch"`
