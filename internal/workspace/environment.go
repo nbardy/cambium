@@ -44,6 +44,11 @@ func (m *Manager) CaptureEnvironment(ctx context.Context, name, sourceRef string
 			}
 		}
 	}
+	cacheLock, err := m.lockEnvironmentCache(ctx)
+	if err != nil {
+		return EnvironmentExplanation{}, err
+	}
+	defer cacheLock.Release()
 	layers, err := native.CaptureWorkspaceLayers(ctx, m.Project, value.Path, sourceRef, m.Native.Cloner, m.Project.Config.RequireCoW)
 	if err != nil {
 		return EnvironmentExplanation{}, err

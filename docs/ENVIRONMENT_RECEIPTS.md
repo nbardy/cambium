@@ -48,6 +48,12 @@ copy failures leave existing workspace and checkpoint references intact. An
 interrupted publication can leave an unreferenced payload generation; pruning
 the unused receipt removes these generations together.
 
+Environment capture, checkpoint capture, and adoption hold the same cache
+administration lock as workspace creation until their receipt IDs are saved in
+workspace or checkpoint metadata. Pruning therefore cannot remove active
+staging directories or newly published payloads before a durable reference
+protects them.
+
 ## Payload and metadata
 
 - `clone` and `seed` receipts may contain an immutable payload directory/file.

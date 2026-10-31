@@ -283,6 +283,9 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 // CaptureWorkspaceLayers publishes matching clone/seed outputs from a live
 // workspace against sourceRef (normally a speculative root). Recreate outputs
 // are represented by their receipt and regenerated on fork rather than copied.
+// Callers hold cache-admin.lock through capture and the publication of the
+// returned IDs in workspace/checkpoint metadata, so pruning cannot remove them
+// between preparation and durable reference publication.
 func CaptureWorkspaceLayers(ctx context.Context, project *project.Project, workspacePath, sourceRef string, cloner Cloner, requireCoW bool) ([]LayerSnapshot, error) {
 	entries, err := project.Repository.TreeEntries(ctx, sourceRef)
 	if err != nil {
