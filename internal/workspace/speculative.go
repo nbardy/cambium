@@ -45,12 +45,14 @@ func (m *Manager) SpecStore() (*speculative.Store, error) {
 }
 
 func (m *Manager) Checkpoint(ctx context.Context, workspaceName string, options CheckpointOptions) (CheckpointResult, error) {
-	workspaceValue, err := m.Load(ctx, workspaceName, true)
+	lock, err := m.Native.LockWorkspace(ctx, workspaceName)
 	if err != nil {
 		return CheckpointResult{}, err
 	}
-	if workspaceValue.Status != model.WorkspaceReady {
-		return CheckpointResult{}, fmt.Errorf("workspace %q is not ready", workspaceName)
+	defer lock.Release()
+	workspaceValue, err := m.loadReadyWorkspaceLocked(ctx, workspaceName)
+	if err != nil {
+		return CheckpointResult{}, err
 	}
 	store, err := m.SpecStore()
 	if err != nil {
@@ -98,7 +100,7 @@ func (m *Manager) Checkpoint(ctx context.Context, workspaceName string, options 
 	workspaceValue.EnvironmentMissing = missing
 	workspaceValue.EnvironmentUnverified = unverified
 	workspaceValue.LastUsedAt = time.Now().UTC()
-	if err := m.Registry.Save(workspaceValue); err != nil {
+	if err := m.saveWorkspaceLocked(ctx, workspaceValue); err != nil {
 		return CheckpointResult{}, fmt.Errorf("record workspace speculative root: %w", err)
 	}
 	return CheckpointResult{

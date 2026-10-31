@@ -31,7 +31,12 @@ type EnvironmentExplanation struct {
 }
 
 func (m *Manager) CaptureEnvironment(ctx context.Context, name, sourceRef string) (EnvironmentExplanation, error) {
-	value, err := m.Load(ctx, name, true)
+	lock, err := m.Native.LockWorkspace(ctx, name)
+	if err != nil {
+		return EnvironmentExplanation{}, err
+	}
+	defer lock.Release()
+	value, err := m.loadReadyWorkspaceLocked(ctx, name)
 	if err != nil {
 		return EnvironmentExplanation{}, err
 	}
@@ -63,7 +68,7 @@ func (m *Manager) CaptureEnvironment(ctx context.Context, name, sourceRef string
 	value.EnvironmentMissing = missing
 	value.EnvironmentUnverified = unverified
 	value.LastUsedAt = time.Now().UTC()
-	if err := m.Registry.Save(value); err != nil {
+	if err := m.saveWorkspaceLocked(ctx, value); err != nil {
 		return EnvironmentExplanation{}, err
 	}
 	return explainLayers(value.Name, sourceRef, ready, missing, unverified, layers), nil
@@ -80,7 +85,12 @@ func (m *Manager) ValidateEnvironment(ctx context.Context, name string) (Environ
 }
 
 func (m *Manager) observeEnvironment(ctx context.Context, name string, validate bool) (EnvironmentExplanation, error) {
-	value, err := m.Load(ctx, name, true)
+	lock, err := m.Native.LockWorkspace(ctx, name)
+	if err != nil {
+		return EnvironmentExplanation{}, err
+	}
+	defer lock.Release()
+	value, err := m.loadReadyWorkspaceLocked(ctx, name)
 	if err != nil {
 		return EnvironmentExplanation{}, err
 	}
@@ -114,7 +124,7 @@ func (m *Manager) observeEnvironment(ctx context.Context, name string, validate 
 		value.EnvironmentMissing = missing
 		value.EnvironmentUnverified = unverified
 		value.LastUsedAt = time.Now().UTC()
-		if err := m.Registry.Save(value); err != nil {
+		if err := m.saveWorkspaceLocked(ctx, value); err != nil {
 			return EnvironmentExplanation{}, err
 		}
 	}
