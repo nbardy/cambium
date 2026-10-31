@@ -116,3 +116,9 @@ loader. Use the same writable npm cache during preparation and measurement.
   evidence; a configured CI job is not a completed measurement.
 - Comparison tools such as simgit and cow are not part of these two-method
   workflow results. No relative claim about them follows from this run.
+
+## Subsequent runtime optimization
+
+A separate [controlled before/after measurement](ENVIRONMENT_OBSERVATION_PERFORMANCE.md)
+covers the removal of unnecessary input scans for unverified or missing
+environment paths. It does not change the fallback-copy storage costs above.

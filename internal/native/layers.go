@@ -213,11 +213,15 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 				return LayerApplyResult{}, err
 			}
 			if rule.Mode == config.LayerClone {
-				matches, err := liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, rule, layer.Inputs)
-				if err != nil {
-					return LayerApplyResult{}, err
+				validated := false
+				if len(rule.Validate) > 0 {
+					matches, err := liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, rule, layer.Inputs)
+					if err != nil {
+						return LayerApplyResult{}, err
+					}
+					validated = matches
 				}
-				if len(rule.Validate) == 0 || !matches {
+				if !validated {
 					result.Ready = false
 					result.Unverified = append(result.Unverified, rule.Path)
 				}
@@ -249,11 +253,14 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 			}
 			layer.Present = true
 			layer.Expected = true
-			matches, err := liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, rule, layer.Inputs)
-			if err != nil {
-				return LayerApplyResult{}, err
+			layer.Validated = false
+			if len(rule.Validate) > 0 {
+				matches, err := liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, rule, layer.Inputs)
+				if err != nil {
+					return LayerApplyResult{}, err
+				}
+				layer.Validated = matches
 			}
-			layer.Validated = len(rule.Validate) > 0 && matches
 			if !layer.Validated {
 				result.Ready = false
 				result.Unverified = append(result.Unverified, rule.Path)
@@ -382,11 +389,19 @@ func ObserveWorkspaceLayers(ctx context.Context, project *project.Project, works
 		}
 		layer.Present = err == nil
 		layer.Expected = layer.Expected || expectedLayer(layer.Rule, layer.Inputs, workspacePath, layer.Present)
+		// Presence and a configured validator are prerequisites for validation.
+		// If either is missing, scanning the Git tree cannot change this result.
+		// Keep source/capture checks separate: they still guard receipt identity.
+		if !layer.Present || len(layer.Rule.Validate) == 0 {
+			layer.Validated = false
+			observed = append(observed, layer)
+			continue
+		}
 		matches, err := liveInputsMatch(ctx, project, workspacePath, layer.SourceRef, layer.Rule, layer.Inputs)
 		if err != nil {
 			return nil, err
 		}
-		if !layer.Present || !matches || len(layer.Rule.Validate) == 0 {
+		if !matches {
 			layer.Validated = false
 		} else if runValidation {
 			layer.Validated = false
