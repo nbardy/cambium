@@ -161,6 +161,12 @@ func (m *Manager) PruneCaches(ctx context.Context, olderThan time.Duration, dryR
 	return m.Native.PruneCaches(ctx, olderThan, dryRun)
 }
 
+type CachePruneOptions = native.CachePruneOptions
+
+func (m *Manager) PruneCachesWithOptions(ctx context.Context, options CachePruneOptions) (native.CachePruneResult, error) {
+	return m.Native.PruneCachesWithOptions(ctx, options)
+}
+
 type GCOptions struct {
 	EphemeralOnly  bool
 	OlderThan      time.Duration

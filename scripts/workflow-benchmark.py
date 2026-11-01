@@ -296,7 +296,7 @@ def apply_edits(recorder: Recorder, workspace: Path, edits: list[dict[str, Any]]
     return results
 
 
-def benchmark_method(recorder: Recorder, recipe: dict[str, Any], source: Path, source_commit: str, root: Path, method: str, count: int, cambium: str) -> None:
+def benchmark_method(recorder: Recorder, recipe: dict[str, Any], source: Path, source_commit: str, root: Path, method: str, count: int, cambium: str, prune_policy: dict[str, Any]) -> None:
     method_root = root / method
     method_root.mkdir()
     result: dict[str, Any] = {"method": method, "status": "running", "workspace_count": count, "phases": [], "workspaces": []}
@@ -398,7 +398,9 @@ def benchmark_method(recorder: Recorder, recipe: dict[str, Any], source: Path, s
 
         with phase("prune") as stage:
             if method.startswith("cambium"):
-                stage["prune_result"] = json.loads(recorder.run([cambium, "prune", "--older-than", "1ns", "--json"], reference, "prune", method))
+                prune_args = ["--max-unused-bytes", str(prune_policy["max_unused_bytes"])] if "max_unused_bytes" in prune_policy else ["--older-than", prune_policy["older_than"]]
+                stage["prune_policy"] = prune_policy
+                stage["prune_result"] = json.loads(recorder.run([cambium, "prune", *prune_args, "--json"], reference, "prune", method))
             recorder.run(["git", "worktree", "prune"], reference, "prune", method)
             registrations = recorder.run(["git", "worktree", "list", "--porcelain"], reference, "prune", method)
             if sum(line.startswith("worktree ") for line in registrations.splitlines()) != 1:
@@ -425,9 +427,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--keep", action="store_true", help="retain successful scratch data; failures always retain it")
     parser.add_argument("--command-timeout", type=float, default=1800)
     parser.add_argument("--overwrite", action="store_true")
+    prune = parser.add_mutually_exclusive_group()
+    prune.add_argument("--prune-older-than", default="1ns", help="Cambium cache idle age during pruning (default: 1ns)")
+    prune.add_argument("--prune-max-unused-bytes", type=int, help="bound unused Cambium cache logical regular-file bytes instead of age")
     args = parser.parse_args(argv)
     if args.count < 1 or args.command_timeout <= 0:
         parser.error("--count and --command-timeout must be positive")
+    if args.prune_max_unused_bytes is not None and args.prune_max_unused_bytes < 0:
+        parser.error("--prune-max-unused-bytes must be nonnegative")
+    prune_policy = {"max_unused_bytes": args.prune_max_unused_bytes} if args.prune_max_unused_bytes is not None else {"older_than": args.prune_older_than}
     methods = args.methods.split(",")
     if not methods or len(set(methods)) != len(methods) or any(method not in METHODS for method in methods):
         parser.error(f"--methods must contain unique values from {','.join(METHODS)}")
@@ -442,7 +450,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.scratch:
         args.scratch.mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix="cambium-workflow-", dir=args.scratch)).resolve()
-    report: dict[str, Any] = {"format_version": 1, "started_at": utc_now(), "status": "running", "scratch": str(root), "method_order": methods, "results": [], "measurement_notes": [
+    report: dict[str, Any] = {"format_version": 1, "started_at": utc_now(), "status": "running", "scratch": str(root), "method_order": methods, "prune_policy": prune_policy, "results": [], "measurement_notes": [
         "Every method starts with a separately cloned, built and tested reference at the same recorded commit. Prepare costs are reported separately from warm-workspace overhead.",
         "Physical figures are signed filesystem free-space deltas, including Cambium baselines/layers retained in .git. Ambient activity and same-volume tool-cache writes can affect them; negative deltas are not hidden.",
         "Logical and st_blocks-derived tree sizes are diagnostic only: shared CoW extents can be counted repeatedly and these sizes do not establish physical savings.",
@@ -464,7 +472,7 @@ def main(argv: list[str] | None = None) -> int:
         report.update({"recipe": recipe, "resolved_source_commit": commit, "resolved_source_tree": tree, "source_origin": origin})
         recorder.checkpoint()
         for method in methods:
-            benchmark_method(recorder, recipe, source_root, commit, root, method, args.count, cambium)
+            benchmark_method(recorder, recipe, source_root, commit, root, method, args.count, cambium, prune_policy)
         report["status"] = "ok"
         success = True
     except (Exception, KeyboardInterrupt) as error:
