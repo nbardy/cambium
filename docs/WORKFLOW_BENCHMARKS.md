@@ -55,9 +55,9 @@ python3 scripts/workflow-benchmark.py \
 ```
 
 Use `--project ripgrep` and separate paths for the Rust recipe. Set
-`CARGO_BUILD_JOBS=4` to match the CI workload. Both recipes list all prewarmed
-outputs copied by the control: `node_modules` and `dist` for clsx, and `target`
-for ripgrep.
+`CARGO_BUILD_JOBS=4` to keep the local workload reproducible. Both recipes list
+all prewarmed outputs copied by the control: `node_modules` and `dist` for clsx,
+and `target` for ripgrep.
 Keep the same writable `NPM_CONFIG_CACHE` in preparation and measurement so
 offline dependency changes can read the warmed registry metadata and packages.
 
@@ -72,11 +72,11 @@ python3 scripts/workflow-benchmark.py \
 ```
 
 `cambium-cow` fails explicitly if native sharing is unavailable. It is not
-silently replaced with a copying result. The CI workflow **Real build
-workflows** runs these recipes on Linux and macOS and uploads the raw report
-and per-command logs, including on failure. A configured workflow is not
-evidence that a particular run completed; link successful artifacts when
-publishing APFS results.
+silently replaced with a copying result. Run these recipes locally on Linux
+and on an APFS Mac. Preserve the raw JSON report and per-command logs, including
+on failure; the repository has no GitHub Actions workflows to run or upload
+them. Publish the successful reports and logs with the source commit,
+toolchain versions, and machine/filesystem details before making APFS claims.
 
 ## Benchmark your own repository
 
