@@ -19,6 +19,14 @@ SPEC.loader.exec_module(benchmark)
 
 
 class WorkflowBenchmarkSafetyTest(unittest.TestCase):
+    def test_invalid_prune_policy_does_not_create_output(self):
+        for flags in (("--prune-max-unused-bytes", "-1"), ("--prune-max-unused-bytes", "0", "--prune-older-than", "1ns")):
+            with self.subTest(flags=flags), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary) / "result.json"
+                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                    benchmark.main(["--fixture", "npm", "--output", str(output), *flags])
+                self.assertFalse(output.exists())
+
     def test_edit_refuses_traversal_and_git_administration(self):
         for path in ("../outside", "/outside", "a/../../outside", ".git/config", "nested/.git/index", ".", "a\\..\\outside"):
             with self.subTest(path=path), self.assertRaises(ValueError):
@@ -102,6 +110,7 @@ class WorkflowBenchmarkSafetyTest(unittest.TestCase):
             self.assertEqual(code, 0, output.read_text())
             report = json.loads(output.read_text())
             self.assertEqual(report["status"], "ok")
+            self.assertEqual(report["prune_policy"], {"older_than": "1ns"})
             self.assertEqual(subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source), before)
             self.assertEqual(subprocess.check_output(["git", "status", "--porcelain"], cwd=source), b"")
             self.assertEqual((source / "source.txt").read_text(), "baseline\n")

@@ -126,6 +126,39 @@ It then creates all worktrees, verifies the initial builds/tests, makes
 per-workspace source edits and verifies again, changes dependencies and verifies
 again, removes the dirty worktrees, and prunes caches.
 
+The default cleanup uses `prune --older-than 1ns` so unreferenced cache entries
+are reclaimed immediately. Use `--prune-older-than 168h` to measure normal
+default retention, or `--prune-max-unused-bytes BYTES` to measure an explicit
+unused-cache budget. These options are mutually exclusive; the budget accepts
+nonnegative integer logical regular-file bytes, including zero. Reports retain
+the chosen policy. Comparing different retention policies does not establish a
+copying-speed improvement or imply that age-based pruning cannot reclaim the
+same unused cache.
+
+`scripts/benchmark-cache-budget.py` runs the same offline npm source through
+Git-plus-environment-copy controls and before/after Cambium binaries, then checks
+multiple unused cache generations and checkpoint replay with a pinned cache.
+It adds a documented deterministic warm cache payload to the fixture so physical
+retention is observable. The payload is checked by actual builds and the trusted
+environment validator. This is a synthetic storage/correctness workload, not a
+substitute for the maintained-project or APFS matrix.
+
+```bash
+python3 scripts/benchmark-cache-budget.py \
+  --before-bin /path/to/baseline-cambium \
+  --after-bin /path/to/final-cambium \
+  --before-source-commit FULL_BASELINE_COMMIT \
+  --after-source-commit FULL_FINAL_COMMIT \
+  --output dist/cache-budget.json
+```
+
+The driver refuses existing report paths and records exact binary and script
+hashes, source commit/tree, all commands, raw workflow reports, signed physical
+allocation observations, and selective-prune results. Its replay check removes
+the original workspaces and the primary environment before forking the pinned
+checkpoint and rerunning the build/tests. It leaves referenced snapshots outside
+the budget and makes no claim that an unused-cache limit removes a pinned copy.
+
 Reports contain:
 
 - Exact recipe, upstream provenance, resolved commit/tree, Cambium binary and

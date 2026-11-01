@@ -112,6 +112,10 @@ exercises both against real git.
 
 ## More
 
+- **Cache retention:** `cambium prune --max-unused-bytes 2GiB` bounds retained
+  unused cache content while preserving live workspaces and checkpoints. Add
+  `--dry-run --json` to inspect the plan; use `0` to remove all unused entries.
+  See [cache retention](docs/CACHE_RETENTION.md) for logical-byte accounting.
 - **Checkpoints:** `cambium checkpoint` / `cambium fork` snapshot uncommitted
   work and branch from it without visible commits.
   See [structural sharing](docs/STRUCTURAL_SHARING.md).

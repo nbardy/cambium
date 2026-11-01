@@ -906,7 +906,8 @@ func (a *App) runRecover(ctx context.Context, args []string) error {
 func (a *App) runPrune(ctx context.Context, args []string) error {
 	set := a.flagSet("prune")
 	olderThanValue := set.String("older-than", "168h", "minimum cache idle age")
-	dryRun := set.Bool("dry-run", false, "show old unreferenced caches without removing them")
+	maxUnusedValue := set.String("max-unused-bytes", "", "maximum unused cache bytes, e.g. 2GiB or 0; excludes referenced caches")
+	dryRun := set.Bool("dry-run", false, "show selected unreferenced caches without removing them")
 	jsonOutput := set.Bool("json", false, "emit JSON")
 	if err := set.Parse(args); err != nil {
 		return err
@@ -914,15 +915,40 @@ func (a *App) runPrune(ctx context.Context, args []string) error {
 	if set.NArg() != 0 {
 		return errors.New("usage: cambium prune [flags]")
 	}
-	olderThan, err := time.ParseDuration(*olderThanValue)
-	if err != nil {
-		return fmt.Errorf("parse --older-than: %w", err)
+	var ageSet, budgetSet bool
+	set.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "older-than":
+			ageSet = true
+		case "max-unused-bytes":
+			budgetSet = true
+		}
+	})
+	if ageSet && budgetSet {
+		return errors.New("--older-than and --max-unused-bytes are mutually exclusive")
+	}
+	options := workspace.CachePruneOptions{DryRun: *dryRun}
+	if budgetSet {
+		limit, err := parseCacheByteLimit(*maxUnusedValue)
+		if err != nil {
+			return fmt.Errorf("parse --max-unused-bytes: %w", err)
+		}
+		options.MaxUnusedBytes = &limit
+	} else {
+		olderThan, err := time.ParseDuration(*olderThanValue)
+		if err != nil {
+			return fmt.Errorf("parse --older-than: %w", err)
+		}
+		if olderThan <= 0 {
+			return errors.New("--older-than must be positive")
+		}
+		options.OlderThan = olderThan
 	}
 	manager, err := a.manager(ctx)
 	if err != nil {
 		return err
 	}
-	result, err := manager.PruneCaches(ctx, olderThan, *dryRun)
+	result, err := manager.PruneCachesWithOptions(ctx, options)
 	if err != nil {
 		return err
 	}
@@ -937,6 +963,13 @@ func (a *App) runPrune(ctx context.Context, args []string) error {
 		fmt.Fprintf(a.Stdout, "%s\t%s\t%s\t%s\n", verb, entry.Kind, entry.ID, entry.Age.Round(time.Second))
 	}
 	fmt.Fprintf(a.Stdout, "protected: %d\nretained: %d\n", result.Protected, result.Retained)
+	if budgetSet {
+		fmt.Fprintf(a.Stdout, "unused cache budget: %d logical bytes\n", *options.MaxUnusedBytes)
+	}
+	fmt.Fprintf(a.Stdout, "logical bytes: protected=%d eligible=%d retained=%d selected=%d removed=%d\n", result.ProtectedBytes, result.EligibleBytes, result.RetainedBytes, result.SelectedBytes, result.RemovedBytes)
+	if *dryRun {
+		fmt.Fprintln(a.Stdout, "dry run: retained bytes describe the plan; no caches were removed")
+	}
 	return nil
 }
 
@@ -1084,7 +1117,7 @@ Usage:
   cambium remove [--force] [--delete-branch] NAME
   cambium gc [flags]
   cambium recover [--dry-run] [--json]
-  cambium prune [--older-than DURATION] [--dry-run] [--json]
+  cambium prune [--older-than DURATION | --max-unused-bytes SIZE] [--dry-run] [--json]
   cambium doctor [--repair] [--json]
   cambium benchmark [flags]
   cambium version
