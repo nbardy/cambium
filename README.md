@@ -137,5 +137,8 @@ Historical APFS measurements are described in the architecture document; they
 do not establish post-build savings for another repository. Published results
 and their limitations belong with the benchmark recipe and raw report.
 
-Develop with `make check test-race system-test`. Apache-2.0, Go, no runtime
-dependencies.
+Develop with `make check test-race system-test`. Validation and benchmarks run
+locally; this repository has no GitHub Actions workflows. See the full
+[validation gate](docs/VALIDATION.md) and [manual release process](docs/RELEASING.md).
+
+Apache-2.0, Go, no runtime dependencies.

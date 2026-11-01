@@ -2,7 +2,8 @@
 
 ## Correctness suite
 
-The release gate is:
+Validation runs locally; the repository has no GitHub Actions workflows. Install
+Git, Go 1.23+, Python 3.10+, and Node/npm before running the release gate:
 
 ```bash
 make check
@@ -36,13 +37,21 @@ The current regression suite also covers real offline npm installs with dirty
 manifests and clean-but-stale installations, missing-cache upgrades, explicit
 revalidation, linked-worktree revision context, recovery overlapping live
 creation/removal, retained local work, and removal from the invoking worktree.
-The npm regression requires Node/npm; CI installs them explicitly. A missing
-runtime is a test skip, not a passed npm integration check.
+The npm regression requires a local Node/npm installation. A missing runtime
+is a test skip, not a passed npm integration check. Binary releases are built
+and published through the [manual release process](RELEASING.md).
 
 ## APFS proof
 
-The repository includes a macOS CI job and `make benchmark-apfs`. The matrix
-compares equal-semantics rows where possible:
+Run the synthetic allocation check locally on an APFS Mac:
+
+```bash
+make benchmark-apfs
+```
+
+This builds Cambium, writes `dist/benchmark-apfs.json`, and checks the recorded
+APFS clone mode and physical allocation. The matrix compares equal-semantics
+rows where possible:
 
 ```text
 plain Git worktree
@@ -59,6 +68,11 @@ to claim CoW savings.
 
 The comparison tools are optional. A missing or incompatible binary is reported
 as skipped rather than replaced by an invented result.
+
+Preserve the raw report with the Cambium source commit, toolchain versions, and
+machine/filesystem details. Also run the real build/edit recipes below and
+publish their reports and command logs manually. The synthetic check alone
+does not establish post-build savings.
 
 ## Current evidence boundary
 

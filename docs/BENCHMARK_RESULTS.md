@@ -112,8 +112,9 @@ loader. Use the same writable npm cache during preparation and measurement.
 - clsx is a small library. Neither workload establishes monorepo-scale
   behavior, parallel throughput, or broad dependency-change performance.
 - APFS post-build allocation and timings remain unmeasured in these artifacts.
-  The macOS workflow requires an explicit `cambium-cow` row and uploads raw
-  evidence; a configured CI job is not a completed measurement.
+  Run the [local Mac recipes](WORKFLOW_BENCHMARKS.md) with an explicit
+  `cambium-cow` row and publish their raw reports and command logs to supply
+  that evidence.
 - Comparison tools such as simgit and cow are not part of these two-method
   workflow results. No relative claim about them follows from this run.
 
