@@ -1,0 +1,178 @@
+{
+  "artifacts": [
+    {
+      "archive_sha256": "c9ab8b7210bfb0467bed9420e9f2bbf50d38941f142b94a55ba0d17769cbcd88",
+      "command_count": 55,
+      "command_log_count": 55,
+      "log_archive": "cache-budget-logs.tar.gz",
+      "report": "cache-budget.json",
+      "report_sha256": "b3847fe7119b38667537c668ea822074dbc521e99c59a5f63ce4a3fd4acd8e00"
+    },
+    {
+      "archive_sha256": "f20564e9f2e7b5a905dd86d9e7388378d17458d554931be2941152fe92e3b0e8",
+      "command_count": 103,
+      "command_log_count": 103,
+      "log_archive": "cache-budget-before-logs.tar.gz",
+      "report": "cache-budget-before.json",
+      "report_sha256": "b41bea282cfb23c181b7a566ac80ddc5dc5bf63e36d8e2fbccc6d8ee80f04cae"
+    },
+    {
+      "archive_sha256": "9c13299f3161a3f2d7b87ce5e9cf89ab11898e6b8ca1dd48158624b3f3c8e18e",
+      "command_count": 103,
+      "command_log_count": 103,
+      "log_archive": "cache-budget-after-logs.tar.gz",
+      "report": "cache-budget-after.json",
+      "report_sha256": "09345c8a9fcdbb3fceb5b823043d3aad11aa16e0c2aa244134c193ff06250428"
+    }
+  ],
+  "binaries": {
+    "after": {
+      "go_build_info": [
+        "/workspace/scratch/6128bae5a461/cache-budget-verification/cambium-after: go1.23.2",
+        "\tpath\tgithub.com/nbardy/cambium/cmd/cambium",
+        "\tmod\tgithub.com/nbardy/cambium\t(devel)\t",
+        "\tbuild\t-buildmode=exe",
+        "\tbuild\t-compiler=gc",
+        "\tbuild\t-trimpath=true",
+        "\tbuild\tCGO_ENABLED=1",
+        "\tbuild\tGOARCH=amd64",
+        "\tbuild\tGOOS=linux",
+        "\tbuild\tGOAMD64=v1"
+      ],
+      "path": "/workspace/scratch/6128bae5a461/cache-budget-verification/cambium-after",
+      "sha256": "c565fb0468428b28b8e108764c778ccfd67c66306fd49e1bf71b35bad6846c65",
+      "source_commit": "2c7e815eb21b99c5f425895feaec929224e14ec5",
+      "source_tree": "00c8844abbab5c4321dfc0d2c4e57209e0863157"
+    },
+    "before": {
+      "go_build_info": [
+        "/workspace/scratch/6128bae5a461/cache-budget-verification/cambium-before-7c3d9a8: go1.23.2",
+        "\tpath\tgithub.com/nbardy/cambium/cmd/cambium",
+        "\tmod\tgithub.com/nbardy/cambium\t(devel)\t",
+        "\tbuild\t-buildmode=exe",
+        "\tbuild\t-compiler=gc",
+        "\tbuild\t-trimpath=true",
+        "\tbuild\tCGO_ENABLED=1",
+        "\tbuild\tGOARCH=amd64",
+        "\tbuild\tGOOS=linux",
+        "\tbuild\tGOAMD64=v1"
+      ],
+      "path": "/workspace/scratch/6128bae5a461/cache-budget-verification/cambium-before-7c3d9a8",
+      "sha256": "f28f64e9fd52ec674ca3e3c991204c109ac3a38309ab8fa44b1cdadcdc268ca4",
+      "source_commit": "7c3d9a80b913f76ea014517a1661d17b0f0b7d40",
+      "source_tree": "ac1dc5aa5aa19408ac623364bcb09e8dcffe693f"
+    }
+  },
+  "build_flags": [
+    "-trimpath",
+    "-buildvcs=false"
+  ],
+  "fixture": {
+    "recipe": {
+      "allow_policy_commands": true,
+      "dependency_edits": [
+        {
+          "new": "file:./packages/helper-v2",
+          "old": "file:./packages/helper-v1",
+          "path": "package.json"
+        },
+        {
+          "new": "dependency-v2",
+          "old": "dependency-v1",
+          "path": "test.mjs"
+        }
+      ],
+      "dependency_prepare": [
+        [
+          "npm",
+          "install",
+          "--offline",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        [
+          "node",
+          "seed-cache.mjs"
+        ]
+      ],
+      "environment_paths": [
+        "node_modules"
+      ],
+      "name": "offline-npm-cache-budget",
+      "prepare": [
+        [
+          "npm",
+          "ci",
+          "--offline",
+          "--ignore-scripts",
+          "--no-audit",
+          "--no-fund"
+        ],
+        [
+          "node",
+          "seed-cache.mjs"
+        ]
+      ],
+      "provenance": {
+        "description": "Real local npm dependency installation, build and Node tests, with a deterministic warm node_modules/.cache payload checked by the build and trusted validator. Synthetic retention workload, not a maintained-project or monorepo performance claim.",
+        "type": "offline-npm-storage-fixture",
+        "warm_cache_payload_bytes": 16777216
+      },
+      "ref": "HEAD",
+      "source": "/tmp/cambium-cache-budget-a43jwysc/source",
+      "source_edits": [
+        {
+          "new": "`agent-{index}:",
+          "old": "`baseline:",
+          "path": "src.mjs"
+        },
+        {
+          "new": "'agent-{index}:dependency-v1'",
+          "old": "'baseline:dependency-v1'",
+          "path": "test.mjs"
+        }
+      ],
+      "verify": [
+        [
+          "npm",
+          "run",
+          "build"
+        ],
+        [
+          "npm",
+          "test"
+        ]
+      ],
+      "version": 1
+    },
+    "source_commit": "dc6c86d44d8b34863a14dd268d4b48b10c972891",
+    "source_note": "Generated once by the committed driver; both workflow runs used exactly this commit/tree. Commit timestamps vary when reproducing the disposable fixture.",
+    "source_tree": "d4610274bd283acbabae8412fab0aafc7dda9a80"
+  },
+  "harnesses": {
+    "scripts/benchmark-cache-budget.py": {
+      "sha256": "7fd290d0691e48c359f079493fcf65d7992dd407e119f2f62b7f7ba84b88504d",
+      "source_commit": "2c7e815eb21b99c5f425895feaec929224e14ec5"
+    },
+    "scripts/workflow-benchmark.py": {
+      "sha256": "dac7dd192a84d58bfb4746aae51176cd90a8b050e786982d9e4a79ef0885c6bf",
+      "source_commit": "2c7e815eb21b99c5f425895feaec929224e14ec5"
+    }
+  },
+  "isolation_note": "Root performed remote GitHub API/review reads only during the measurement window; dedicated host isolation is not claimed.",
+  "local_build_and_test_jobs_stopped_during_measurement": true,
+  "measurement_completed_at": "2026-11-01T04:38:54.340340+00:00",
+  "measurement_started_at": "2026-11-01T04:38:17.625940+00:00",
+  "published_source_equivalence": {
+    "commit": "2a16714b9e8baa68e076317308b66eb40d482f78",
+    "pull_request": "https://github.com/nbardy/cambium/pull/33",
+    "status_at_verification": "published PR source, not yet merged",
+    "tree": "00c8844abbab5c4321dfc0d2c4e57209e0863157",
+    "url": "https://github.com/nbardy/cambium/commit/2a16714b9e8baa68e076317308b66eb40d482f78",
+    "verification": "GitHub commit API tree matches measured integration candidate tree exactly; no additional binary rebuild was required."
+  },
+  "toolchain": "go version go1.23.2 linux/amd64",
+  "verified_at": "2026-11-01T04:40:25.521244+00:00",
+  "version": 1
+}
