@@ -46,11 +46,11 @@ For orchestrators that must never lose agent work:
 # Remove only if nothing is lost. Exit 3 + {"removed":false,"reason":...} on refusal.
 # Reasons, in order: unreadable, in-progress, branch-changed, dirty, unmerged,
 # salvage-failed, output-conflict, output-unreadable.
-cambium remove --safe --json \
-  --require-merged main \              # refuse unless HEAD is an ancestor of main
-  --harvest output \                   # move git-ignored output/ files to the primary checkout
-  --salvage-ref refs/salvage/agent \   # snapshot a dirty tree (incl. untracked) instead of refusing
-  agent-auth
+# --require-merged: refuse unless HEAD is an ancestor of main
+# --harvest: move git-ignored output/ files to the primary checkout first
+# --salvage-ref: snapshot a dirty tree (incl. untracked) instead of refusing
+cambium remove --safe --json --require-merged main --harvest output \
+  --salvage-ref refs/salvage/agent agent-auth
 
 # Replace a branch with a tag verified on the remote, then compare-and-delete it.
 # Exit 3 + {"archived":false,"reason":...}: checked-out, missing, tag-conflict,
