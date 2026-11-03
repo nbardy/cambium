@@ -26,7 +26,7 @@ import (
 	"github.com/nbardy/cambium/internal/workspace"
 )
 
-var Version = "0.5.0"
+var Version = "0.6.0"
 
 type App struct {
 	Stdout io.Writer
@@ -83,6 +83,8 @@ func (a *App) Run(ctx context.Context, args []string) int {
 		err = a.runEnvironment(ctx, args[1:])
 	case "remove", "rm":
 		err = a.runRemove(ctx, args[1:])
+	case "archive":
+		err = a.runArchive(ctx, args[1:])
 	case "run":
 		code, err = a.runCommand(ctx, args[1:])
 	case "gc":
@@ -100,6 +102,11 @@ func (a *App) Run(ctx context.Context, args []string) int {
 	}
 	if err != nil {
 		fmt.Fprintf(a.Stderr, "error: %v\n", err)
+		var refusal *workspace.Refusal
+		if errors.As(err, &refusal) {
+			// Exit 3: a guard deliberately preserved the target; nothing was deleted.
+			code = 3
+		}
 		if code == 0 {
 			code = 1
 		}
@@ -744,21 +751,119 @@ func (a *App) runInspect(ctx context.Context, args []string) error {
 func (a *App) runRemove(ctx context.Context, args []string) error {
 	set := a.flagSet("remove")
 	force := set.Bool("force", false, "discard uncommitted changes")
+	safe := set.Bool("safe", false, "remove only after the guard ladder proves nothing is lost (exit 3 on refusal)")
 	deleteBranch := set.Bool("delete-branch", false, "delete the workspace branch")
+	jsonOutput := set.Bool("json", false, "emit JSON (with --safe)")
+	requireMerged := set.String("require-merged", "", "with --safe: refuse unless the workspace HEAD is an ancestor of REF")
+	harvest := set.String("harvest", "", "with --safe: move git-ignored files under DIR into the primary checkout first")
+	salvageRef := set.String("salvage-ref", "", "with --safe: snapshot a dirty workspace as a commit at REF (refs/...) instead of refusing")
 	if err := set.Parse(args); err != nil {
 		return err
 	}
 	if set.NArg() != 1 {
-		return errors.New("usage: cambium remove [flags] NAME")
+		return errors.New("usage: cambium remove [--force | --safe [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF]] [--delete-branch] NAME")
 	}
 	manager, err := a.manager(ctx)
 	if err != nil {
 		return err
 	}
-	if err := manager.Remove(ctx, set.Arg(0), *force, *deleteBranch); err != nil {
+	if !*safe {
+		if *jsonOutput || *requireMerged != "" || *harvest != "" || *salvageRef != "" {
+			return errors.New("--json, --require-merged, --harvest and --salvage-ref require --safe")
+		}
+		if err := manager.Remove(ctx, set.Arg(0), *force, *deleteBranch); err != nil {
+			return err
+		}
+		fmt.Fprintln(a.Stdout, set.Arg(0))
+		return nil
+	}
+	if *force {
+		return errors.New("--safe and --force are mutually exclusive")
+	}
+	if err := validateHarvestDir(*harvest); err != nil {
 		return err
 	}
-	fmt.Fprintln(a.Stdout, set.Arg(0))
+	if err := validateSalvageRef(ctx, a.runner(), *salvageRef); err != nil {
+		return err
+	}
+	result, err := manager.SafeRemove(ctx, set.Arg(0), workspace.SafeRemoveOptions{
+		DeleteBranch: *deleteBranch, RequireMerged: *requireMerged, HarvestDir: *harvest, SalvageRef: *salvageRef,
+	})
+	var refusal *workspace.Refusal
+	if errors.As(err, &refusal) && *jsonOutput {
+		_ = writeJSON(a.Stdout, map[string]any{"removed": false, "reason": refusal.Reason, "detail": refusal.Detail})
+	}
+	if err != nil {
+		return err
+	}
+	if *jsonOutput {
+		return writeJSON(a.Stdout, result)
+	}
+	fmt.Fprintf(a.Stdout, "%s\nsalvage ref: %s\nharvested: moved=%d deduplicated=%d\n", set.Arg(0), result.SalvageRef, result.Harvested.Moved, result.Harvested.Deduplicated)
+	return nil
+}
+
+func (a *App) runArchive(ctx context.Context, args []string) error {
+	set := a.flagSet("archive")
+	jsonOutput := set.Bool("json", false, "emit JSON")
+	remote := set.String("remote", "origin", "remote that must hold the tag before the branch is deleted")
+	if err := set.Parse(args); err != nil {
+		return err
+	}
+	if set.NArg() != 2 {
+		return errors.New("usage: cambium archive [--json] [--remote origin] BRANCH TAG")
+	}
+	repository, err := gitx.Discover(ctx, a.Cwd, a.runner())
+	if err != nil {
+		return err
+	}
+	branch, tag := set.Arg(0), set.Arg(1)
+	if err := repository.ValidateBranch(ctx, branch); err != nil {
+		return err
+	}
+	if _, err := repository.RunCommon(ctx, nil, "check-ref-format", "refs/tags/"+tag); err != nil {
+		return fmt.Errorf("invalid tag name %q", tag)
+	}
+	result, err := workspace.Archive(ctx, repository, branch, tag, *remote)
+	var refusal *workspace.Refusal
+	if errors.As(err, &refusal) && *jsonOutput {
+		_ = writeJSON(a.Stdout, map[string]any{"archived": false, "reason": refusal.Reason, "detail": refusal.Detail})
+	}
+	if err != nil {
+		return err
+	}
+	if *jsonOutput {
+		return writeJSON(a.Stdout, result)
+	}
+	fmt.Fprintf(a.Stdout, "archived %s at %s as tag %s (already=%t)\n", branch, result.SHA, result.Tag, result.Already)
+	return nil
+}
+
+// validateHarvestDir keeps harvest inside the repository: DIR is a relative
+// path that cannot climb out of the workspace or the primary checkout.
+func validateHarvestDir(dir string) error {
+	if dir == "" {
+		return nil
+	}
+	clean := filepath.Clean(dir)
+	if filepath.IsAbs(clean) || clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
+		return fmt.Errorf("--harvest must be a relative directory inside the repository, got %q", dir)
+	}
+	return nil
+}
+
+// validateSalvageRef requires a full ref name under refs/ so the snapshot can
+// never land in .git as a stray top-level ref file.
+func validateSalvageRef(ctx context.Context, runner execx.Runner, ref string) error {
+	if ref == "" {
+		return nil
+	}
+	if !strings.HasPrefix(ref, "refs/") {
+		return fmt.Errorf("--salvage-ref must be a full ref under refs/, got %q", ref)
+	}
+	if _, err := runner.Run(ctx, execx.Command{Name: "git", Args: []string{"check-ref-format", ref}}); err != nil {
+		return fmt.Errorf("invalid --salvage-ref %q", ref)
+	}
 	return nil
 }
 
@@ -1115,6 +1220,8 @@ Usage:
   cambium reconcile [--dry-run] [--json]
   cambium env <explain|validate|capture> WORKSPACE
   cambium remove [--force] [--delete-branch] NAME
+  cambium remove --safe [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF] [--delete-branch] NAME
+  cambium archive [--json] [--remote origin] BRANCH TAG
   cambium gc [flags]
   cambium recover [--dry-run] [--json]
   cambium prune [--older-than DURATION | --max-unused-bytes SIZE] [--dry-run] [--json]

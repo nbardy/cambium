@@ -38,6 +38,26 @@ cambium remove --delete-branch agent-auth     # when the agent is done
 cambium prune                                 # drop old, unused caches
 ```
 
+## Guarded removal and archiving
+
+For orchestrators that must never lose agent work:
+
+```bash
+# Remove only if nothing is lost. Exit 3 + {"removed":false,"reason":...} on refusal.
+# Reasons, in order: unreadable, in-progress, branch-changed, dirty, unmerged,
+# salvage-failed, output-conflict, output-unreadable.
+cambium remove --safe --json \
+  --require-merged main \              # refuse unless HEAD is an ancestor of main
+  --harvest output \                   # move git-ignored output/ files to the primary checkout
+  --salvage-ref refs/salvage/agent \   # snapshot a dirty tree (incl. untracked) instead of refusing
+  agent-auth
+
+# Replace a branch with a tag verified on the remote, then compare-and-delete it.
+# Exit 3 + {"archived":false,"reason":...}: checked-out, missing, tag-conflict,
+# push-unverified, moved. Rerunning after success returns {"already":true}.
+cambium archive --json --remote origin agent/auth archive/agent-auth
+```
+
 ## How it works
 
 - **Tracked files** come from a per-commit baseline under `.git/cambium/`,

@@ -1,6 +1,22 @@
 # Changelog
 
-## Unreleased — workspace correctness and build evidence
+## 0.6.0 — guarded removal and verified archiving
+
+### Added
+
+- `cambium remove --safe [--json] [--require-merged REF] [--harvest DIR]
+  [--salvage-ref REF]`: a guard ladder (unreadable, in-progress,
+  branch-changed, dirty, unmerged, salvage-failed, output-conflict,
+  output-unreadable) that refuses with exit 3 and a typed JSON reason instead
+  of deleting. `--salvage-ref` snapshots tracked + untracked files through a
+  private index; `--harvest` moves git-ignored output to the primary checkout
+  (ported from oompa after swarm 455987ea lost paid GPU run output,
+  2026-10-24). `--safe` and `--force` are mutually exclusive.
+- `cambium archive [--json] [--remote origin] BRANCH TAG`: tags the branch
+  tip, pushes the tag, verifies it with `ls-remote`, then deletes the branch
+  with compare-and-delete. Fails closed; idempotent on rerun.
+
+## Unreleased (folded into 0.6.0) — workspace correctness and build evidence
 
 ### Fixed
 
