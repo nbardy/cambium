@@ -70,6 +70,10 @@ target is only a seed; `cargo build` or `cargo test` still decides what can be
 reused. Measure physical disk usage after divergent builds as well as after
 workspace creation.
 
+The default is conservative because a copied `target` makes Cargo treat local
+crates as fresh. To share third-party build output across commits, set the
+`cargo-target` policy for the path; see [PATH_POLICIES.md](PATH_POLICIES.md).
+
 ## Clojure and ClojureScript
 
 Works with Clojure CLI, Leiningen, Babashka, shadow-cljs, Figwheel, and

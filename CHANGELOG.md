@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0 — share third-party Cargo build output between workspaces
+
+### Added
+
+- `policy = "cargo-target"` for a Cargo `target` directory. The layer keeps
+  Cargo's compile cache and removes the freshness records of every package
+  `Cargo.lock` lists without a `source`, plus incremental state, final
+  binaries and anything else stored under `target`. A new workspace reuses
+  third-party crates and rebuilds its own. A plain `seed` of `target` reuses
+  local crates too, which runs code compiled in another checkout with that
+  checkout's paths compiled in. The seed is not captured while a build holds
+  Cargo's build lock. Measured on a 432-package workspace: 0 third-party
+  crates recompiled, 66 seconds, 0.26 GiB of new disk for a 7.4 GiB build
+  directory.
+
 ## 0.6.1 — forget workspaces whose worktree is gone
 
 ### Added
