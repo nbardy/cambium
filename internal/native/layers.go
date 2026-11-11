@@ -101,7 +101,7 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 				return nil, err
 			}
 			layers = append(layers, layer)
-		case config.LayerClone, config.LayerSeed:
+		case config.LayerClone, config.LayerSeed, config.LayerCargoTarget:
 			// Only snapshot the primary checkout if its source inputs describe the
 			// same environment receipt as the requested target tree.
 			if sourceCommitErr != nil {
@@ -226,6 +226,22 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 					result.Unverified = append(result.Unverified, rule.Path)
 				}
 			}
+		case config.LayerCargoTarget:
+			if !layer.Present {
+				break
+			}
+			if err := ensureAbsent(destination); err != nil {
+				return LayerApplyResult{}, err
+			}
+			if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {
+				return LayerApplyResult{}, err
+			}
+			if err := materializeCargoTarget(ctx, layer.Payload, destination, cloner, requireCoW); err != nil {
+				return LayerApplyResult{}, fmt.Errorf("materialize layer %s: %w", rule.Path, err)
+			}
+			if err := runRuleCommand(ctx, project, workspacePath, rule.Validate, "validate", rule.Path); err != nil {
+				return LayerApplyResult{}, err
+			}
 		case config.LayerRecreate:
 			if err := removeIfPresent(destination); err != nil {
 				return LayerApplyResult{}, err
@@ -314,7 +330,7 @@ func CaptureWorkspaceLayers(ctx context.Context, project *project.Project, works
 			return nil, err
 		}
 		switch rule.Mode {
-		case config.LayerClone, config.LayerSeed:
+		case config.LayerClone, config.LayerSeed, config.LayerCargoTarget:
 			matches, err := liveInputsMatch(ctx, project, workspacePath, sourceRef, rule, inputs)
 			if err != nil {
 				return nil, err
@@ -548,10 +564,13 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 		if err := runRuleCommand(ctx, project, sourceRoot, rule.Validate, "validate", rule.Path); err != nil {
 			return LayerSnapshot{}, err
 		}
-		validated = len(rule.Validate) > 0
-		if _, err := cloner.ClonePath(ctx, source, payload, requireCoW); err != nil {
+		present, err = snapshotLayerPayload(ctx, rule, source, payload, cloner, requireCoW)
+		if err != nil {
 			return LayerSnapshot{}, fmt.Errorf("snapshot layer %s: %w", rule.Path, err)
 		}
+		// A snapshot that was declined (a busy Cargo target) published nothing
+		// the validation could vouch for.
+		validated = present && len(rule.Validate) > 0
 		matches, err := liveInputsMatch(ctx, project, sourceRoot, sourceRef, rule, inputs)
 		if err != nil {
 			return LayerSnapshot{}, err
@@ -818,7 +837,7 @@ func loadLayer(root string) (LayerSnapshot, bool) {
 	}
 	layer.Rule.Builtin = layer.RuleBuiltin
 	layer.Rule.Origin = layer.RuleOrigin
-	if layer.Present && (layer.Rule.Mode == config.LayerClone || layer.Rule.Mode == config.LayerSeed) {
+	if layer.Present && (layer.Rule.Mode == config.LayerClone || layer.Rule.Mode == config.LayerSeed || layer.Rule.Mode == config.LayerCargoTarget) {
 		payloadName := "payload"
 		if layer.Payload != "" {
 			payloadName = filepath.Base(layer.Payload)

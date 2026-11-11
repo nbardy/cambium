@@ -63,7 +63,7 @@ root**, so a branch carries the policy that matches its own build layout.
 
 - `name`
 - `path` (a concrete relative path; globs are rejected)
-- `policy`: `clone`, `seed`, `recreate`, `share`, `empty`, or `skip`
+- `policy`: `clone`, `seed`, `cargo-target`, `recreate`, `share`, `empty`, or `skip`
 - `inputs` (globs allowed)
 - `prepare` and `validate` as direct argv arrays
 - `allow_unignored`

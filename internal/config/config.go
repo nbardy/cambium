@@ -37,12 +37,15 @@ func LocalPath(commonGitDir string) string {
 type LayerMode string
 
 const (
-	LayerClone    LayerMode = "clone"
-	LayerSeed     LayerMode = "seed"
-	LayerRecreate LayerMode = "recreate"
-	LayerShare    LayerMode = "share"
-	LayerEmpty    LayerMode = "empty"
-	LayerSkip     LayerMode = "skip"
+	LayerClone LayerMode = "clone"
+	LayerSeed  LayerMode = "seed"
+	// LayerCargoTarget seeds a Cargo target directory with third-party build
+	// output only; see internal/native/cargo_target.go.
+	LayerCargoTarget LayerMode = "cargo-target"
+	LayerRecreate    LayerMode = "recreate"
+	LayerShare       LayerMode = "share"
+	LayerEmpty       LayerMode = "empty"
+	LayerSkip        LayerMode = "skip"
 )
 
 // LayerRule is a generic filesystem policy. Cambium deliberately does not
@@ -212,7 +215,7 @@ func ValidateRule(rule LayerRule) error {
 		return errors.New("path may not include .git")
 	}
 	switch rule.Mode {
-	case LayerClone, LayerSeed, LayerRecreate, LayerShare, LayerEmpty, LayerSkip:
+	case LayerClone, LayerSeed, LayerCargoTarget, LayerRecreate, LayerShare, LayerEmpty, LayerSkip:
 	default:
 		return fmt.Errorf("unsupported mode %q", rule.Mode)
 	}

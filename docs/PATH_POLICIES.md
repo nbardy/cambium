@@ -53,6 +53,64 @@ Good fits:
 
 A seed never becomes a correctness authority.
 
+### `cargo-target`
+
+Seed a Cargo `target` directory with third-party build output only.
+
+A plain `seed` of `target` is unsound across checkouts. Cargo finds every unit
+fresh, so the new workspace runs code compiled from the other checkout's
+sources, with that checkout's `CARGO_MANIFEST_DIR` compiled in. Registry and
+git packages do not have this problem: their sources are immutable and live
+under `CARGO_HOME`, outside any checkout.
+
+`cargo-target` therefore keeps Cargo's compile cache (`.fingerprint`, `deps`
+and `build` in each profile directory, for the host and for every target
+triple) and removes:
+
+- the freshness record of every package that `Cargo.lock` lists without a
+  `source`: workspace members and path dependencies. Cargo rebuilds these in
+  the workspace and reuses the rest;
+- `incremental`, final binaries, `examples`, and everything a project stores
+  beside Cargo's own directories (evidence, timing reports, test archives).
+
+`Cargo.lock` is read from beside the target directory. It is read twice: from
+the source workspace when the seed is captured, and from the new workspace when
+the seed is installed, so a package that became a path dependency since the
+capture is rebuilt. With no readable `Cargo.lock` every record is removed and
+the workspace builds cold. An unrecognized directory layout is emptied for the
+same reason. Cambium never tells Cargo that something is fresh; it only
+withholds records, so the worst outcome is a rebuild.
+
+A target directory is not captured while a build holds Cargo's build lock. The
+layer is published as absent and the next capture or workspace creation
+upgrades it.
+
+```toml
+[[path]]
+path = "target"
+policy = "cargo-target"
+inputs = ["Cargo.lock", "rust-toolchain.toml"]
+```
+
+Choose `inputs` for how often the seed should refresh. With `Cargo.lock` as an
+input, a dependency change starts a new seed, captured from the invoking
+workspace the next time one is created. With only the toolchain file, one seed
+is reused across dependency changes and Cargo rebuilds what changed. Without
+`inputs` the receipt is tied to one commit and other commits get no seed.
+
+Limits:
+
+- Builds must use the same Cargo configuration to share units. Different
+  `RUSTFLAGS`, profiles or feature selections produce different unit hashes and
+  compile again (measured: a build without a project's `--cfg` flag reused
+  nothing).
+- A third-party crate that reads a workspace-relative environment variable at
+  compile time is still reused. Cargo does not track that either.
+
+Measured on a 432-package workspace (374 third-party, 58 local), 2026-11-12: a
+new workspace recompiled 0 third-party crates and 56 local ones in 66 seconds,
+and its 7.4 GiB build directory used 0.26 GiB of its own disk.
+
 ### `recreate`
 
 Remove any copied path and optionally run `prepare` plus `validate` in the new
