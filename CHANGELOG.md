@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.1 — cargo-target seeds grow with their source
+
+### Fixed
+
+- A `cargo-target` seed was captured once per receipt and never again, so
+  third-party crates built afterwards (another profile, or a dependency version
+  built after its lockfile bump was committed) compiled again in every new
+  workspace. The seed is now captured again when the invoking workspace holds a
+  third-party unit it lacks.
+- A source whose declared inputs no longer match the receipt could mark a
+  present cached payload absent. It now leaves the payload in place.
+
 ## 0.7.0 — share third-party Cargo build output between workspaces
 
 ### Added
