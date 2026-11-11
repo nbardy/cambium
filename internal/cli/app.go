@@ -26,7 +26,7 @@ import (
 	"github.com/nbardy/cambium/internal/workspace"
 )
 
-var Version = "0.6.0"
+var Version = "0.6.1"
 
 type App struct {
 	Stdout io.Writer
@@ -83,6 +83,8 @@ func (a *App) Run(ctx context.Context, args []string) int {
 		err = a.runEnvironment(ctx, args[1:])
 	case "remove", "rm":
 		err = a.runRemove(ctx, args[1:])
+	case "forget":
+		err = a.runForget(ctx, args[1:])
 	case "archive":
 		err = a.runArchive(ctx, args[1:])
 	case "run":
@@ -978,6 +980,44 @@ func (a *App) runGC(ctx context.Context, args []string) error {
 	return nil
 }
 
+func (a *App) runForget(ctx context.Context, args []string) error {
+	set := a.flagSet("forget")
+	missing := set.Bool("missing", false, "forget every workspace whose worktree is gone")
+	dryRun := set.Bool("dry-run", false, "report without deleting Cambium metadata")
+	jsonOutput := set.Bool("json", false, "emit JSON")
+	if err := set.Parse(args); err != nil {
+		return err
+	}
+	if *missing == (set.NArg() != 0) {
+		return errors.New("usage: cambium forget [--dry-run] [--json] <NAME... | --missing>")
+	}
+	manager, err := a.manager(ctx)
+	if err != nil {
+		return err
+	}
+	var result workspace.ForgetResult
+	if *missing {
+		result, err = manager.ForgetMissing(ctx, *dryRun)
+	} else {
+		result, err = manager.Forget(ctx, set.Args(), *dryRun)
+	}
+	// Records dropped before a refusal stay dropped, so report them either way.
+	if *jsonOutput {
+		if jsonErr := writeJSON(a.Stdout, result); jsonErr != nil {
+			return jsonErr
+		}
+		return err
+	}
+	action := "forgot"
+	if *dryRun {
+		action = "would-forget"
+	}
+	for _, change := range result.Forgotten {
+		fmt.Fprintf(a.Stdout, "%s\t%s\t%s\n", action, change.Name, change.Path)
+	}
+	return err
+}
+
 func (a *App) runRecover(ctx context.Context, args []string) error {
 	set := a.flagSet("recover")
 	dryRun := set.Bool("dry-run", false, "show recovery actions without applying them")
@@ -1221,6 +1261,7 @@ Usage:
   cambium env <explain|validate|capture> WORKSPACE
   cambium remove [--force] [--delete-branch] NAME
   cambium remove --safe [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF] [--delete-branch] NAME
+  cambium forget [--dry-run] [--json] <NAME... | --missing>
   cambium archive [--json] [--remote origin] BRANCH TAG
   cambium gc [flags]
   cambium recover [--dry-run] [--json]
