@@ -44,12 +44,36 @@ case "$action" in
     printf '%s\n' "$path"
     ;;
   remove)
-    path=$(printf '%s' "$input" | jq -r '.path')
+    # Claude Code sends the path as `worktree_path`. This script used to read
+    # `.path`, got "null", failed the git lookup below and exited 0, so every
+    # removal reported success while the directory and the Cambium record stayed
+    # (found 2026-11-11). Exit 0 tells Claude the worktree is gone, so only exit 0
+    # when it is.
+    path=$(printf '%s' "$input" | jq -r '.worktree_path // .path // empty')
+    if [ -z "$path" ]; then
+      echo "claude-worktree-hook: no worktree_path in hook input" >&2
+      exit 2
+    fi
     name=$(basename "$path")
-    # Already gone: nothing to unregister.
-    common=$(git -C "$path" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
+    if [ ! -e "$path" ]; then
+      # Something else deleted the directory. `cambium remove` cannot verify a
+      # worktree that is gone, and the leftover record keeps its baseline from
+      # being pruned, so drop Git's registration for the missing path (if it
+      # still has one) and the record. The repository comes from the session's
+      # directory; if that is gone too there is nothing to find it by.
+      cwd=$(printf '%s' "$input" | jq -r '.cwd // empty')
+      common=$(git -C "$cwd" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
+      cd "$(dirname "$common")"
+      git worktree remove "$path" >/dev/null 2>&1 || true
+      cambium forget "claude-$name" >&2 || true
+      exit 0
+    fi
+    # The directory exists. If it is not a worktree, fail so Claude keeps it.
+    common=$(git -C "$path" rev-parse --path-format=absolute --git-common-dir)
     repo=$(dirname "$common")
     cd "$repo"
+    # Without --force Cambium refuses a workspace with uncommitted work; the
+    # non-zero exit then makes Claude keep the worktree.
     cambium remove "claude-$name" >&2
     git branch -d "worktree-$name" >/dev/null 2>&1 || true
     ;;

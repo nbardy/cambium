@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.6.1 — forget workspaces whose worktree is gone
+
+### Added
+
+- `cambium forget [--dry-run] [--json] <NAME... | --missing>`: drops the
+  record of a workspace whose worktree no longer exists. When another tool
+  deletes a worktree, `remove`, `remove --force` and `gc` all refuse the
+  record ("worktree ownership cannot be verified") because the receipt they
+  verify was inside the deleted worktree. The record stayed `broken` and kept
+  its baseline and layers referenced, so `prune` never released them (found
+  2026-11-11: 14 such records in one repository held six baselines). `forget`
+  deletes only the record, and only when the path does not exist, Git
+  registers no worktree there, no worktree carries the workspace's receipt and
+  no worktree is on its branch. It never deletes a directory, a Git
+  registration or a branch.
+
+### Fixed
+
+- `integrations/claude-worktree-hook` read `.path` from the WorktreeRemove
+  input; Claude Code sends `worktree_path`. Every removal exited 0 having
+  removed nothing. It now removes the workspace, keeps one with uncommitted
+  work (non-zero exit), and forgets the record when the directory is already
+  gone.
+
 ## 0.6.0 — guarded removal and verified archiving
 
 ### Added
