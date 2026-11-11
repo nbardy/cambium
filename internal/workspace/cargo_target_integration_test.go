@@ -128,3 +128,82 @@ func TestCargoTargetLayerWaitsForARunningBuild(t *testing.T) {
 	}
 	assertPresent(t, after.Path, true, "target/debug/.fingerprint/serde-0123456789abcdef/lib-serde.json")
 }
+
+func cargoSeedGenerations(t *testing.T, repo string) int {
+	t.Helper()
+	payloads, err := filepath.Glob(filepath.Join(repo, ".git", "cambium", "layers", "*", "payload*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(payloads)
+}
+
+// A seed is captured once per receipt, often before everything is built.
+// Without a refresh, crates built later compile again in every new workspace.
+// A refresh must not happen when it would add nothing, and a capture that
+// cannot be trusted (a running build, uncommitted inputs) must leave the
+// existing seed in place.
+func TestCargoTargetLayerRefreshesOnlyWhenTheSourceHasBuiltMore(t *testing.T) {
+	ctx := context.Background()
+	repo := cargoTargetRepository(t)
+	manager := readinessManager(t, repo, false)
+	create := func(name string) string {
+		t.Helper()
+		value, err := manager.Create(ctx, CreateSpec{Name: name, Materializer: model.MaterializerGit})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return value.Path
+	}
+	const serde = "target/debug/.fingerprint/serde-0123456789abcdef/lib-serde.json"
+	const later = "target/debug/.fingerprint/later-2222222222222222/lib-later.json"
+	const latest = "target/debug/.fingerprint/latest-3333333333333333/lib-latest.json"
+
+	assertPresent(t, create("first"), true, serde)
+	assertPresent(t, create("unchanged"), true, serde)
+	if got := cargoSeedGenerations(t, repo); got != 1 {
+		t.Fatalf("an unchanged source produced %d seed payloads, want 1", got)
+	}
+
+	// A local unit never enters a seed, so building one is not growth.
+	writeReadinessFile(t, repo, "target/debug/.fingerprint/app-4444444444444444/bin-app.json", "{}")
+	create("local-only")
+	if got := cargoSeedGenerations(t, repo); got != 1 {
+		t.Fatalf("a new local unit produced %d seed payloads, want 1", got)
+	}
+
+	writeReadinessFile(t, repo, later, "{}")
+	grown := create("grown")
+	assertPresent(t, grown, true, serde)
+	assertPresent(t, grown, true, later)
+	if got := cargoSeedGenerations(t, repo); got != 2 {
+		t.Fatalf("a grown source produced %d seed payloads, want 2", got)
+	}
+
+	// More output appears while a build is running: keep the seed as it is.
+	writeReadinessFile(t, repo, latest, "{}")
+	build, err := os.Open(filepath.Join(repo, "target", "debug", ".cargo-lock"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer build.Close()
+	if err := syscall.Flock(int(build.Fd()), syscall.LOCK_EX); err != nil {
+		t.Fatal(err)
+	}
+	busy := create("busy")
+	assertPresent(t, busy, true, later)
+	assertPresent(t, busy, false, latest)
+	if err := syscall.Flock(int(build.Fd()), syscall.LOCK_UN); err != nil {
+		t.Fatal(err)
+	}
+
+	// An uncommitted change to a declared input: the source no longer matches
+	// the receipt, so it is not captured, and the seed still installs.
+	writeReadinessFile(t, repo, "rust-toolchain.toml", "[toolchain]\nchannel = \"1.94.0\"\n")
+	dirty := create("dirty-input")
+	assertPresent(t, dirty, true, later)
+	assertPresent(t, dirty, false, latest)
+	if got := cargoSeedGenerations(t, repo); got != 2 {
+		t.Fatalf("an untrusted capture produced %d seed payloads, want 2", got)
+	}
+}

@@ -85,6 +85,12 @@ A target directory is not captured while a build holds Cargo's build lock. The
 layer is published as absent and the next capture or workspace creation
 upgrades it.
 
+A seed grows with its source. When a workspace is created and the invoking
+workspace holds a third-party unit the seed lacks (a profile or a dependency
+version built since the capture), the seed is captured again. A source that is
+mid-build, or whose declared inputs have uncommitted changes, is not captured
+and the existing seed is used as it is.
+
 ```toml
 [[path]]
 path = "target"

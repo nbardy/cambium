@@ -26,7 +26,7 @@ import (
 	"github.com/nbardy/cambium/internal/workspace"
 )
 
-var Version = "0.7.0"
+var Version = "0.7.1"
 
 type App struct {
 	Stdout io.Writer

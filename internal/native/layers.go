@@ -79,7 +79,21 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 	for _, rule := range rules {
 		active, targetInputs := activeRule(rule, targetEntries, filepath.Join(project.Repository.Root, filepath.FromSlash(rule.Path)))
 		id := fingerprintRule(commit, rule, targetInputs)
+		sourcePath := filepath.Join(project.Repository.Root, filepath.FromSlash(rule.Path))
 		if cached, ok := loadLayer(filepath.Join(project.LayersDir(), id)); ok && cached.Present {
+			// The source may have outgrown the cached payload. Re-capture it under
+			// the same receipt checks as a first capture; when one of them
+			// fails, the cached payload stands.
+			if layerOutgrown(rule, sourcePath, cached) && sourceCommitErr == nil {
+				_, sourceInputs := activeRule(rule, sourceEntries, sourcePath)
+				if fingerprintRule(sourceCommit, rule, sourceInputs) == id && validateLayerSafetyAt(ctx, project, project.Repository.Root, rule) == nil {
+					refreshed, err := publishLayer(ctx, project, project.Repository.Root, commit, rule, targetInputs, cloner, requireCoW, true)
+					if err != nil {
+						return nil, err
+					}
+					cached = refreshed
+				}
+			}
 			_ = touchCacheEntry(filepath.Join(project.LayersDir(), id))
 			layers = append(layers, cached)
 			continue
@@ -87,7 +101,6 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 		if !active {
 			continue
 		}
-		sourcePath := filepath.Join(project.Repository.Root, filepath.FromSlash(rule.Path))
 		_, sourcePathErr := os.Lstat(sourcePath)
 		sourcePresent := sourcePathErr == nil
 		if sourcePathErr != nil && !errors.Is(sourcePathErr, os.ErrNotExist) {
@@ -515,7 +528,12 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 	} else if !errors.Is(statErr, os.ErrNotExist) {
 		return LayerSnapshot{}, statErr
 	}
-	if layer, ok := loadLayer(finalRoot); ok && !(upgradeMissing && sourcePresent && !layer.Present) {
+	// A cached receipt is replaced only by a capture that adds to it: a payload
+	// where there was none, or one the source has outgrown.
+	upgradable := func(layer LayerSnapshot) bool {
+		return upgradeMissing && sourcePresent && (!layer.Present || layerOutgrown(rule, source, layer))
+	}
+	if layer, ok := loadLayer(finalRoot); ok && !upgradable(layer) {
 		_ = touchCacheEntry(finalRoot)
 		return layer, nil
 	}
@@ -525,6 +543,13 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 			return LayerSnapshot{}, err
 		}
 		if !matches {
+			// A source that no longer matches the receipt cannot refresh a
+			// payload captured when it did. Recording it as absent, as below,
+			// would discard that payload for every later workspace.
+			if layer, ok := loadLayer(finalRoot); ok && layer.Present {
+				_ = touchCacheEntry(finalRoot)
+				return layer, nil
+			}
 			return publishMetadataLayer(ctx, project, LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Expected: expectedLayer(rule, inputs, sourceRoot, sourcePresent), SourceRef: sourceRef, Inputs: inputs, CreatedAt: time.Now().UTC()})
 		}
 	}
@@ -535,7 +560,7 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 	defer lock.Release()
 	var previous *LayerSnapshot
 	if layer, ok := loadLayer(finalRoot); ok {
-		if !(upgradeMissing && sourcePresent && !layer.Present) {
+		if !upgradable(layer) {
 			return layer, nil
 		}
 		previous = &layer

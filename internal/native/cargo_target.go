@@ -283,3 +283,50 @@ func snapshotLayerPayload(ctx context.Context, rule config.LayerRule, source, pa
 		return true, nil
 	}
 }
+
+// layerOutgrown reports whether a live source holds reusable output that a
+// present cached payload lacks, so capturing again would add to it. Payloads
+// are otherwise immutable for a receipt.
+func layerOutgrown(rule config.LayerRule, source string, layer LayerSnapshot) bool {
+	switch rule.Mode {
+	case config.LayerCargoTarget:
+		return layer.Present && cargoSeedLacksUnits(source, layer.Payload)
+	default:
+		return false
+	}
+}
+
+// cargoSeedLacksUnits reports whether source has a third-party unit the seed
+// does not. A seed is captured once per receipt, often before every profile
+// has been built; without this, crates built later would compile again in
+// every new workspace until the receipt changed (seen 2026-11-12 after a
+// lockfile bump: the seed was captured before the new version was built).
+// Local units never count: no seed holds them. An unreadable directory or
+// lockfile answers false, which keeps the existing seed.
+func cargoSeedLacksUnits(source, seed string) bool {
+	locals := readCargoLocals(cargoLockfile(source))
+	profiles, _, err := cargoProfileDirs(source)
+	if err != nil {
+		return false
+	}
+	for _, dir := range profiles {
+		relative, err := filepath.Rel(source, dir)
+		if err != nil {
+			return false
+		}
+		units, err := os.ReadDir(filepath.Join(dir, ".fingerprint"))
+		if err != nil {
+			return false
+		}
+		for _, unit := range units {
+			match := cargoUnitDir.FindStringSubmatch(unit.Name())
+			if match == nil || locals.contains(match[1]) {
+				continue
+			}
+			if _, err := os.Lstat(filepath.Join(seed, relative, ".fingerprint", unit.Name())); errors.Is(err, os.ErrNotExist) {
+				return true
+			}
+		}
+	}
+	return false
+}
