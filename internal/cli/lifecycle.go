@@ -30,7 +30,7 @@ func (a *App) runStatus(ctx context.Context, args []string) error {
 	var managers []*workspace.Manager
 	if *all {
 		var err error
-		if managers, err = a.allRepositories(ctx); err != nil {
+		if managers, _, err = a.allRepositories(ctx); err != nil {
 			return err
 		}
 	} else {
@@ -104,7 +104,18 @@ type MaintainReport struct {
 	Caches     native.CachePruneResult      `json:"caches"`
 	Expired    []string                     `json:"expired_checkpoints,omitempty"`
 	Merged     *workspace.PruneMergedResult `json:"merged,omitempty"`
+	Protected  string                       `json:"protected,omitempty"`
 	Error      string                       `json:"error,omitempty"`
+}
+
+// protectedRefusal is the typed refusal every automatic sweep returns for a
+// protected repository: maintain, prune and gc never touch it, not even to
+// reconcile or forget records.
+func protectedRefusal(manager *workspace.Manager, verb string) error {
+	if protected, why := manager.Project.Config.Protected(manager.Project.PrimaryRoot()); protected {
+		return &workspace.Refusal{Reason: workspace.RefuseProtected, Detail: fmt.Sprintf("%s is protected (%s); %s leaves it alone", manager.Project.PrimaryRoot(), why, verb)}
+	}
+	return nil
 }
 
 // runMaintain is the one-command housekeeping pass that wrapper scripts used
@@ -132,7 +143,7 @@ func (a *App) runMaintain(ctx context.Context, args []string) (int, error) {
 	}
 	var managers []*workspace.Manager
 	if *all {
-		if managers, err = a.allRepositories(ctx); err != nil {
+		if managers, _, err = a.allRepositories(ctx); err != nil {
 			return 1, err
 		}
 	} else {
@@ -146,6 +157,11 @@ func (a *App) runMaintain(ctx context.Context, args []string) (int, error) {
 	var reports []MaintainReport
 	for _, manager := range managers {
 		report := MaintainReport{Repository: manager.Project.PrimaryRoot()}
+		if protected, why := manager.Project.Config.Protected(report.Repository); protected {
+			report.Protected = why
+			reports = append(reports, report)
+			continue
+		}
 		if err := maintainOne(ctx, manager, &report, *merged, *deleteBranch, olderThan, *dryRun); err != nil {
 			report.Error = err.Error()
 			failed = true
@@ -178,6 +194,9 @@ func (a *App) runMaintain(ctx context.Context, args []string) (int, error) {
 			for _, skip := range report.Merged.Skipped {
 				fmt.Fprintf(a.Stdout, "  kept\t%s\t%s\n", skip.Name, firstLine(skip.Reason))
 			}
+		}
+		if report.Protected != "" {
+			fmt.Fprintf(a.Stdout, "  protected\t%s\n", report.Protected)
 		}
 		if report.Error != "" {
 			fmt.Fprintf(a.Stdout, "  error\t%s\n", report.Error)
@@ -223,6 +242,9 @@ func firstLine(text string) string {
 	return text
 }
 
+// sweepGrace keeps add-time sweeps off workspaces another agent just made and has not yet committed to.
+const sweepGrace = 24 * time.Hour
+
 // sweepOnAdd honours prune_merged_on_add: finished workspaces are removed
 // (guarded, checkpointed) before a new one is made. A failure never blocks the
 // add; it is reported and the add goes on.
@@ -231,8 +253,11 @@ func (a *App) sweepOnAdd(ctx context.Context, manager *workspace.Manager) {
 	if !manager.Project.Config.PruneMergedOnAdd || target == "" {
 		return
 	}
+	if protectedRefusal(manager, "the sweep on add") != nil {
+		return
+	}
 	manager.FetchMergeTarget(ctx, target)
-	result, err := manager.PruneMerged(ctx, workspace.PruneMergedOptions{Ref: target})
+	result, err := manager.PruneMerged(ctx, workspace.PruneMergedOptions{Ref: target, MinIdle: sweepGrace})
 	if err != nil {
 		fmt.Fprintf(a.Stderr, "warning: prune_merged_on_add: %v\n", err)
 		return

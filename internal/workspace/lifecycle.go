@@ -51,7 +51,7 @@ type Status struct {
 	Ephemeral  bool           `json:"ephemeral"`
 	Missing    bool           `json:"missing"`
 	Dirty      int            `json:"dirty_paths"`
-	Unpushed   int            `json:"unpushed_commits"` // reachable from HEAD, from no remote-tracking ref
+	Unpushed   int            `json:"unpushed_commits"` // reachable from HEAD, from no remote-tracking ref and no other branch or tag
 	HasCommits bool           `json:"has_commits"`      // HEAD moved past the base commit
 	Merged     bool           `json:"merged"`
 	MergedInto string         `json:"merged_into"`
@@ -112,10 +112,10 @@ func (m *Manager) statusOf(ctx context.Context, value model.Workspace, mergedInt
 		return status
 	}
 	status.HasCommits = head != value.BaseCommit
-	if result, err := repo.RunAt(ctx, value.Path, nil, "rev-list", "--count", "HEAD", "--not", "--remotes"); err != nil {
+	if count, err := unpushedCommits(ctx, repo, value.Path, value.Branch); err != nil {
 		fail("unpushed", err)
 	} else {
-		status.Unpushed = atoi(result.Stdout)
+		status.Unpushed = count
 	}
 	if err := checkMerged(ctx, repo, head, mergedInto); err == nil {
 		status.Merged = true
@@ -155,7 +155,7 @@ type PruneMergedOptions struct {
 	Ref          string        // required: remove workspaces whose HEAD is an ancestor of Ref
 	DryRun       bool          //
 	DeleteBranch bool          // also delete the (merged) branch
-	MinIdle      time.Duration // a workspace with no commits of its own is "merged" trivially; it is selected only if idle this long
+	MinIdle      time.Duration // when > 0, a workspace with no commits of its own is selected only if idle this long
 }
 
 type PruneMergedResult struct {
@@ -205,21 +205,32 @@ func (m *Manager) PruneMerged(ctx context.Context, options PruneMergedOptions) (
 			}
 			continue
 		}
-		if head == value.BaseCommit {
+		// A workspace with no commits of its own is "merged" trivially. An explicit
+		// `prune --merged` removes it; automatic sweeps pass MinIdle so a workspace
+		// another agent just made is not reaped before it has done anything.
+		if head == value.BaseCommit && options.MinIdle > 0 {
 			lastUsed := value.LastUsedAt
 			if lastUsed.IsZero() {
 				lastUsed = value.CreatedAt
 			}
-			if options.MinIdle <= 0 || time.Since(lastUsed) < options.MinIdle {
-				skip("no commits of its own yet; pass --older-than to remove idle ones")
+			if time.Since(lastUsed) < options.MinIdle {
+				skip("no commits of its own and used within " + options.MinIdle.String())
 				continue
 			}
+		}
+		// The same guards as the real removal, so --dry-run lists only what a real run removes.
+		removal := SafeRemoveOptions{DeleteBranch: options.DeleteBranch, RequireMerged: options.Ref}
+		removal.DryRun = true
+		if _, err := m.SafeRemove(ctx, value.Name, removal); err != nil {
+			skip(err.Error())
+			continue
 		}
 		result.Selected = append(result.Selected, value.Name)
 		if options.DryRun {
 			continue
 		}
-		if _, err := m.SafeRemove(ctx, value.Name, SafeRemoveOptions{DeleteBranch: options.DeleteBranch, RequireMerged: options.Ref}); err != nil {
+		removal.DryRun = false
+		if _, err := m.SafeRemove(ctx, value.Name, removal); err != nil {
 			skip(err.Error())
 			continue
 		}

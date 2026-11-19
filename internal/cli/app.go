@@ -23,6 +23,7 @@ import (
 	"github.com/nbardy/cambium/internal/gitx"
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/project"
+	"github.com/nbardy/cambium/internal/registry"
 	"github.com/nbardy/cambium/internal/state"
 	"github.com/nbardy/cambium/internal/workspace"
 )
@@ -131,6 +132,7 @@ func (a *App) runInit(ctx context.Context, args []string) error {
 	requireCoW := set.Bool("require-cow", false, "refuse non-CoW workspaces")
 	preparedIndex := set.Bool("prepared-index", true, "install the prepared baseline index")
 	allowPolicyCommands := set.Bool("allow-policy-commands", false, "allow reviewed .cambium.toml prepare/validate commands (local only)")
+	protect := set.Bool("protect", false, "protect this repository from maintain, prune and gc (local only)")
 	detectLayers := set.Bool("detect-layers", true, "detect existing ignored dependency environments")
 	if err := set.Parse(args); err != nil {
 		return err
@@ -163,6 +165,8 @@ func (a *App) runInit(ctx context.Context, args []string) error {
 			settings = append(settings, config.BoolSetting("prepared_index", *preparedIndex))
 		case "allow-policy-commands":
 			settings = append(settings, config.BoolSetting("allow_policy_commands", *allowPolicyCommands))
+		case "protect":
+			settings = append(settings, config.BoolSetting("protect", *protect))
 		case "force", "detect-layers":
 		default:
 			panic("runInit: unhandled flag " + f.Name)
@@ -780,13 +784,14 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 	deleteBranch := set.Bool("delete-branch", false, "delete the workspace branch")
 	jsonOutput := set.Bool("json", false, "emit JSON")
 	requireMerged := set.String("require-merged", "", "refuse unless the workspace HEAD is an ancestor of REF")
-	harvest := set.String("harvest", "", "move git-ignored files under DIR into the primary checkout first")
-	salvageRef := set.String("salvage-ref", "", "snapshot a dirty workspace as a commit at REF (refs/...) instead of refusing")
+	harvest := set.String("harvest", "", "move git-ignored files under DIR into the primary checkout first (with --harvest-to: DIR may be . for the whole workspace)")
+	harvestTo := set.String("harvest-to", "", "with --harvest: move them to DEST/<path> instead (a rescue directory, absolute or ~/...); regenerable dependencies and Cargo compiler state are left behind")
+	salvageRef := set.String("salvage-ref", "", "keep uncommitted work (as a snapshot commit) and unpushed commits at REF (refs/...) instead of refusing")
 	if err := set.Parse(args); err != nil {
 		return err
 	}
 	if set.NArg() != 1 {
-		return errors.New("usage: cambium remove [--force | [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF]] [--delete-branch] NAME")
+		return errors.New("usage: cambium remove [--force | [--json] [--require-merged REF] [--harvest DIR [--harvest-to DEST]] [--salvage-ref REF]] [--delete-branch] NAME")
 	}
 	// Removal is guarded by default: a dirty, in-progress, in-use or
 	// branch-changed workspace is refused (exit 3). --force is the only opt-out.
@@ -794,7 +799,7 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 		if *safe {
 			return errors.New("--safe and --force are mutually exclusive")
 		}
-		if *jsonOutput || *requireMerged != "" || *harvest != "" || *salvageRef != "" {
+		if *jsonOutput || *requireMerged != "" || *harvest != "" || *harvestTo != "" || *salvageRef != "" {
 			return errors.New("--json, --require-merged, --harvest and --salvage-ref apply to guarded removal; drop --force")
 		}
 		manager, err := a.managerFor(ctx, set.Arg(0))
@@ -815,14 +820,15 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := validateHarvestDir(*harvest); err != nil {
+	dest, err := validateHarvest(*harvest, *harvestTo)
+	if err != nil {
 		return err
 	}
 	if err := validateSalvageRef(ctx, a.runner(), *salvageRef); err != nil {
 		return err
 	}
 	result, err := manager.SafeRemove(ctx, set.Arg(0), workspace.SafeRemoveOptions{
-		DeleteBranch: *deleteBranch, RequireMerged: *requireMerged, HarvestDir: *harvest, SalvageRef: *salvageRef,
+		DeleteBranch: *deleteBranch, RequireMerged: *requireMerged, HarvestDir: *harvest, HarvestTo: dest, SalvageRef: *salvageRef,
 	})
 	var refusal *workspace.Refusal
 	if errors.As(err, &refusal) && *jsonOutput {
@@ -881,17 +887,28 @@ func (a *App) runArchive(ctx context.Context, args []string) error {
 	return nil
 }
 
-// validateHarvestDir keeps harvest inside the repository: DIR is a relative
-// path that cannot climb out of the workspace or the primary checkout.
-func validateHarvestDir(dir string) error {
+// validateHarvest keeps harvest inside the repository: DIR is a relative path
+// that cannot climb out of the workspace or the primary checkout. With a rescue
+// destination, DIR may be "." and the destination is an absolute directory.
+func validateHarvest(dir, to string) (string, error) {
+	if to != "" && dir == "" {
+		return "", errors.New("--harvest-to needs --harvest DIR (use --harvest . for the whole workspace)")
+	}
 	if dir == "" {
-		return nil
+		return "", nil
 	}
 	clean := filepath.Clean(dir)
-	if filepath.IsAbs(clean) || clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
-		return fmt.Errorf("--harvest must be a relative directory inside the repository, got %q", dir)
+	if filepath.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, "../") || (clean == "." && to == "") {
+		return "", fmt.Errorf("--harvest must be a relative directory inside the repository, got %q", dir)
 	}
-	return nil
+	if to == "" {
+		return "", nil
+	}
+	dest, err := config.ExpandPath(to, "")
+	if err != nil || !filepath.IsAbs(dest) {
+		return "", fmt.Errorf("--harvest-to must be an absolute directory or start with ~/, got %q", to)
+	}
+	return dest, nil
 }
 
 // validateSalvageRef requires a full ref name under refs/ so the snapshot can
@@ -1012,6 +1029,9 @@ func (a *App) runGC(ctx context.Context, args []string) error {
 	}
 	manager, err := a.manager(ctx)
 	if err != nil {
+		return err
+	}
+	if err := protectedRefusal(manager, "gc"); err != nil {
 		return err
 	}
 	result, err := manager.GC(ctx, workspace.GCOptions{EphemeralOnly: *ephemeral, OlderThan: olderThan, Force: *force, DeleteBranches: *deleteBranches, DryRun: *dryRun})
@@ -1184,6 +1204,9 @@ func (a *App) runPrune(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
+		if err := protectedRefusal(manager, "prune"); err != nil {
+			return err
+		}
 		return a.printPruneMerged(ctx, manager, workspace.PruneMergedOptions{Ref: *merged, DryRun: *dryRun, DeleteBranch: *deleteBranch, MinIdle: idle}, *jsonOutput)
 	}
 	options := workspace.CachePruneOptions{DryRun: *dryRun}
@@ -1205,6 +1228,9 @@ func (a *App) runPrune(ctx context.Context, args []string) error {
 	}
 	manager, err := a.manager(ctx)
 	if err != nil {
+		return err
+	}
+	if err := protectedRefusal(manager, "prune"); err != nil {
 		return err
 	}
 	result, err := manager.PruneCachesWithOptions(ctx, options)
@@ -1365,11 +1391,12 @@ func (a *App) manager(ctx context.Context) (*workspace.Manager, error) {
 	return workspace.New(projectValue), nil
 }
 
-// managerFor opens the repository that owns workspace NAME. Inside a
-// repository that has NAME, that repository. Otherwise every repository under
-// repos_root is searched, so `cambium remove NAME` and `cambium path NAME` work
-// from any directory. Two repositories sharing a NAME is an error that lists
-// them, never a guess.
+// managerFor opens the repository that owns workspace NAME: the current
+// repository when it has NAME, otherwise the one repository, anywhere on disk,
+// that the user-level registry (or repos_root) knows to have it. So
+// `cambium remove NAME` and `cambium path NAME` work from any directory. Two
+// repositories sharing a NAME is an error that lists them, never a guess; an
+// unknown NAME is an error that says where it looked and how to fix it.
 func (a *App) managerFor(ctx context.Context, name string) (*workspace.Manager, error) {
 	local, localErr := a.manager(ctx)
 	if localErr == nil {
@@ -1377,12 +1404,9 @@ func (a *App) managerFor(ctx context.Context, name string) (*workspace.Manager, 
 			return local, err
 		}
 	}
-	repositories, err := a.allRepositories(ctx)
+	repositories, searched, err := a.allRepositories(ctx)
 	if err != nil {
-		if localErr != nil {
-			return nil, localErr
-		}
-		return local, nil
+		return nil, fmt.Errorf("find workspace %q: %w", name, err)
 	}
 	var matches []*workspace.Manager
 	for _, manager := range repositories {
@@ -1395,10 +1419,11 @@ func (a *App) managerFor(ctx context.Context, name string) (*workspace.Manager, 
 	}
 	switch len(matches) {
 	case 0:
-		if localErr != nil {
-			return nil, fmt.Errorf("%w (and no repository under the repos root has a workspace named %q)", localErr, name)
+		where := "no repository Cambium knows has it (" + searched + ")"
+		if localErr == nil {
+			return nil, fmt.Errorf("no workspace %q in %s, and %s; run `cambium list` from inside the owning repository once so Cambium registers it", name, local.Project.PrimaryRoot(), where)
 		}
-		return local, nil // let the caller report the ordinary not-found error
+		return nil, fmt.Errorf("no workspace %q: %v is not a repository, and %s; run `cambium list` from inside the owning repository once so Cambium registers it", name, a.Cwd, where)
 	case 1:
 		return matches[0], nil
 	}
@@ -1409,21 +1434,26 @@ func (a *App) managerFor(ctx context.Context, name string) (*workspace.Manager, 
 	return nil, fmt.Errorf("workspace %q exists in several repositories (%s); run the command from inside the one you mean", name, strings.Join(roots, ", "))
 }
 
-// allRepositories opens every repository under repos_root that has Cambium
-// state, plus the current one when it is elsewhere.
-func (a *App) allRepositories(ctx context.Context) ([]*workspace.Manager, error) {
+// allRepositories opens every repository Cambium knows: the user-level
+// registry, every repository under repos_root that has Cambium state, and the
+// current one. The second result says where it looked, for error messages.
+func (a *App) allRepositories(ctx context.Context) ([]*workspace.Manager, string, error) {
 	user, err := config.LoadUser()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	root, err := user.ResolveReposRoot()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	paths, err := project.FindRepositories(root)
-	if err != nil {
-		return nil, fmt.Errorf("scan %s for repositories: %w", root, err)
+	registered := registry.List()
+	paths := append([]string(nil), registered...)
+	scanned, scanErr := project.FindRepositories(root)
+	if scanErr != nil && len(registered) == 0 {
+		return nil, "", fmt.Errorf("scan %s for repositories: %w", root, scanErr)
 	}
+	paths = append(paths, scanned...)
+	searched := fmt.Sprintf("searched %d registered and the repositories under %s; registry %s", len(registered), root, registry.Path())
 	seen := map[string]bool{}
 	var managers []*workspace.Manager
 	add := func(manager *workspace.Manager) {
@@ -1443,7 +1473,7 @@ func (a *App) allRepositories(ctx context.Context) ([]*workspace.Manager, error)
 		}
 		add(workspace.New(value))
 	}
-	return managers, nil
+	return managers, searched, nil
 }
 
 func (a *App) runner() execx.Runner {
@@ -1477,7 +1507,7 @@ Usage:
   cambium adopt NAME PATH
   cambium reconcile [--dry-run] [--json]
   cambium env <explain|validate|capture> WORKSPACE
-  cambium remove [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF] [--delete-branch] NAME
+  cambium remove [--json] [--require-merged REF] [--harvest DIR [--harvest-to DEST]] [--salvage-ref REF] [--delete-branch] NAME
   cambium remove --force [--delete-branch] NAME
   cambium forget [--dry-run] [--json] <NAME... | --missing>
   cambium archive [--json] [--remote origin] BRANCH TAG
@@ -1495,7 +1525,7 @@ Usage:
 
 The default materializer uses APFS clone/reflink when available and otherwise
 falls back to Git's normal checkout. Removal is guarded: remove refuses (exit 3)
-a dirty, in-use or mid-operation workspace unless --force. NAME commands work
+a dirty, unpushed, in-use or mid-operation workspace unless --force. NAME commands work
 from any directory; settings are in ~/.config/cambium/config.toml. Cambium is not a mounted filesystem and is
 not in the I/O path after workspace creation. Checkpoint commands use a private
 Git index and hidden refs; the user's branch and staging area remain unchanged.

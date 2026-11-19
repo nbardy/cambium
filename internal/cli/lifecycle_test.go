@@ -144,9 +144,9 @@ func TestPruneMergedKeepsUnmergedAndDirty(t *testing.T) {
 	writeFile(t, filepath.Join(unmerged, "u.txt"), "u\n")
 	gitCLI(t, unmerged, "add", ".")
 	gitCLI(t, unmerged, "commit", "-q", "-m", "u")
-	fresh := f.create("fresh") // no commits of its own: kept unless idle
+	fresh := f.createEphemeral("fresh") // no commits of its own: kept only while --older-than says it is young
 	var result workspace.PruneMergedResult
-	if err := json.Unmarshal([]byte(f.mustRun("prune", "--merged", "main", "--json")), &result); err != nil {
+	if err := json.Unmarshal([]byte(f.mustRun("prune", "--merged", "main", "--older-than", "1h", "--json")), &result); err != nil {
 		t.Fatal(err)
 	}
 	if len(result.Removed) != 1 || result.Removed[0] != "merged" {
@@ -155,6 +155,16 @@ func TestPruneMergedKeepsUnmergedAndDirty(t *testing.T) {
 	requireExists(t, merged, false)
 	requireExists(t, unmerged, true)
 	requireExists(t, fresh, true)
+	requireExists(t, keep, true)
+	// Alone, with no --older-than, prune --merged acts: a workspace already in REF is removed.
+	if err := json.Unmarshal([]byte(f.mustRun("prune", "--merged", "main", "--json")), &result); err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Removed) != 1 || result.Removed[0] != "fresh" {
+		t.Fatalf("prune --merged alone must remove the merged no-commit workspace, got %+v", result)
+	}
+	requireExists(t, fresh, false)
+	requireExists(t, unmerged, true)
 	requireExists(t, keep, true)
 }
 

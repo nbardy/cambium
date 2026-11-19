@@ -127,6 +127,44 @@ type Config struct {
 	// checkout's local copies, and makes removal drop them after proving they
 	// hold no unpushed or uncommitted work.
 	Submodules bool `json:"submodules,omitempty"`
+	// Protect marks this repository as off-limits to every automatic sweep:
+	// maintain, prune and gc refuse it and add never sweeps it. An explicit
+	// `remove NAME` still runs its guards.
+	Protect bool `json:"protect,omitempty"`
+	// ProtectedRepos is the per-user list of repositories (or directories that
+	// contain repositories) protected the same way. Per-user config only.
+	ProtectedRepos []string `json:"protected_repos,omitempty"`
+	// ScrubEnv runs every child process (Git, policy commands) with an
+	// allow-listed environment and Git hooks disabled, so a repository hook
+	// never sees provider keys or other secrets from the caller.
+	ScrubEnv bool `json:"scrub_env,omitempty"`
+}
+
+// Protected reports whether repoRoot is protected, and by what.
+func (c Config) Protected(repoRoot string) (bool, string) {
+	if c.Protect {
+		return true, "protect = true in this repository's config"
+	}
+	root := resolveLoose(repoRoot)
+	for _, entry := range c.ProtectedRepos {
+		expanded, err := ExpandPath(entry, "")
+		if err != nil {
+			continue
+		}
+		base := resolveLoose(expanded)
+		if root == base || strings.HasPrefix(root, base+string(filepath.Separator)) {
+			return true, "listed in protected_repos (" + entry + ")"
+		}
+	}
+	return false, ""
+}
+
+// resolveLoose resolves symlinks when the path exists and cleans it otherwise.
+func resolveLoose(path string) string {
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		return resolved
+	}
+	return filepath.Clean(path)
 }
 
 func Default() Config {

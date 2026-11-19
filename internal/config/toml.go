@@ -252,6 +252,12 @@ func checkSetting(setting Setting, scope Scope) error {
 	if setting.Key == "repos_root" && scope != ScopeUser {
 		return errors.New("repos_root may only be set in the per-user config; it names where maintain --all-repos looks, not a property of one repository")
 	}
+	if setting.Key == "protected_repos" && scope != ScopeUser {
+		return errors.New("protected_repos may only be set in the per-user config; a repository protects itself with protect = true")
+	}
+	if setting.Key == "protect" && scope == ScopeUser {
+		return errors.New("protect belongs to one repository (.cambium.toml or the clone-local config); list repositories in the per-user config with protected_repos")
+	}
 	var probe Config
 	if err := assignSetting(&probe, setting); err != nil {
 		return err
@@ -310,6 +316,16 @@ func assignSetting(value *Config, setting Setting) error {
 		value.MergeTarget = parsed
 	case "submodules":
 		return parseBoolInto(&value.Submodules, setting)
+	case "protect":
+		return parseBoolInto(&value.Protect, setting)
+	case "scrub_env":
+		return parseBoolInto(&value.ScrubEnv, setting)
+	case "protected_repos":
+		parsed, err := parseTOMLStringArray(setting.Raw)
+		if err != nil {
+			return fmt.Errorf("protected_repos: %w", err)
+		}
+		value.ProtectedRepos = parsed
 	case "prune_merged_on_add":
 		return parseBoolInto(&value.PruneMergedOnAdd, setting)
 	case "repos_root":

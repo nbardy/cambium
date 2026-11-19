@@ -9,6 +9,7 @@ import (
 	"github.com/nbardy/cambium/internal/environment"
 	"github.com/nbardy/cambium/internal/execx"
 	"github.com/nbardy/cambium/internal/gitx"
+	"github.com/nbardy/cambium/internal/registry"
 )
 
 type Project struct {
@@ -31,6 +32,15 @@ func Open(ctx context.Context, path string, runner execx.Runner) (*Project, erro
 	if err != nil {
 		return nil, err
 	}
+	if value.ScrubEnv {
+		if _, plain := runner.(execx.OSRunner); plain {
+			// Rediscover through the scrubbing runner so every later Git call is scrubbed too.
+			runner = execx.OSRunner{Scrub: true}
+			if repository, err = gitx.Discover(ctx, path, runner); err != nil {
+				return nil, err
+			}
+		}
+	}
 	rules, err := environment.ResolveRules(repository.Root)
 	if err != nil {
 		return nil, err
@@ -41,7 +51,9 @@ func Open(ctx context.Context, path string, runner execx.Runner) (*Project, erro
 			return nil, err
 		}
 	}
-	return &Project{Repository: repository, Config: value, Rules: rules, StateDir: stateDir, Runner: runner}, nil
+	project := &Project{Repository: repository, Config: value, Rules: rules, StateDir: stateDir, Runner: runner}
+	registry.Register(project.PrimaryRoot())
+	return project, nil
 }
 
 func (p *Project) BaselinesDir() string { return filepath.Join(p.StateDir, "baselines") }

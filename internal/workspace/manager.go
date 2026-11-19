@@ -200,6 +200,13 @@ func (m *Manager) GC(ctx context.Context, options GCOptions) (GCResult, error) {
 		if workspaceGCIneligible(value, options, cutoff) != "" {
 			continue
 		}
+		if !options.Force {
+			// Same guard ladder as the real removal, so a dry run lists only what a real run removes.
+			if _, err := m.SafeRemove(ctx, value.Name, SafeRemoveOptions{DryRun: true}); err != nil {
+				result.Skipped = append(result.Skipped, GCSkip{Name: value.Name, Reason: err.Error()})
+				continue
+			}
+		}
 		result.Selected = append(result.Selected, value.Name)
 		if options.DryRun {
 			continue
@@ -216,12 +223,20 @@ func (m *Manager) GC(ctx context.Context, options GCOptions) (GCResult, error) {
 			}
 			return nil
 		}
-		checkpoint, err := m.SaveBeforeRemove(ctx, value.Name)
-		if err == nil {
-			err = m.Native.RemoveIf(ctx, value.Name, options.Force, options.DeleteBranches, guard)
-			if err != nil {
-				m.DiscardIfSurvived(ctx, value.Name, checkpoint)
+		var err error
+		if options.Force {
+			// Explicit opt-out: discards dirty work, checkpointed so it can be recovered.
+			var checkpoint string
+			if checkpoint, err = m.SaveBeforeRemove(ctx, value.Name); err == nil {
+				err = m.Native.RemoveIf(ctx, value.Name, true, options.DeleteBranches, guard)
+				if err != nil {
+					m.DiscardIfSurvived(ctx, value.Name, checkpoint)
+				}
 			}
+		} else {
+			// Without --force gc is the guarded removal: dirty, unpushed, in-use
+			// or mid-operation workspaces are skipped, never removed.
+			_, err = m.SafeRemove(ctx, value.Name, SafeRemoveOptions{DeleteBranch: options.DeleteBranches, Recheck: guard})
 		}
 		if err != nil {
 			result.Skipped = append(result.Skipped, GCSkip{Name: value.Name, Reason: err.Error()})

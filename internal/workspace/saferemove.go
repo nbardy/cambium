@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nbardy/cambium/internal/config"
 	"github.com/nbardy/cambium/internal/fsx"
 	"github.com/nbardy/cambium/internal/gitx"
 	"github.com/nbardy/cambium/internal/inuse"
@@ -45,6 +46,8 @@ const (
 	RefuseInUse             RefusalReason = "in-use"
 	RefusePrimary           RefusalReason = "primary"
 	RefuseSubmoduleUnpushed RefusalReason = "submodule-unpushed"
+	RefuseUnpushed          RefusalReason = "unpushed"
+	RefuseProtected         RefusalReason = "protected"
 )
 
 // Refusal is the typed "nothing was deleted" outcome. The CLI maps it to exit
@@ -64,7 +67,18 @@ type SafeRemoveOptions struct {
 	DeleteBranch  bool
 	RequireMerged string // empty: no merge requirement
 	HarvestDir    string // empty: no harvest
-	SalvageRef    string // empty: dirty workspaces refuse
+	// HarvestTo, with HarvestDir, moves the ignored files to HarvestTo/<relative path>
+	// instead of into the primary checkout, and leaves behind what a rescue
+	// copy does not need: regenerable dependency directories and Cargo
+	// compiler state. HarvestDir "." means the whole workspace.
+	HarvestTo  string
+	SalvageRef string // empty: dirty workspaces and unpushed commits refuse
+	// DryRun runs every read-only guard and reports the same refusal the real
+	// removal would, but changes nothing (no checkpoint, salvage or harvest).
+	DryRun bool
+	// Recheck runs first under the workspace lock; the caller uses it to
+	// re-verify identity and eligibility on the record actually removed.
+	Recheck func(model.Workspace) error
 }
 
 type HarvestSummary struct {
@@ -88,6 +102,9 @@ var inProgressMarkers = []string{"MERGE_HEAD", "rebase-merge", "rebase-apply", "
 // never leaves a salvage ref or a half-harvest behind; side-effecting steps
 // (salvage, harvest) run last, still under the workspace and Git locks.
 func (m *Manager) SafeRemove(ctx context.Context, name string, options SafeRemoveOptions) (SafeRemoveResult, error) {
+	if options.DryRun {
+		return m.checkRemovable(ctx, name, options)
+	}
 	checkpoint, err := m.SaveBeforeRemove(ctx, name)
 	if err != nil {
 		return SafeRemoveResult{}, err
@@ -102,51 +119,118 @@ func (m *Manager) SafeRemove(ctx context.Context, name string, options SafeRemov
 	return result, nil
 }
 
+// removalPlan is what the read-only guards learned about a workspace.
+type removalPlan struct {
+	head     string
+	clean    bool
+	status   string
+	unpushed int
+	salvage  bool // a salvage ref will be written: dirty tree and/or unpushed commits
+}
+
+// guardRemoval is the guard ladder shared by the real removal and its dry run,
+// so `prune --merged --dry-run` can never promise what the real run refuses.
+// It changes nothing.
+func (m *Manager) guardRemoval(ctx context.Context, name string, current model.Workspace, options SafeRemoveOptions) (removalPlan, error) {
+	var plan removalPlan
+	repo := m.Project.Repository
+	if options.Recheck != nil {
+		if err := options.Recheck(current); err != nil {
+			return plan, err
+		}
+	}
+	if native.SamePath(current.Path, m.Project.PrimaryRoot()) {
+		return plan, refuse(RefusePrimary, "%s is the primary checkout, not a removable workspace", current.Path)
+	}
+	// Guarded removal has no force: a workspace in use is never removed.
+	holders, err := inuse.Check(current.Path, m.Project.UseDir(current.ID))
+	if err != nil {
+		return plan, refuse(RefuseUnreadable, "check whether %s is in use: %v", current.Path, err)
+	}
+	if len(holders) > 0 {
+		return plan, refuse(RefuseInUse, "workspace %q is in use: %s", name, holderList(holders))
+	}
+	plan.clean, plan.status, err = repo.IsClean(ctx, current.Path)
+	if err != nil {
+		return plan, refuse(RefuseUnreadable, "git status failed in %s: %v", current.Path, err)
+	}
+	if err := checkNoOperationInProgress(ctx, repo, current.Path); err != nil {
+		return plan, err
+	}
+	plan.head, err = checkBranchUnchanged(ctx, repo, current)
+	if err != nil {
+		return plan, err
+	}
+	if err := m.checkSubmodules(ctx, current.Path); err != nil {
+		return plan, err
+	}
+	if !plan.clean && options.SalvageRef == "" {
+		return plan, refuse(RefuseDirty, "workspace %q has uncommitted or untracked changes:\n%s", name, plan.status)
+	}
+	merged := false
+	if options.RequireMerged != "" {
+		if err := checkMerged(ctx, repo, plan.head, options.RequireMerged); err != nil {
+			return plan, err
+		}
+		merged = true
+	}
+	// A commit already in REQUIRE-MERGED is held by that ref; any other commit
+	// that no remote and no other branch holds is lost with the workspace's
+	// branch (or stranded on it), so removal refuses or salvages it.
+	if !merged {
+		plan.unpushed, err = unpushedCommits(ctx, repo, current.Path, current.Branch)
+		if err != nil {
+			return plan, refuse(RefuseUnreadable, "count unpushed commits in %s: %v", current.Path, err)
+		}
+		if plan.unpushed > 0 && options.SalvageRef == "" {
+			return plan, refuse(RefuseUnpushed, "workspace %q has %d unpushed commit(s) (HEAD %s) that no remote or other branch holds: push or merge them, or pass --salvage-ref refs/... to keep them", name, plan.unpushed, shortSHA(plan.head))
+		}
+	}
+	plan.salvage = !plan.clean || plan.unpushed > 0
+	return plan, nil
+}
+
+// checkRemovable is the dry run: the guards, then "would remove".
+func (m *Manager) checkRemovable(ctx context.Context, name string, options SafeRemoveOptions) (SafeRemoveResult, error) {
+	current, err := m.Registry.Load(name)
+	if err != nil {
+		return SafeRemoveResult{}, err
+	}
+	plan, err := m.guardRemoval(ctx, name, current, options)
+	if err != nil {
+		return SafeRemoveResult{}, err
+	}
+	result := SafeRemoveResult{Removed: false}
+	if plan.salvage {
+		result.SalvageRef = options.SalvageRef
+	}
+	return result, nil
+}
+
+func shortSHA(sha string) string {
+	if len(sha) > 12 {
+		return sha[:12]
+	}
+	return sha
+}
+
 func (m *Manager) safeRemove(ctx context.Context, name string, options SafeRemoveOptions) (SafeRemoveResult, error) {
 	result := SafeRemoveResult{Removed: true}
 	repo := m.Project.Repository
 	err := m.Native.RemoveIf(ctx, name, true, options.DeleteBranch, func(current model.Workspace) error {
-		if native.SamePath(current.Path, m.Project.PrimaryRoot()) {
-			return refuse(RefusePrimary, "%s is the primary checkout, not a removable workspace", current.Path)
-		}
-		// Guarded removal has no force: a workspace in use is never removed.
-		holders, err := inuse.Check(current.Path, m.Project.UseDir(current.ID))
-		if err != nil {
-			return refuse(RefuseUnreadable, "check whether %s is in use: %v", current.Path, err)
-		}
-		if len(holders) > 0 {
-			return refuse(RefuseInUse, "workspace %q is in use: %s", name, holderList(holders))
-		}
-		clean, status, err := repo.IsClean(ctx, current.Path)
-		if err != nil {
-			return refuse(RefuseUnreadable, "git status failed in %s: %v", current.Path, err)
-		}
-		if err := checkNoOperationInProgress(ctx, repo, current.Path); err != nil {
-			return err
-		}
-		head, err := checkBranchUnchanged(ctx, repo, current)
+		plan, err := m.guardRemoval(ctx, name, current, options)
 		if err != nil {
 			return err
 		}
-		if err := m.checkSubmodules(ctx, current.Path); err != nil {
-			return err
-		}
-		if !clean && options.SalvageRef == "" {
-			return refuse(RefuseDirty, "workspace %q has uncommitted or untracked changes:\n%s", name, status)
-		}
-		if options.RequireMerged != "" {
-			if err := checkMerged(ctx, repo, head, options.RequireMerged); err != nil {
-				return err
-			}
-		}
-		if !clean {
-			if err := salvage(ctx, repo, current.Path, head, options.SalvageRef); err != nil {
+		// Side effects last, after every guard has passed.
+		if plan.salvage {
+			if err := salvage(ctx, repo, current.Path, plan.head, options.SalvageRef, plan.clean); err != nil {
 				return err
 			}
 			result.SalvageRef = options.SalvageRef
 		}
 		if options.HarvestDir != "" {
-			summary, err := harvestIgnored(ctx, repo, current.Path, options.HarvestDir)
+			summary, err := m.harvest(ctx, current.Path, options)
 			if err != nil {
 				return err
 			}
@@ -159,6 +243,27 @@ func (m *Manager) safeRemove(ctx context.Context, name string, options SafeRemov
 		return SafeRemoveResult{}, err
 	}
 	return result, nil
+}
+
+// unpushedCommits counts commits reachable from the workspace HEAD that no
+// remote-tracking ref and no other local branch or tag holds: the work that
+// removing this workspace (and, with --delete-branch, its branch) would strand
+// or lose. A repository with no remote is judged by the other-ref test alone.
+func unpushedCommits(ctx context.Context, repo gitx.Repository, worktree, branch string) (int, error) {
+	args := []string{"rev-list", "--count", "HEAD", "--not"}
+	if branch != "" {
+		// Git matches --exclude relative to the namespace the next option walks
+		// (--branches), so the pattern is the bare branch name, not refs/heads/NAME.
+		// A full ref name matches nothing and the workspace's own branch would
+		// count as "another branch holding the commits".
+		args = append(args, "--exclude="+branch)
+	}
+	args = append(args, "--branches", "--tags", "--remotes")
+	result, err := repo.RunAt(ctx, worktree, nil, args...)
+	if err != nil {
+		return 0, err
+	}
+	return atoi(result.Stdout), nil
 }
 
 func checkNoOperationInProgress(ctx context.Context, repo gitx.Repository, worktree string) error {
@@ -215,7 +320,21 @@ func checkMerged(ctx context.Context, repo gitx.Repository, head, target string)
 // speculative checkpoints so the workspace's own staging area is untouched.
 // An existing ref is reused only if it already holds the identical tree, so a
 // rerun is idempotent and an unrelated salvage is never overwritten.
-func salvage(ctx context.Context, repo gitx.Repository, worktree, head, ref string) error {
+func salvage(ctx context.Context, repo gitx.Repository, worktree, head, ref string, clean bool) error {
+	if clean {
+		// Only unpushed commits to keep: the ref is the HEAD commit itself.
+		existing, err := repo.RunCommon(ctx, nil, "rev-parse", "--verify", "-q", ref+"^{commit}")
+		if err == nil {
+			if strings.TrimSpace(existing.Stdout) == head {
+				return nil
+			}
+			return refuse(RefuseSalvageFailed, "%s already exists at a different commit (%s)", ref, strings.TrimSpace(existing.Stdout))
+		}
+		if _, err := repo.RunCommon(ctx, nil, "update-ref", ref, head, ""); err != nil {
+			return refuse(RefuseSalvageFailed, "update-ref %s: %v", ref, err)
+		}
+		return nil
+	}
 	tree, err := snapshotTree(ctx, repo, worktree)
 	if err != nil {
 		return refuse(RefuseSalvageFailed, "snapshot tree: %v", err)
@@ -228,7 +347,7 @@ func salvage(ctx context.Context, repo gitx.Repository, worktree, head, ref stri
 		}
 		return refuse(RefuseSalvageFailed, "%s already exists with a different tree (%s)", ref, existingTree)
 	}
-	commit, err := repo.RunCommon(ctx, nil, "commit-tree", tree, "-p", head, "-m", "cambium remove --safe salvage of "+worktree)
+	commit, err := repo.RunCommon(ctx, nil, "commit-tree", tree, "-p", head, "-m", "cambium remove salvage of "+worktree)
 	if err != nil {
 		return refuse(RefuseSalvageFailed, "commit-tree: %v", err)
 	}
@@ -281,17 +400,20 @@ func snapshotTree(ctx context.Context, repo gitx.Repository, worktree string) (s
 // from oompa agentnet/cambium.clj harvest-ignored-output!). All conflicts are
 // found before anything moves: a differing destination refuses the whole
 // harvest. Identical destinations deduplicate (the source is deleted).
-func harvestIgnored(ctx context.Context, repo gitx.Repository, worktree, dir string) (HarvestSummary, error) {
+func harvestIgnored(ctx context.Context, repo gitx.Repository, worktree, dir, dest string, skip func(string) bool) (HarvestSummary, error) {
 	listed, err := repo.RunAt(ctx, worktree, nil, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--", dir)
 	if err != nil {
 		return HarvestSummary{}, refuse(RefuseOutputUnreadable, "list ignored files under %s: %v", dir, err)
 	}
 	primary := filepath.Dir(repo.CommonGitDir)
+	if dest != "" {
+		primary = dest
+	}
 	type pair struct{ relative, from, to string }
 	var moves, duplicates []pair
 	var conflicts []string
 	for _, relative := range strings.Split(listed.Stdout, "\x00") {
-		if relative == "" {
+		if relative == "" || (skip != nil && skip(relative)) {
 			continue
 		}
 		item := pair{relative, filepath.Join(worktree, relative), filepath.Join(primary, relative)}
@@ -365,4 +487,77 @@ func sameEntry(from, to string) (same, exists bool, err error) {
 		return false, true, err
 	}
 	return bytes.Equal(a, b), true, nil
+}
+
+// harvest runs harvestIgnored for one removal. Into the primary checkout the
+// rule is exact: every ignored file under DIR. Into a rescue directory
+// (HarvestTo) what a rescue copy would only carry as dead weight stays behind.
+func (m *Manager) harvest(ctx context.Context, worktree string, options SafeRemoveOptions) (HarvestSummary, error) {
+	dir, dest := options.HarvestDir, options.HarvestTo
+	if dest == "" {
+		return harvestIgnored(ctx, m.Project.Repository, worktree, dir, "", nil)
+	}
+	if rel, err := filepath.Rel(worktree, dest); err == nil && rel != ".." && !strings.HasPrefix(rel, "../") {
+		return HarvestSummary{}, refuse(RefuseOutputUnreadable, "--harvest-to %s is inside the workspace being removed", dest)
+	}
+	var managed []string // layer outputs Cambium can rebuild from a baseline
+	for _, rule := range m.Project.Rules {
+		switch rule.Mode {
+		case config.LayerClone, config.LayerRecreate, config.LayerShare:
+			managed = append(managed, filepath.ToSlash(rule.Path))
+		}
+	}
+	return harvestIgnored(ctx, m.Project.Repository, worktree, dir, dest, func(rel string) bool {
+		return notWorthRescuing(rel, managed)
+	})
+}
+
+// regenerable names directories that any package manager or tool recreates.
+var regenerable = map[string]bool{
+	"node_modules": true, ".venv": true, "venv": true, ".next": true, ".turbo": true,
+	"__pycache__": true, ".pytest_cache": true, ".mypy_cache": true, ".ruff_cache": true,
+	".gradle": true, ".vite": true, ".vinext": true, "coverage": true, ".cache": true,
+	".pnpm-store": true, ".DS_Store": true,
+}
+
+// notWorthRescuing reports whether an ignored file is rebuildable rather than
+// work: a regenerable dependency directory, a Cambium-managed layer, a .pyc, or
+// Cargo compiler state inside a target directory (incremental caches, build
+// fingerprints, build-script output and hashed intermediates in deps/).
+// Binaries, dist, build and local databases are kept.
+func notWorthRescuing(rel string, managed []string) bool {
+	rel = filepath.ToSlash(rel)
+	for _, layer := range managed {
+		if rel == layer || strings.HasPrefix(rel, layer+"/") {
+			return true
+		}
+	}
+	if strings.HasSuffix(rel, ".pyc") {
+		return true
+	}
+	parts := strings.Split(rel, "/")
+	inTarget := false
+	for i, part := range parts {
+		if regenerable[part] {
+			return true
+		}
+		if part == "target" {
+			inTarget = true
+			continue
+		}
+		if !inTarget {
+			continue
+		}
+		switch part {
+		case "incremental", ".fingerprint", "build":
+			return true
+		case "deps":
+			for _, ext := range []string{".rlib", ".rmeta", ".o", ".d"} {
+				if strings.HasSuffix(parts[len(parts)-1], ext) && i < len(parts)-1 {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
