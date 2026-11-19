@@ -1517,7 +1517,7 @@ Usage:
   cambium prune [--older-than DURATION | --max-unused-bytes SIZE] [--dry-run] [--json]
   cambium prune --merged REF [--older-than DURATION] [--delete-branch] [--dry-run] [--json]
   cambium status [--all] [--merged-into REF] [--no-bytes] [--json]
-  cambium maintain [--all-repos] [--merged REF] [--older-than DURATION] [--dry-run] [--json]
+  cambium maintain [--all-repos] [--exclude PATH]... [--merged REF] [--older-than DURATION] [--dry-run] [--json]
   cambium seed refresh [--json] [NAME]
   cambium doctor [--repair] [--json]
   cambium benchmark [flags]

@@ -122,4 +122,7 @@ fi
 "$CAMBIUM_BIN" recover --dry-run | grep -q 'no interrupted operations'
 "$CAMBIUM_BIN" doctor >/dev/null
 
+# Wrapper-parity behaviours with real git and cargo.
+sh "$(dirname "$0")/wrapper-parity-test.sh"
+
 printf 'Cambium system test passed\n'

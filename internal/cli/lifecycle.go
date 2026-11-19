@@ -8,6 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/nbardy/cambium/internal/config"
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/native"
 	"github.com/nbardy/cambium/internal/workspace"
@@ -131,11 +132,13 @@ func (a *App) runMaintain(ctx context.Context, args []string) (int, error) {
 	olderThanValue := set.String("older-than", "168h", "minimum cache idle age; with --merged also the idle age for workspaces with no commits")
 	dryRun := set.Bool("dry-run", false, "report without changing anything")
 	jsonOutput := set.Bool("json", false, "emit JSON")
+	var exclude pathList
+	set.Var(&exclude, "exclude", "leave this repository (or every repository under this directory) alone; repeatable")
 	if err := set.Parse(args); err != nil {
 		return 1, err
 	}
 	if set.NArg() != 0 {
-		return 1, errors.New("usage: cambium maintain [--all-repos] [--merged REF [--delete-branch]] [--older-than DURATION] [--dry-run] [--json]")
+		return 1, errors.New("usage: cambium maintain [--all-repos] [--exclude PATH]... [--merged REF [--delete-branch]] [--older-than DURATION] [--dry-run] [--json]")
 	}
 	olderThan, err := time.ParseDuration(*olderThanValue)
 	if err != nil || olderThan <= 0 {
@@ -157,7 +160,11 @@ func (a *App) runMaintain(ctx context.Context, args []string) (int, error) {
 	var reports []MaintainReport
 	for _, manager := range managers {
 		report := MaintainReport{Repository: manager.Project.PrimaryRoot()}
-		if protected, why := manager.Project.Config.Protected(report.Repository); protected {
+		protected, why := manager.Project.Config.Protected(report.Repository)
+		if !protected {
+			protected, why = excluded(exclude, report.Repository)
+		}
+		if protected {
 			report.Protected = why
 			reports = append(reports, report)
 			continue
@@ -282,4 +289,17 @@ func (a *App) populateSubmodules(ctx context.Context, manager *workspace.Manager
 		fmt.Fprintf(a.Stderr, "warning: submodule %s left empty: %s has no copy of it\n", path, source)
 	}
 	return err
+}
+
+// pathList is a repeatable string flag.
+type pathList []string
+
+func (p *pathList) String() string     { return strings.Join(*p, ",") }
+func (p *pathList) Set(v string) error { *p = append(*p, v); return nil }
+
+// excluded reports whether repo is one of the --exclude paths or inside one.
+// A caller with its own protection policy (for example a disk-cleanup script
+// that knows which repositories are in use) passes that policy here.
+func excluded(list pathList, repo string) (bool, string) {
+	return config.Config{ProtectedRepos: list}.Protected(repo)
 }

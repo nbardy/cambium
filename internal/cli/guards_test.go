@@ -277,3 +277,24 @@ func TestInheritedGitDirDoesNotRedirectCambium(t *testing.T) {
 		t.Fatalf("workspace belongs to the wrong repository: %s", got)
 	}
 }
+
+// Gap 4, wiring: a caller with its own protection policy (cleanup_tools'
+// disk_policy.py) excludes repositories per run, and nothing under them moves.
+func TestMaintainExcludeLeavesNamedRepositoriesAlone(t *testing.T) {
+	t.Setenv("CAMBIUM_STATE_DIR", t.TempDir())
+	userConfig(t, "repos_root = \""+t.TempDir()+"\"\n")
+	finishedIn := func(f *safeFixture, name string) string {
+		writeFile(t, filepath.Join(f.root, ".cambium.toml"), "version = 1\n[settings]\nmerge_target = \"main\"\n")
+		path := f.createEphemeral(name)
+		writeFile(t, filepath.Join(path, name+".txt"), "x\n")
+		gitCLI(t, path, "add", ".")
+		gitCLI(t, path, "commit", "-q", "-m", name)
+		gitCLI(t, f.root, "merge", "-q", "--ff-only", gitOut(t, path, "rev-parse", "HEAD"))
+		return path
+	}
+	kept, swept := newSafeFixture(t), newSafeFixture(t)
+	keptPath, sweptPath := finishedIn(kept, "kept"), finishedIn(swept, "swept")
+	swept.mustRun("maintain", "--all-repos", "--merged", "main", "--exclude", kept.root)
+	requireExists(t, keptPath, true)
+	requireExists(t, sweptPath, false)
+}
