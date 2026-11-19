@@ -11,7 +11,7 @@ E-F cleanup_tools (49-74), G-H relay (75-87), I other callers (88-92), J owner-w
 
 | # | Status | Cambium 0.10.0 |
 |---|---|---|
-| 1 | COVERED | `workspace_root` (user or repo setting); `git cambium add -b B -name N -ephemeral` with no PATH creates `<root>/N`. Keel sets `workspace_root = "~/git/lanes/room-runners"` in its `.cambium.toml`. |
+| 1 | COVERED | `workspace_root` (user or repo setting); `git cambium add -b B -name N -ephemeral` with no PATH creates `<root>/N`. Keel sets `workspace_root = "~/git/_wt"` in its `.cambium.toml` (PR #3). |
 | 2 | DROPPED | Keel's character set is Keel policy. Cambium rejects the names it cannot place (empty, `.`, `..`) and slugs the path; a wrapper that wants a stricter alphabet checks it before calling. |
 | 3 | COVERED | `add` refuses an existing path (`workspace path already exists`) and an existing name or branch. |
 | 4 | COVERED | `add` with no COMMIT resolves HEAD in the invoking checkout, not the primary (checked with a linked workspace ahead of the primary: the new workspace carries its commit). |
