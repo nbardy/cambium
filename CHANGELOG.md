@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 - repo-level sweep settings
+
+- `merge_target` and `prune_merged_on_add` settings: `maintain` and `add`/`create` sweep clean, idle
+  workspaces already merged into the target, after a best-effort fetch.
+- `prune --merged` and `maintain` only remove **ephemeral** workspaces (others are reported as kept).
+
 ## 0.8.0 — wrapper behaviour moves into Cambium
 
 Folds what the Keel, loft, cleanup_tools and Buddies wrapper scripts re-implemented

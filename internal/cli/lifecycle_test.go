@@ -133,7 +133,9 @@ func TestNameCommandsWorkOutsideTheRepository(t *testing.T) {
 // Feature: prune --merged REF.
 func TestPruneMergedKeepsUnmergedAndDirty(t *testing.T) {
 	f := newSafeFixture(t)
-	merged := f.create("merged")
+	merged := f.createEphemeral("merged")
+	keep := f.create("not-ephemeral") // long-lived checkout: never swept
+	gitCLI(t, keep, "merge", "-q", "--ff-only", "main")
 	writeFile(t, filepath.Join(merged, "m.txt"), "m\n")
 	gitCLI(t, merged, "add", ".")
 	gitCLI(t, merged, "commit", "-q", "-m", "m")
@@ -153,6 +155,34 @@ func TestPruneMergedKeepsUnmergedAndDirty(t *testing.T) {
 	requireExists(t, merged, false)
 	requireExists(t, unmerged, true)
 	requireExists(t, fresh, true)
+	requireExists(t, keep, true)
+}
+
+func (f *safeFixture) createEphemeral(name string) string {
+	f.t.Helper()
+	f.mustRun("create", "--materializer", "git", "--ephemeral", name)
+	return strings.TrimSpace(f.mustRun("path", name))
+}
+
+// merge_target + prune_merged_on_add: making a workspace sweeps finished
+// ephemeral ones; maintain does the same with no --merged flag.
+func TestMergeTargetSweepsOnAddAndMaintain(t *testing.T) {
+	f := newSafeFixture(t)
+	writeFile(t, filepath.Join(f.root, ".cambium.toml"), "version = 1\n[settings]\nmerge_target = \"main\"\nprune_merged_on_add = true\n")
+	finish := func(name string) string {
+		path := f.createEphemeral(name)
+		writeFile(t, filepath.Join(path, name+".txt"), "x\n")
+		gitCLI(t, path, "add", ".")
+		gitCLI(t, path, "commit", "-q", "-m", name)
+		gitCLI(t, f.root, "merge", "-q", "--ff-only", strings.TrimSpace(gitOut(t, path, "rev-parse", "HEAD")))
+		return path
+	}
+	first := finish("first")
+	f.createEphemeral("second") // sweeps first
+	requireExists(t, first, false)
+	second := finish("second-done")
+	f.mustRun("maintain")
+	requireExists(t, second, false)
 }
 
 // Features: status --all and maintain --all-repos over every repository

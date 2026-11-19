@@ -302,6 +302,14 @@ func assignSetting(value *Config, setting Setting) error {
 			return fmt.Errorf("workspace_root: %w", err)
 		}
 		value.WorkspaceRoot = parsed
+	case "merge_target":
+		parsed, err := parseTOMLString(setting.Raw)
+		if err != nil {
+			return fmt.Errorf("merge_target: %w", err)
+		}
+		value.MergeTarget = parsed
+	case "prune_merged_on_add":
+		return parseBoolInto(&value.PruneMergedOnAdd, setting)
 	case "repos_root":
 		parsed, err := parseTOMLString(setting.Raw)
 		if err != nil {

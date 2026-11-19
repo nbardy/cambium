@@ -58,6 +58,8 @@ root**, so a branch carries the policy that matches its own build layout.
 | `prepared_index` | `true` | seed worktree indexes from immutable baselines |
 | `require_ignored_layers` | `true` | managed outputs must be Git-ignored unless a rule opts out |
 | `workspace_root` | unset | directory for `add NAME` with no PATH: `<root>/<name>`. `~/` and absolute paths; relative paths are relative to the primary checkout |
+| `merge_target` | unset | ref (e.g. `origin/main`) that marks a workspace finished; `maintain` removes clean, idle, **ephemeral** workspaces whose HEAD is in it, after a best-effort fetch of that remote branch |
+| `prune_merged_on_add` | `false` | needs `merge_target`; `add` and `create` first remove finished workspaces the same way (guarded and checkpointed; a failure only warns) |
 | `repos_root` | `~/git` | **per-user file only**; where `status --all` and `maintain --all-repos` look for repositories with `.git/cambium` |
 | `allow_policy_commands` | `false` | **local file only**; see [Commands and trust](#commands-and-trust) |
 

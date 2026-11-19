@@ -27,7 +27,7 @@ import (
 	"github.com/nbardy/cambium/internal/workspace"
 )
 
-var Version = "0.8.0"
+var Version = "0.9.0"
 
 type App struct {
 	Stdout io.Writer
@@ -266,6 +266,7 @@ func (a *App) runCreate(ctx context.Context, args []string) error {
 		value := *preparedIndex
 		indexOverride = &value
 	}
+	a.sweepOnAdd(ctx, manager)
 	created, err := manager.Create(ctx, workspace.CreateSpec{
 		Name: set.Arg(0), Ref: *ref, Branch: *branch, Path: *path,
 		Ephemeral: *ephemeral, RequireCoW: *requireCoW,
@@ -331,6 +332,7 @@ func (a *App) runAdd(ctx context.Context, args []string) error {
 			return err
 		}
 	}
+	a.sweepOnAdd(ctx, manager)
 	created, err := manager.Create(ctx, workspace.CreateSpec{
 		Name: *name, Ref: ref, Branch: *branch, Path: path,
 		Ephemeral: *ephemeral, RequireCoW: *requireCoW, Materializer: materializer,

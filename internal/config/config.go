@@ -116,6 +116,13 @@ type Config struct {
 	// ReposRoot is the directory `maintain --all-repos` and `status --all`
 	// scan for repositories that have Cambium state. Per-user config only.
 	ReposRoot string `json:"repos_root,omitempty"`
+	// MergeTarget is the ref (usually "origin/main") that decides a workspace is
+	// finished: `maintain` removes clean ephemeral workspaces whose HEAD is in
+	// it, after a best-effort fetch of its remote branch.
+	MergeTarget string `json:"merge_target,omitempty"`
+	// PruneMergedOnAdd makes `add` and `create` sweep merged workspaces
+	// (against MergeTarget) first, so finished ones never pile up.
+	PruneMergedOnAdd bool `json:"prune_merged_on_add,omitempty"`
 }
 
 func Default() Config {
@@ -274,6 +281,9 @@ func (c Config) Validate() error {
 	}
 	if strings.HasPrefix(c.WorkspaceRoot, "~") && c.WorkspaceRoot != "~" && !strings.HasPrefix(c.WorkspaceRoot, "~/") {
 		return fmt.Errorf("workspace_root %q: only ~ and ~/... are expanded", c.WorkspaceRoot)
+	}
+	if c.PruneMergedOnAdd && c.MergeTarget == "" {
+		return errors.New("prune_merged_on_add needs merge_target")
 	}
 	if c.BranchPrefix == "" {
 		return errors.New("branch_prefix cannot be empty")

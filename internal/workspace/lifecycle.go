@@ -183,6 +183,12 @@ func (m *Manager) PruneMerged(ctx context.Context, options PruneMergedOptions) (
 			skip("primary checkout")
 			continue
 		}
+		// Only disposable workspaces are swept; a workspace made without
+		// --ephemeral is somebody's long-lived checkout.
+		if !value.Ephemeral {
+			skip("not ephemeral")
+			continue
+		}
 		if _, err := os.Stat(value.Path); err != nil {
 			skip("worktree missing; use forget --missing")
 			continue
@@ -220,4 +226,18 @@ func (m *Manager) PruneMerged(ctx context.Context, options PruneMergedOptions) (
 		result.Removed = append(result.Removed, value.Name)
 	}
 	return result, nil
+}
+
+// FetchMergeTarget refreshes a "remote/branch" ref before a merged check. It
+// is best effort: offline, or a ref that is not remote-tracking, changes
+// nothing and the check runs against the ref as it is.
+func (m *Manager) FetchMergeTarget(ctx context.Context, ref string) {
+	remote, branch, ok := strings.Cut(ref, "/")
+	if !ok || remote == "" || branch == "" {
+		return
+	}
+	if _, err := m.Project.Repository.RunCommon(ctx, nil, "remote", "get-url", remote); err != nil {
+		return
+	}
+	_, _ = m.Project.Repository.RunCommon(ctx, nil, "fetch", "--quiet", remote, branch)
 }

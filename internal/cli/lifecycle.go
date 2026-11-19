@@ -192,7 +192,11 @@ func maintainOne(ctx context.Context, manager *workspace.Manager, report *Mainta
 	if report.Forget, err = manager.ForgetMissing(ctx, dryRun); err != nil {
 		return fmt.Errorf("forget --missing: %w", err)
 	}
+	if mergedRef == "" {
+		mergedRef = manager.Project.Config.MergeTarget
+	}
 	if mergedRef != "" {
+		manager.FetchMergeTarget(ctx, mergedRef)
 		result, err := manager.PruneMerged(ctx, workspace.PruneMergedOptions{Ref: mergedRef, DryRun: dryRun, DeleteBranch: deleteBranch, MinIdle: olderThan})
 		if err != nil {
 			return fmt.Errorf("prune --merged: %w", err)
@@ -215,4 +219,23 @@ func firstLine(text string) string {
 		}
 	}
 	return text
+}
+
+// sweepOnAdd honours prune_merged_on_add: finished workspaces are removed
+// (guarded, checkpointed) before a new one is made. A failure never blocks the
+// add; it is reported and the add goes on.
+func (a *App) sweepOnAdd(ctx context.Context, manager *workspace.Manager) {
+	target := manager.Project.Config.MergeTarget
+	if !manager.Project.Config.PruneMergedOnAdd || target == "" {
+		return
+	}
+	manager.FetchMergeTarget(ctx, target)
+	result, err := manager.PruneMerged(ctx, workspace.PruneMergedOptions{Ref: target})
+	if err != nil {
+		fmt.Fprintf(a.Stderr, "warning: prune_merged_on_add: %v\n", err)
+		return
+	}
+	for _, name := range result.Removed {
+		fmt.Fprintf(a.Stderr, "removed merged workspace %s\n", name)
+	}
 }
