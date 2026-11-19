@@ -8,6 +8,9 @@ export PATH
 # Resolve symlinks (macOS /var -> /private/var): Cambium reports canonical paths.
 ROOT=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/cambium-system.XXXXXX")" && pwd -P)
 trap 'rm -rf "$ROOT"' EXIT INT TERM
+# Never read or write the developer's own config, registry or workspace root.
+export CAMBIUM_CONFIG="$ROOT/no-user-config.toml"
+export CAMBIUM_STATE_DIR="$ROOT/state"
 REPO="$ROOT/repo"
 mkdir -p "$REPO"
 cd "$REPO"

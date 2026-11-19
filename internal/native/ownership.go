@@ -110,7 +110,9 @@ func (b *Backend) VerifyWorkspaceOwnership(ctx context.Context, value model.Work
 	if err != nil {
 		return "", err
 	}
-	if !found || worktree.Bare || worktree.Branch != value.Branch {
+	// A detached HEAD (a review tree pinned to a commit) is still this workspace: identity is the
+	// owner ID checked below; a different branch checked out is not.
+	if !found || worktree.Bare || (worktree.Branch != "" && worktree.Branch != value.Branch) {
 		return "", fmt.Errorf("%w: registration at %s does not match recorded branch %q", ErrWorktreeOwnership, value.Path, value.Branch)
 	}
 	info, err := os.Stat(value.Path)

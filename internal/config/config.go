@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"testing"
 
 	"github.com/nbardy/cambium/internal/fsx"
 	"github.com/nbardy/cambium/internal/model"
@@ -182,6 +183,11 @@ func Default() Config {
 func UserPath() string {
 	if path := os.Getenv("CAMBIUM_CONFIG"); path != "" {
 		return path
+	}
+	if testing.Testing() {
+		// A test binary must not read the developer's own config (a real workspace_root
+		// once made test fixtures land in ~/git/_wt); a test that wants one sets CAMBIUM_CONFIG.
+		return ""
 	}
 	if base := os.Getenv("XDG_CONFIG_HOME"); base != "" {
 		return filepath.Join(base, "cambium", LocalFilename)

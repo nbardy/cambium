@@ -17,6 +17,10 @@
   (`--harvest .` for the whole workspace); rebuildable dependency and compiler state stays behind.
 - **`scrub_env`** setting: allow-listed child environment, hooks and fsmonitor disabled.
   Inherited `GIT_DIR`/`GIT_WORK_TREE`-style selectors never redirect Cambium.
+- A detached HEAD (a review tree pinned to a commit) no longer reads as a changed branch: it is removable when its commit is held, refused as `unpushed` when not.
+- The Claude Code hook and Codex command removals follow the same guard: a worktree holding a commit nothing else holds is kept (non-zero exit) until the commit is merged or pushed.
+- `remove --dry-run NAME`: every guard, nothing changed.
+- Test binaries and the test scripts never read the developer's config or registry.
 - `scripts/wrapper-parity-test.sh` (run by `system-test.sh`): default workspace root, submodules and a real
   `cargo build` seed, with real commands.
 

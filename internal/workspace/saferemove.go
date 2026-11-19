@@ -294,6 +294,12 @@ func checkBranchUnchanged(ctx context.Context, repo gitx.Repository, current mod
 	}
 	symbolic, err := repo.RunAt(ctx, current.Path, nil, "symbolic-ref", "-q", "HEAD")
 	actual := strings.TrimSpace(symbolic.Stdout)
+	if actual == "" {
+		// Detached HEAD (a review tree pinned to a commit): no other branch took the
+		// workspace over, and the unpushed-commit guard judges the commit HEAD names.
+		// Branch deletion stays safe because it only deletes a branch still at its base.
+		return head, nil
+	}
 	if err != nil || actual != "refs/heads/"+current.Branch {
 		return "", refuse(RefuseBranchChanged, "workspace HEAD is %q, recorded branch is %q", actual, current.Branch)
 	}

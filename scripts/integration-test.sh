@@ -9,6 +9,9 @@ export PATH
 # Resolve symlinks (macOS /var -> /private/var): Cambium reports canonical paths.
 ROOT=$(cd "$(mktemp -d "${TMPDIR:-/tmp}/cambium-integration.XXXXXX")" && pwd -P)
 trap 'chmod -R u+w "$ROOT" 2>/dev/null; rm -rf "$ROOT"' EXIT INT TERM
+# Never read or write the developer's own config, registry or workspace root.
+export CAMBIUM_CONFIG="$ROOT/no-user-config.toml"
+export CAMBIUM_STATE_DIR="$ROOT/state"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 worktrees() { git -C "$REPO" worktree list --porcelain | grep -c '^worktree '; }
@@ -42,11 +45,19 @@ test ! -e "$CODEX_ROOT" || fail "codex: worktree not removed"
 test "$(worktrees)" = 1 || fail "codex: worktree still registered"
 test -z "$(git -C "$REPO" branch --list 'codex/*')" || fail "codex: merged branch not deleted"
 
-# A commit made in the worktree must survive removal (safe branch delete).
+# A commit made in the worktree that nothing else holds is unpushed work: the adapter's remove
+# refuses (so Codex keeps the worktree) until the commit is held elsewhere; then the branch is deleted.
 "$HERE/integrations/codex-worktree-command" create "$REPO" "$CODEX_ROOT" "$HEAD_SHA"
 git -C "$CODEX_ROOT" -c user.name=t -c user.email=t@example.invalid commit -q --allow-empty -m agent-work
+if "$HERE/integrations/codex-worktree-command" remove "$REPO" "$CODEX_ROOT" 2>/dev/null; then
+  fail "codex: removed a worktree holding an unpushed commit"
+fi
+test -d "$CODEX_ROOT" || fail "codex: refused removal still deleted the worktree"
+git -C "$REPO" merge -q --ff-only codex/a1b2
 "$HERE/integrations/codex-worktree-command" remove "$REPO" "$CODEX_ROOT"
-test -n "$(git -C "$REPO" branch --list 'codex/*')" || fail "codex: unmerged branch with agent commit was deleted"
+test ! -e "$CODEX_ROOT" || fail "codex: worktree not removed once its commit is merged"
+test "$(git -C "$REPO" log -1 --format=%s)" = agent-work || fail "codex: agent commit lost"
+HEAD_SHA=$(git -C "$REPO" rev-parse HEAD) # main moved with the merge
 
 # --- Claude Code: WorktreeCreate / WorktreeRemove hooks -------------------
 HOOK="$HERE/integrations/claude-worktree-hook"

@@ -314,3 +314,23 @@ func TestRemoveDryRunRefusesLikeTheRealRemoveAndChangesNothing(t *testing.T) {
 	f.mustRun("remove", "clean")
 	requireExists(t, clean, false)
 }
+
+// A detached HEAD is not a branch change: relay review trees are pinned to a
+// commit. The commit is still judged by the unpushed guard.
+func TestDetachedWorkspaceIsRemovableOnlyWhenItsCommitIsHeld(t *testing.T) {
+	f := newSafeFixture(t)
+	held := f.create("held")
+	gitCLI(t, held, "switch", "-q", "--detach", "main")
+	f.mustRun("remove", "held")
+	requireExists(t, held, false)
+
+	stray := f.create("stray")
+	gitCLI(t, stray, "switch", "-q", "--detach")
+	writeFile(t, filepath.Join(stray, "s.txt"), "s\n")
+	gitCLI(t, stray, "add", ".")
+	gitCLI(t, stray, "commit", "-q", "-m", "only on a detached HEAD")
+	if code := f.run("remove", "stray"); code != 3 || !strings.Contains(f.stderr.String(), "unpushed") {
+		t.Fatalf("a detached HEAD commit nothing holds must refuse as unpushed: exit %d, %s", code, f.stderr.String())
+	}
+	requireExists(t, stray, true)
+}
