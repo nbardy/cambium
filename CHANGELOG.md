@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.8.0 — wrapper behaviour moves into Cambium
+
+Folds what the Keel, loft, cleanup_tools and Buddies wrapper scripts re-implemented
+around `cambium` into the tool.
+
+### Changed
+
+- **`remove` is guarded by default.** A dirty, mid-operation, branch-moved or
+  in-use workspace is refused (exit 3). `--force` is the only opt-out and it
+  still refuses the primary checkout. `--safe` is accepted and means the
+  default. `--json`, `--require-merged`, `--harvest` and `--salvage-ref` no
+  longer need `--safe`.
+- `add` and `create` print a summary without the "environment unverified" path
+  list; `inspect` and `env explain` still show it.
+
+### Fixed
+
+- `remove NAME`, `path NAME` and `inspect NAME` work from any directory: the
+  workspace is found by searching `repos_root`. A name in two repositories is
+  an error that lists them.
+- The primary checkout is never removable, never adoptable, and never reported
+  as a removable workspace.
+- `--older-than` / `-older-than`: help and docs use `--`; both spellings work.
+
+### Added
+
+- `prune --merged REF [--older-than D] [--delete-branch] [--dry-run]`: remove
+  clean workspaces already in REF. Never removes a dirty, in-use or unmerged one.
+- `maintain [--all-repos] [--merged REF]`: reconcile, forget missing records,
+  prune idle caches, for this repository or every repository under `repos_root`.
+- `status [--all]`: per workspace dirty paths, unpushed commits, merged,
+  in-use, and exclusive bytes (APFS private size).
+- In-use detection for remove, prune and maintain: a live process whose cwd is
+  inside the workspace, a `cambium run` marker, or a held Cargo build lock.
+- A per-user config (`~/.config/cambium/config.toml`, `$CAMBIUM_CONFIG`) with
+  `workspace_root` (where `add` puts a workspace when PATH is omitted) and
+  `repos_root` (default `~/git`). `workspace_root` is overridable in
+  `.cambium.toml` and the clone-local config.
+- `add [flags] [PATH [COMMIT]]`: PATH may be omitted when a root is configured.
+
 ## 0.7.1 — cargo-target seeds grow with their source
 
 ### Fixed

@@ -11,8 +11,18 @@ import (
 
 	"github.com/nbardy/cambium/internal/fsx"
 	"github.com/nbardy/cambium/internal/gitx"
+	"github.com/nbardy/cambium/internal/inuse"
 	"github.com/nbardy/cambium/internal/model"
+	"github.com/nbardy/cambium/internal/native"
 )
+
+func holderList(holders []inuse.Holder) string {
+	parts := make([]string, len(holders))
+	for i, holder := range holders {
+		parts[i] = holder.String()
+	}
+	return strings.Join(parts, "; ")
+}
 
 // RefusalReason names why a guarded command preserved its target. The values
 // are part of the JSON contract read by orchestrators (oompa, Buddies).
@@ -32,6 +42,8 @@ const (
 	RefuseTagConflict      RefusalReason = "tag-conflict"
 	RefusePushUnverified   RefusalReason = "push-unverified"
 	RefuseMoved            RefusalReason = "moved"
+	RefuseInUse            RefusalReason = "in-use"
+	RefusePrimary          RefusalReason = "primary"
 )
 
 // Refusal is the typed "nothing was deleted" outcome. The CLI maps it to exit
@@ -75,6 +87,17 @@ func (m *Manager) SafeRemove(ctx context.Context, name string, options SafeRemov
 	result := SafeRemoveResult{Removed: true}
 	repo := m.Project.Repository
 	err := m.Native.RemoveIf(ctx, name, true, options.DeleteBranch, func(current model.Workspace) error {
+		if native.SamePath(current.Path, m.Project.PrimaryRoot()) {
+			return refuse(RefusePrimary, "%s is the primary checkout, not a removable workspace", current.Path)
+		}
+		// Guarded removal has no force: a workspace in use is never removed.
+		holders, err := inuse.Check(current.Path, m.Project.UseDir(current.ID))
+		if err != nil {
+			return refuse(RefuseUnreadable, "check whether %s is in use: %v", current.Path, err)
+		}
+		if len(holders) > 0 {
+			return refuse(RefuseInUse, "workspace %q is in use: %s", name, holderList(holders))
+		}
 		clean, status, err := repo.IsClean(ctx, current.Path)
 		if err != nil {
 			return refuse(RefuseUnreadable, "git status failed in %s: %v", current.Path, err)

@@ -95,6 +95,14 @@ type Config struct {
 	PreparedIndex        bool               `json:"prepared_index"`
 	RequireIgnoredLayers bool               `json:"require_ignored_layers"`
 	AllowPolicyCommands  bool               `json:"allow_policy_commands"`
+	// WorkspaceRoot is where `add` and `create` put a workspace when no PATH is
+	// given: <root>/<name>. Empty keeps the legacy <git-common-dir>/cambium/worktrees.
+	// "~" and absolute paths are accepted anywhere; a relative path is relative
+	// to the primary checkout and is rejected in the per-user config.
+	WorkspaceRoot string `json:"workspace_root,omitempty"`
+	// ReposRoot is the directory `maintain --all-repos` and `status --all`
+	// scan for repositories that have Cambium state. Per-user config only.
+	ReposRoot string `json:"repos_root,omitempty"`
 }
 
 func Default() Config {
@@ -106,10 +114,87 @@ func Default() Config {
 	}
 }
 
-// Load resolves operational settings: defaults, then the primary checkout's
-// committed .cambium.toml [settings], then the clone-local config.toml.
+// UserPath is the per-user settings file: $CAMBIUM_CONFIG, else
+// $XDG_CONFIG_HOME/cambium/config.toml, else ~/.config/cambium/config.toml.
+// An empty result means no home directory could be determined.
+func UserPath() string {
+	if path := os.Getenv("CAMBIUM_CONFIG"); path != "" {
+		return path
+	}
+	if base := os.Getenv("XDG_CONFIG_HOME"); base != "" {
+		return filepath.Join(base, "cambium", LocalFilename)
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".config", "cambium", LocalFilename)
+}
+
+func loadUserFile() (File, error) {
+	path := UserPath()
+	if path == "" {
+		return File{}, nil
+	}
+	return readFile(path, ScopeUser)
+}
+
+// LoadUser resolves only built-in defaults and the per-user file, for commands
+// that run outside any repository.
+func LoadUser() (Config, error) {
+	value := Default()
+	user, err := loadUserFile()
+	if err != nil {
+		return Config{}, err
+	}
+	if err := applySettings(&value, user); err != nil {
+		return Config{}, err
+	}
+	return value, value.Validate()
+}
+
+// ExpandPath resolves "~", "~/x" and relative paths (against base).
+func ExpandPath(raw, base string) (string, error) {
+	switch {
+	case raw == "~" || strings.HasPrefix(raw, "~/"):
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(home, strings.TrimPrefix(raw, "~")), nil
+	case filepath.IsAbs(raw):
+		return filepath.Clean(raw), nil
+	default:
+		return filepath.Join(base, raw), nil
+	}
+}
+
+// ResolveWorkspaceRoot returns the absolute default workspace root for a
+// repository, or "" when none is configured.
+func (c Config) ResolveWorkspaceRoot(repoRoot string) (string, error) {
+	if c.WorkspaceRoot == "" {
+		return "", nil
+	}
+	return ExpandPath(c.WorkspaceRoot, repoRoot)
+}
+
+// ResolveReposRoot returns the directory scanned for repositories (default ~/git).
+func (c Config) ResolveReposRoot() (string, error) {
+	if c.ReposRoot == "" {
+		return ExpandPath("~/git", "")
+	}
+	return ExpandPath(c.ReposRoot, "")
+}
+
+// Load resolves operational settings: defaults, then the per-user config, then
+// the primary checkout's committed .cambium.toml [settings], then the
+// clone-local config.toml. A repository therefore overrides the user.
 func Load(repoRoot, commonGitDir string) (Config, error) {
 	value := Default()
+	user, err := loadUserFile()
+	if err != nil {
+		return Config{}, err
+	}
 	committed, err := readFile(filepath.Join(repoRoot, PolicyFilename), ScopeCommitted)
 	if err != nil {
 		return Config{}, err
@@ -118,7 +203,7 @@ func Load(repoRoot, commonGitDir string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	for _, file := range []File{committed, local} {
+	for _, file := range []File{user, committed, local} {
 		if err := applySettings(&value, file); err != nil {
 			return Config{}, err
 		}
@@ -173,6 +258,9 @@ func WriteLocal(commonGitDir string, settings []Setting, overwrite bool) (string
 func (c Config) Validate() error {
 	if err := ValidateMaterializer(c.Materializer); err != nil {
 		return err
+	}
+	if strings.HasPrefix(c.WorkspaceRoot, "~") && c.WorkspaceRoot != "~" && !strings.HasPrefix(c.WorkspaceRoot, "~/") {
+		return fmt.Errorf("workspace_root %q: only ~ and ~/... are expanded", c.WorkspaceRoot)
 	}
 	if c.BranchPrefix == "" {
 		return errors.New("branch_prefix cannot be empty")

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -26,7 +27,7 @@ import (
 	"github.com/nbardy/cambium/internal/workspace"
 )
 
-var Version = "0.7.1"
+var Version = "0.8.0"
 
 type App struct {
 	Stdout io.Writer
@@ -95,6 +96,10 @@ func (a *App) Run(ctx context.Context, args []string) int {
 		err = a.runRecover(ctx, args[1:])
 	case "prune":
 		err = a.runPrune(ctx, args[1:])
+	case "status":
+		err = a.runStatus(ctx, args[1:])
+	case "maintain":
+		code, err = a.runMaintain(ctx, args[1:])
 	case "doctor":
 		code, err = a.runDoctor(ctx, args[1:])
 	case "benchmark", "bench":
@@ -291,19 +296,27 @@ func (a *App) runAdd(ctx context.Context, args []string) error {
 	if err := set.Parse(args); err != nil {
 		return err
 	}
-	if set.NArg() < 1 || set.NArg() > 2 {
-		return errors.New("usage: git cambium add [flags] PATH [COMMIT]")
+	if set.NArg() > 2 {
+		return errors.New("usage: git cambium add [flags] [PATH [COMMIT]]")
 	}
-	path := set.Arg(0)
+	// With no PATH the workspace goes to <workspace_root>/<name> (or the legacy
+	// managed directory when no root is configured).
+	path := ""
 	ref := "HEAD"
+	if set.NArg() >= 1 {
+		path = set.Arg(0)
+	}
 	if set.NArg() == 2 {
 		ref = set.Arg(1)
 	}
-	if *branch == "" {
+	if *branch == "" && path != "" {
 		*branch = filepath.Base(filepath.Clean(path))
 	}
 	if *name == "" {
 		*name = *branch
+	}
+	if *name == "" {
+		return errors.New("add without PATH needs -name or -b to name the workspace")
 	}
 	manager, err := a.manager(ctx)
 	if err != nil {
@@ -342,7 +355,7 @@ func (a *App) runPath(ctx context.Context, args []string) error {
 	if set.NArg() != 1 {
 		return errors.New("usage: cambium path NAME")
 	}
-	manager, err := a.manager(ctx)
+	manager, err := a.managerFor(ctx, set.Arg(0))
 	if err != nil {
 		return err
 	}
@@ -735,7 +748,7 @@ func (a *App) runInspect(ctx context.Context, args []string) error {
 	if set.NArg() != 1 {
 		return errors.New("usage: cambium inspect [flags] NAME")
 	}
-	manager, err := a.manager(ctx)
+	manager, err := a.managerFor(ctx, set.Arg(0))
 	if err != nil {
 		return err
 	}
@@ -746,41 +759,47 @@ func (a *App) runInspect(ctx context.Context, args []string) error {
 	if *jsonOutput {
 		return writeJSON(a.Stdout, value)
 	}
-	printWorkspace(a.Stdout, value)
+	printWorkspaceDetail(a.Stdout, value)
 	return nil
 }
 
 func (a *App) runRemove(ctx context.Context, args []string) error {
 	set := a.flagSet("remove")
-	force := set.Bool("force", false, "discard uncommitted changes")
-	safe := set.Bool("safe", false, "remove only after the guard ladder proves nothing is lost (exit 3 on refusal)")
+	force := set.Bool("force", false, "discard uncommitted work and skip every guard except the primary-checkout check")
+	safe := set.Bool("safe", false, "the default; accepted so scripts can state it (exit 3 on refusal)")
 	deleteBranch := set.Bool("delete-branch", false, "delete the workspace branch")
-	jsonOutput := set.Bool("json", false, "emit JSON (with --safe)")
-	requireMerged := set.String("require-merged", "", "with --safe: refuse unless the workspace HEAD is an ancestor of REF")
-	harvest := set.String("harvest", "", "with --safe: move git-ignored files under DIR into the primary checkout first")
-	salvageRef := set.String("salvage-ref", "", "with --safe: snapshot a dirty workspace as a commit at REF (refs/...) instead of refusing")
+	jsonOutput := set.Bool("json", false, "emit JSON")
+	requireMerged := set.String("require-merged", "", "refuse unless the workspace HEAD is an ancestor of REF")
+	harvest := set.String("harvest", "", "move git-ignored files under DIR into the primary checkout first")
+	salvageRef := set.String("salvage-ref", "", "snapshot a dirty workspace as a commit at REF (refs/...) instead of refusing")
 	if err := set.Parse(args); err != nil {
 		return err
 	}
 	if set.NArg() != 1 {
-		return errors.New("usage: cambium remove [--force | --safe [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF]] [--delete-branch] NAME")
+		return errors.New("usage: cambium remove [--force | [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF]] [--delete-branch] NAME")
 	}
-	manager, err := a.manager(ctx)
-	if err != nil {
-		return err
-	}
-	if !*safe {
-		if *jsonOutput || *requireMerged != "" || *harvest != "" || *salvageRef != "" {
-			return errors.New("--json, --require-merged, --harvest and --salvage-ref require --safe")
+	// Removal is guarded by default: a dirty, in-progress, in-use or
+	// branch-changed workspace is refused (exit 3). --force is the only opt-out.
+	if *force {
+		if *safe {
+			return errors.New("--safe and --force are mutually exclusive")
 		}
-		if err := manager.Remove(ctx, set.Arg(0), *force, *deleteBranch); err != nil {
+		if *jsonOutput || *requireMerged != "" || *harvest != "" || *salvageRef != "" {
+			return errors.New("--json, --require-merged, --harvest and --salvage-ref apply to guarded removal; drop --force")
+		}
+		manager, err := a.managerFor(ctx, set.Arg(0))
+		if err != nil {
+			return err
+		}
+		if err := manager.Remove(ctx, set.Arg(0), true, *deleteBranch); err != nil {
 			return err
 		}
 		fmt.Fprintln(a.Stdout, set.Arg(0))
 		return nil
 	}
-	if *force {
-		return errors.New("--safe and --force are mutually exclusive")
+	manager, err := a.managerFor(ctx, set.Arg(0))
+	if err != nil {
+		return err
 	}
 	if err := validateHarvestDir(*harvest); err != nil {
 		return err
@@ -801,7 +820,11 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 	if *jsonOutput {
 		return writeJSON(a.Stdout, result)
 	}
-	fmt.Fprintf(a.Stdout, "%s\nsalvage ref: %s\nharvested: moved=%d deduplicated=%d\n", set.Arg(0), result.SalvageRef, result.Harvested.Moved, result.Harvested.Deduplicated)
+	if *safe || *harvest != "" || *salvageRef != "" {
+		fmt.Fprintf(a.Stdout, "%s\nsalvage ref: %s\nharvested: moved=%d deduplicated=%d\n", set.Arg(0), result.SalvageRef, result.Harvested.Moved, result.Harvested.Deduplicated)
+		return nil
+	}
+	fmt.Fprintln(a.Stdout, set.Arg(0))
 	return nil
 }
 
@@ -908,6 +931,13 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 	if value.Status != model.WorkspaceReady {
 		return 1, fmt.Errorf("workspace %q is %s", name, value.Status)
 	}
+	// Register use so prune, maintain and remove leave this workspace alone while
+	// the command runs, even if it is idle between processes.
+	releaseUse, err := manager.MarkInUse(value)
+	if err != nil {
+		return 1, fmt.Errorf("mark workspace in use: %w", err)
+	}
+	defer releaseUse()
 	child := exec.CommandContext(ctx, command[0], command[1:]...)
 	child.Dir = value.Path
 	child.Stdin = a.Stdin
@@ -924,6 +954,7 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 		return 1, runErr
 	}
 	if *discard || *cleanup {
+		releaseUse() // our own marker must not block our own cleanup
 		// A child may outlive its workspace. Another operation can reuse the
 		// same name and path while it runs, so authorize cleanup by identity
 		// under the removal locks rather than by the original name alone.
@@ -1054,11 +1085,13 @@ func (a *App) runPrune(ctx context.Context, args []string) error {
 	maxUnusedValue := set.String("max-unused-bytes", "", "maximum unused cache bytes, e.g. 2GiB or 0; excludes referenced caches")
 	dryRun := set.Bool("dry-run", false, "show selected unreferenced caches without removing them")
 	jsonOutput := set.Bool("json", false, "emit JSON")
+	merged := set.String("merged", "", "remove clean, idle workspaces whose HEAD is already in REF instead of pruning caches")
+	deleteBranch := set.Bool("delete-branch", false, "with --merged: also delete the merged branches")
 	if err := set.Parse(args); err != nil {
 		return err
 	}
 	if set.NArg() != 0 {
-		return errors.New("usage: cambium prune [flags]")
+		return errors.New("usage: cambium prune [--merged REF [--delete-branch]] [--older-than DURATION | --max-unused-bytes SIZE] [--dry-run] [--json]")
 	}
 	var ageSet, budgetSet bool
 	set.Visit(func(f *flag.Flag) {
@@ -1071,6 +1104,23 @@ func (a *App) runPrune(ctx context.Context, args []string) error {
 	})
 	if ageSet && budgetSet {
 		return errors.New("--older-than and --max-unused-bytes are mutually exclusive")
+	}
+	if *merged != "" {
+		if budgetSet {
+			return errors.New("--merged and --max-unused-bytes are mutually exclusive")
+		}
+		var idle time.Duration
+		if ageSet {
+			var err error
+			if idle, err = time.ParseDuration(*olderThanValue); err != nil || idle <= 0 {
+				return fmt.Errorf("parse --older-than: want a positive duration, got %q", *olderThanValue)
+			}
+		}
+		manager, err := a.manager(ctx)
+		if err != nil {
+			return err
+		}
+		return a.printPruneMerged(ctx, manager, workspace.PruneMergedOptions{Ref: *merged, DryRun: *dryRun, DeleteBranch: *deleteBranch, MinIdle: idle}, *jsonOutput)
 	}
 	options := workspace.CachePruneOptions{DryRun: *dryRun}
 	if budgetSet {
@@ -1114,6 +1164,29 @@ func (a *App) runPrune(ctx context.Context, args []string) error {
 	fmt.Fprintf(a.Stdout, "logical bytes: protected=%d eligible=%d retained=%d selected=%d removed=%d\n", result.ProtectedBytes, result.EligibleBytes, result.RetainedBytes, result.SelectedBytes, result.RemovedBytes)
 	if *dryRun {
 		fmt.Fprintln(a.Stdout, "dry run: retained bytes describe the plan; no caches were removed")
+	}
+	return nil
+}
+
+func (a *App) printPruneMerged(ctx context.Context, manager *workspace.Manager, options workspace.PruneMergedOptions, jsonOutput bool) error {
+	result, err := manager.PruneMerged(ctx, options)
+	if err != nil {
+		return err
+	}
+	if jsonOutput {
+		return writeJSON(a.Stdout, result)
+	}
+	verb := "removed"
+	if options.DryRun {
+		verb = "would-remove"
+	}
+	for _, name := range result.Selected {
+		if options.DryRun || slices.Contains(result.Removed, name) {
+			fmt.Fprintf(a.Stdout, "%s\t%s\n", verb, name)
+		}
+	}
+	for _, skip := range result.Skipped {
+		fmt.Fprintf(a.Stdout, "kept\t%s\t%s\n", skip.Name, strings.SplitN(skip.Reason, "\n", 2)[0])
 	}
 	return nil
 }
@@ -1228,6 +1301,87 @@ func (a *App) manager(ctx context.Context) (*workspace.Manager, error) {
 	return workspace.New(projectValue), nil
 }
 
+// managerFor opens the repository that owns workspace NAME. Inside a
+// repository that has NAME, that repository. Otherwise every repository under
+// repos_root is searched, so `cambium remove NAME` and `cambium path NAME` work
+// from any directory. Two repositories sharing a NAME is an error that lists
+// them, never a guess.
+func (a *App) managerFor(ctx context.Context, name string) (*workspace.Manager, error) {
+	local, localErr := a.manager(ctx)
+	if localErr == nil {
+		if exists, err := local.Registry.Exists(name); err != nil || exists {
+			return local, err
+		}
+	}
+	repositories, err := a.allRepositories(ctx)
+	if err != nil {
+		if localErr != nil {
+			return nil, localErr
+		}
+		return local, nil
+	}
+	var matches []*workspace.Manager
+	for _, manager := range repositories {
+		if localErr == nil && manager.Project.PrimaryRoot() == local.Project.PrimaryRoot() {
+			continue
+		}
+		if exists, _ := manager.Registry.Exists(name); exists {
+			matches = append(matches, manager)
+		}
+	}
+	switch len(matches) {
+	case 0:
+		if localErr != nil {
+			return nil, fmt.Errorf("%w (and no repository under the repos root has a workspace named %q)", localErr, name)
+		}
+		return local, nil // let the caller report the ordinary not-found error
+	case 1:
+		return matches[0], nil
+	}
+	roots := make([]string, len(matches))
+	for i, manager := range matches {
+		roots[i] = manager.Project.PrimaryRoot()
+	}
+	return nil, fmt.Errorf("workspace %q exists in several repositories (%s); run the command from inside the one you mean", name, strings.Join(roots, ", "))
+}
+
+// allRepositories opens every repository under repos_root that has Cambium
+// state, plus the current one when it is elsewhere.
+func (a *App) allRepositories(ctx context.Context) ([]*workspace.Manager, error) {
+	user, err := config.LoadUser()
+	if err != nil {
+		return nil, err
+	}
+	root, err := user.ResolveReposRoot()
+	if err != nil {
+		return nil, err
+	}
+	paths, err := project.FindRepositories(root)
+	if err != nil {
+		return nil, fmt.Errorf("scan %s for repositories: %w", root, err)
+	}
+	seen := map[string]bool{}
+	var managers []*workspace.Manager
+	add := func(manager *workspace.Manager) {
+		if key := manager.Project.PrimaryRoot(); !seen[key] {
+			seen[key] = true
+			managers = append(managers, manager)
+		}
+	}
+	if current, err := a.manager(ctx); err == nil {
+		add(current)
+	}
+	for _, path := range paths {
+		value, err := project.Open(ctx, path, a.runner())
+		if err != nil {
+			fmt.Fprintf(a.Stderr, "warning: skip %s: %v\n", path, err)
+			continue
+		}
+		add(workspace.New(value))
+	}
+	return managers, nil
+}
+
 func (a *App) runner() execx.Runner {
 	if a.Runner == nil {
 		return execx.OSRunner{}
@@ -1247,7 +1401,7 @@ func (a *App) printUsage() {
 Usage:
   cambium init [flags]
   cambium prepare [flags]
-  git cambium add [flags] PATH [COMMIT]
+  git cambium add [flags] [PATH [COMMIT]]
   cambium create [flags] NAME
   cambium checkpoint [flags] WORKSPACE
   cambium fork [flags] ROOT_OR_REF NAME
@@ -1259,19 +1413,24 @@ Usage:
   cambium adopt NAME PATH
   cambium reconcile [--dry-run] [--json]
   cambium env <explain|validate|capture> WORKSPACE
-  cambium remove [--force] [--delete-branch] NAME
-  cambium remove --safe [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF] [--delete-branch] NAME
+  cambium remove [--json] [--require-merged REF] [--harvest DIR] [--salvage-ref REF] [--delete-branch] NAME
+  cambium remove --force [--delete-branch] NAME
   cambium forget [--dry-run] [--json] <NAME... | --missing>
   cambium archive [--json] [--remote origin] BRANCH TAG
   cambium gc [flags]
   cambium recover [--dry-run] [--json]
   cambium prune [--older-than DURATION | --max-unused-bytes SIZE] [--dry-run] [--json]
+  cambium prune --merged REF [--older-than DURATION] [--delete-branch] [--dry-run] [--json]
+  cambium status [--all] [--merged-into REF] [--no-bytes] [--json]
+  cambium maintain [--all-repos] [--merged REF] [--older-than DURATION] [--dry-run] [--json]
   cambium doctor [--repair] [--json]
   cambium benchmark [flags]
   cambium version
 
 The default materializer uses APFS clone/reflink when available and otherwise
-falls back to Git's normal checkout. Cambium is not a mounted filesystem and is
+falls back to Git's normal checkout. Removal is guarded: remove refuses (exit 3)
+a dirty, in-use or mid-operation workspace unless --force. NAME commands work
+from any directory; settings are in ~/.config/cambium/config.toml. Cambium is not a mounted filesystem and is
 not in the I/O path after workspace creation. Checkpoint commands use a private
 Git index and hidden refs; the user's branch and staging area remain unchanged.
 `)
@@ -1285,7 +1444,16 @@ func parseMaterializer(value string) (model.Materializer, error) {
 	return materializer, nil
 }
 
+// printWorkspace is the summary shown after add/create/fork. It omits the
+// environment "unverified" list: that is a per-path observation detail, not
+// something the person who just made a workspace can act on. `inspect` and
+// `env explain` show it.
 func printWorkspace(writer io.Writer, value model.Workspace) {
+	value.EnvironmentUnverified = nil
+	printWorkspaceDetail(writer, value)
+}
+
+func printWorkspaceDetail(writer io.Writer, value model.Workspace) {
 	fmt.Fprintf(writer, "name: %s\nstatus: %s\npath: %s\nbranch: %s\nbase: %s\nmode: %s\nprepared index: %t\nenvironment ready: %t\n", value.Name, value.Status, value.Path, value.Branch, value.BaseCommit, value.CloneMode, value.PreparedIndex, value.EnvironmentReady)
 	if len(value.EnvironmentMissing) > 0 {
 		fmt.Fprintf(writer, "environment missing: %s\n", strings.Join(value.EnvironmentMissing, ", "))
