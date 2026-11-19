@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -197,4 +198,68 @@ func TestFindRepositoriesSkipsLinkedWorktrees(t *testing.T) {
 	if len(found) != 1 || canon(t, found[0]) != canon(t, f.root) {
 		t.Fatalf("want exactly the primary checkout, got %v", found)
 	}
+}
+
+// Every removal, --force included, first saves the workspace as a hidden
+// checkpoint, and `recover --removed` brings the work back.
+func TestRemoveCheckpointsFirstAndRecoverRestores(t *testing.T) {
+	f := newSafeFixture(t)
+	path := f.create("doomed")
+	writeFile(t, filepath.Join(path, "untracked.txt"), "irreplaceable\n")
+	f.mustRun("remove", "--force", "doomed")
+	requireExists(t, path, false)
+
+	listed := f.mustRun("recover", "--removed")
+	ref := strings.Fields(listed)[0]
+	if !strings.HasPrefix(ref, workspace.RemovedPrefix+"doomed-") {
+		t.Fatalf("no removal checkpoint listed:\n%s", listed)
+	}
+	restoredPath := filepath.Join(t.TempDir(), "restored")
+	f.mustRun("recover", "--removed", "--path", restoredPath, ref, "restored")
+	got, err := os.ReadFile(filepath.Join(restoredPath, "untracked.txt"))
+	if err != nil || string(got) != "irreplaceable\n" {
+		t.Fatalf("restored workspace lost the untracked file: %q %v", got, err)
+	}
+}
+
+// A refused guarded removal deletes nothing and leaves no checkpoint behind;
+// a successful one leaves exactly one.
+func TestGuardedRemoveCheckpointOnlyWhenItRemoves(t *testing.T) {
+	f := newSafeFixture(t)
+	path := f.create("dirty")
+	writeFile(t, filepath.Join(path, "wip.txt"), "x\n")
+	f.refused("dirty", "remove", "--json", "dirty")
+	if out := f.mustRun("recover", "--removed"); !strings.Contains(out, "no removal checkpoints") {
+		t.Fatalf("a refused removal left a checkpoint:\n%s", out)
+	}
+	f.mustRun("remove", "--salvage-ref", "refs/salvage/dirty", "dirty")
+	if out := f.mustRun("recover", "--removed"); !strings.Contains(out, workspace.RemovedPrefix+"dirty-") {
+		t.Fatalf("a successful removal left no checkpoint:\n%s", out)
+	}
+}
+
+// `cambium run` registers a use marker for the length of its child, so a
+// concurrent prune or remove leaves the workspace alone; the marker is gone
+// when the child exits.
+func TestRunRegistersAUseMarkerForItsChild(t *testing.T) {
+	f := newSafeFixture(t)
+	path := f.create("running")
+	manager, err := f.app.manager(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := manager.Registry.Load("running")
+	if err != nil {
+		t.Fatal(err)
+	}
+	markers := manager.Project.UseDir(value.ID)
+	out := f.mustRun("run", "running", "--", "ls", markers)
+	if strings.TrimSpace(out) == "" {
+		t.Fatalf("no use marker existed while the child ran: %q", out)
+	}
+	if holders, err := manager.InUse(value); err != nil || len(holders) != 0 {
+		t.Fatalf("marker outlived the child: %v %v", holders, err)
+	}
+	f.mustRun("remove", "running")
+	requireExists(t, path, false)
 }

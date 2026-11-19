@@ -39,6 +39,22 @@ around `cambium` into the tool.
   `repos_root` (default `~/git`). `workspace_root` is overridable in
   `.cambium.toml` and the clone-local config.
 - `add [flags] [PATH [COMMIT]]`: PATH may be omitted when a root is configured.
+- **Dependency seeds.** `policy = "seed"` with `seed = "cargo-deps"` starts a
+  workspace's `target` from the compiled units of registry and git
+  dependencies, from one seed per compiler release under
+  `~/Library/Caches/cambium-seed/<rustc release>/` (`$CAMBIUM_SEED_ROOT`
+  overrides). Workspace members' units never travel: cloning them makes Cargo
+  report another checkout's crates Fresh. `cambium seed refresh [NAME]`
+  publishes the seed from a built workspace; ports Keel's `seed.sh`/`seed.py`.
+  A workspace that gets no seed records why (`dependency seed:` in `inspect`).
+- **Checkpoint before remove.** Every removal (`remove`, `remove --force`,
+  `prune --merged`, `maintain --merged`, `gc`, `run --cleanup`) first saves the
+  workspace, untracked files included, as a hidden `removed/<name>-<time>`
+  checkpoint; a refused removal keeps none. `cambium recover --removed` lists
+  them and `cambium recover --removed [--path P] REF NAME` restores one.
+  `maintain` expires them after 14 days.
+- Live-use markers are documented in the README and covered by
+  `TestRunRegistersAUseMarkerForItsChild`.
 
 ## 0.7.1 — cargo-target seeds grow with their source
 

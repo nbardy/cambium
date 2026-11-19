@@ -216,7 +216,14 @@ func (m *Manager) GC(ctx context.Context, options GCOptions) (GCResult, error) {
 			}
 			return nil
 		}
-		if err := m.Native.RemoveIf(ctx, value.Name, options.Force, options.DeleteBranches, guard); err != nil {
+		checkpoint, err := m.SaveBeforeRemove(ctx, value.Name)
+		if err == nil {
+			err = m.Native.RemoveIf(ctx, value.Name, options.Force, options.DeleteBranches, guard)
+			if err != nil {
+				m.DiscardIfSurvived(ctx, value.Name, checkpoint)
+			}
+		}
+		if err != nil {
 			result.Skipped = append(result.Skipped, GCSkip{Name: value.Name, Reason: err.Error()})
 			continue
 		}

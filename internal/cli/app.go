@@ -100,6 +100,8 @@ func (a *App) Run(ctx context.Context, args []string) int {
 		err = a.runStatus(ctx, args[1:])
 	case "maintain":
 		code, err = a.runMaintain(ctx, args[1:])
+	case "seed":
+		err = a.runSeed(ctx, args[1:])
 	case "doctor":
 		code, err = a.runDoctor(ctx, args[1:])
 	case "benchmark", "bench":
@@ -791,10 +793,14 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
-		if err := manager.Remove(ctx, set.Arg(0), true, *deleteBranch); err != nil {
+		checkpoint, err := manager.RemoveCheckpointed(ctx, set.Arg(0), true, *deleteBranch)
+		if err != nil {
 			return err
 		}
 		fmt.Fprintln(a.Stdout, set.Arg(0))
+		if checkpoint != "" {
+			fmt.Fprintf(a.Stderr, "checkpoint: %s (cambium recover --removed)\n", checkpoint)
+		}
 		return nil
 	}
 	manager, err := a.managerFor(ctx, set.Arg(0))
@@ -819,6 +825,9 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 	}
 	if *jsonOutput {
 		return writeJSON(a.Stdout, result)
+	}
+	if result.Checkpoint != "" {
+		fmt.Fprintf(a.Stderr, "checkpoint: %s (cambium recover --removed)\n", result.Checkpoint)
 	}
 	if *safe || *harvest != "" || *salvageRef != "" {
 		fmt.Fprintf(a.Stdout, "%s\nsalvage ref: %s\nharvested: moved=%d deduplicated=%d\n", set.Arg(0), result.SalvageRef, result.Harvested.Moved, result.Harvested.Deduplicated)
@@ -955,6 +964,10 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 	}
 	if *discard || *cleanup {
 		releaseUse() // our own marker must not block our own cleanup
+		checkpoint, err := manager.SaveBeforeRemove(ctx, name)
+		if err != nil {
+			return 1, err
+		}
 		// A child may outlive its workspace. Another operation can reuse the
 		// same name and path while it runs, so authorize cleanup by identity
 		// under the removal locks rather than by the original name alone.
@@ -964,6 +977,7 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 			}
 			return nil
 		}); err != nil {
+			manager.DiscardIfSurvived(ctx, name, checkpoint)
 			return 1, err
 		}
 	}
@@ -1053,11 +1067,16 @@ func (a *App) runRecover(ctx context.Context, args []string) error {
 	set := a.flagSet("recover")
 	dryRun := set.Bool("dry-run", false, "show recovery actions without applying them")
 	jsonOutput := set.Bool("json", false, "emit JSON")
+	restorePath := set.String("path", "", "with --removed REF NAME: where to restore the workspace")
+	removed := set.Bool("removed", false, "list the checkpoints taken before removals; with REF NAME, restore REF as a new workspace NAME")
 	if err := set.Parse(args); err != nil {
 		return err
 	}
+	if *removed {
+		return a.runRecoverRemoved(ctx, set.Args(), *restorePath, *jsonOutput)
+	}
 	if set.NArg() != 0 {
-		return errors.New("usage: cambium recover [flags]")
+		return errors.New("usage: cambium recover [--dry-run] [--json] | cambium recover --removed [REF NAME]")
 	}
 	manager, err := a.manager(ctx)
 	if err != nil {
@@ -1077,6 +1096,43 @@ func (a *App) runRecover(ctx context.Context, args []string) error {
 		fmt.Fprintln(a.Stdout, "no interrupted operations")
 	}
 	return nil
+}
+
+// runRecoverRemoved lists the hidden checkpoints that every removal takes, or
+// forks one back into a new workspace.
+func (a *App) runRecoverRemoved(ctx context.Context, args []string, restorePath string, jsonOutput bool) error {
+	manager, err := a.manager(ctx)
+	if err != nil {
+		return err
+	}
+	switch len(args) {
+	case 0:
+		refs, err := manager.RemovedCheckpoints(ctx)
+		if err != nil {
+			return err
+		}
+		if jsonOutput {
+			return writeJSON(a.Stdout, refs)
+		}
+		for _, ref := range refs {
+			fmt.Fprintf(a.Stdout, "%s\t%s\t%s\n", ref.Name, ref.CreatedAt.Format(time.RFC3339), ref.Root)
+		}
+		if len(refs) == 0 {
+			fmt.Fprintln(a.Stdout, "no removal checkpoints")
+		}
+		return nil
+	case 2:
+		result, err := manager.Fork(ctx, args[0], workspace.CreateSpec{Name: args[1], Path: restorePath})
+		if err != nil {
+			return err
+		}
+		if jsonOutput {
+			return writeJSON(a.Stdout, result)
+		}
+		printWorkspace(a.Stdout, result.Workspace)
+		return nil
+	}
+	return errors.New("usage: cambium recover --removed [REF NAME]")
 }
 
 func (a *App) runPrune(ctx context.Context, args []string) error {
@@ -1419,10 +1475,12 @@ Usage:
   cambium archive [--json] [--remote origin] BRANCH TAG
   cambium gc [flags]
   cambium recover [--dry-run] [--json]
+  cambium recover --removed [REF NAME]
   cambium prune [--older-than DURATION | --max-unused-bytes SIZE] [--dry-run] [--json]
   cambium prune --merged REF [--older-than DURATION] [--delete-branch] [--dry-run] [--json]
   cambium status [--all] [--merged-into REF] [--no-bytes] [--json]
   cambium maintain [--all-repos] [--merged REF] [--older-than DURATION] [--dry-run] [--json]
+  cambium seed refresh [--json] [NAME]
   cambium doctor [--repair] [--json]
   cambium benchmark [flags]
   cambium version
@@ -1460,6 +1518,9 @@ func printWorkspaceDetail(writer io.Writer, value model.Workspace) {
 	}
 	if len(value.EnvironmentUnverified) > 0 {
 		fmt.Fprintf(writer, "environment unverified: %s\n", strings.Join(value.EnvironmentUnverified, ", "))
+	}
+	for _, note := range value.DependencySeeds {
+		fmt.Fprintf(writer, "dependency seed: %s\n", note)
 	}
 	if value.SpeculativeRoot != "" {
 		fmt.Fprintf(writer, "speculative root: %s\n", value.SpeculativeRoot)

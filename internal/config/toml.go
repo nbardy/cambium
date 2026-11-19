@@ -338,6 +338,12 @@ func assignPolicyValue(rule *LayerRule, key, raw string) error {
 			return err
 		}
 		rule.Mode = LayerMode(value)
+	case "seed":
+		value, err := parseTOMLString(raw)
+		if err != nil {
+			return err
+		}
+		rule.Seed = SeedKind(value)
 	case "inputs":
 		value, err := parseTOMLStringArray(raw)
 		if err != nil {

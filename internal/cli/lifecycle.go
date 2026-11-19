@@ -100,6 +100,7 @@ type MaintainReport struct {
 	Reconcile  workspace.ReconcileResult    `json:"reconcile"`
 	Forget     workspace.ForgetResult       `json:"forget"`
 	Caches     native.CachePruneResult      `json:"caches"`
+	Expired    []string                     `json:"expired_checkpoints,omitempty"`
 	Merged     *workspace.PruneMergedResult `json:"merged,omitempty"`
 	Error      string                       `json:"error,omitempty"`
 }
@@ -164,6 +165,9 @@ func (a *App) runMaintain(ctx context.Context, args []string) (int, error) {
 		for _, change := range report.Forget.Forgotten {
 			fmt.Fprintf(a.Stdout, "  forget\t%s\n", change.Name)
 		}
+		for _, name := range report.Expired {
+			fmt.Fprintf(a.Stdout, "  expired\t%s\n", name)
+		}
 		fmt.Fprintf(a.Stdout, "  caches\tselected=%d removed_bytes=%d\n", len(report.Caches.Selected), report.Caches.RemovedBytes)
 		if report.Merged != nil {
 			for _, name := range report.Merged.Selected {
@@ -194,6 +198,9 @@ func maintainOne(ctx context.Context, manager *workspace.Manager, report *Mainta
 			return fmt.Errorf("prune --merged: %w", err)
 		}
 		report.Merged = &result
+	}
+	if report.Expired, err = manager.ExpireRemovedCheckpoints(ctx, workspace.RemovedKeep, dryRun); err != nil {
+		return fmt.Errorf("expire removal checkpoints: %w", err)
 	}
 	if report.Caches, err = manager.PruneCachesWithOptions(ctx, workspace.CachePruneOptions{DryRun: dryRun, OlderThan: olderThan}); err != nil {
 		return fmt.Errorf("prune: %w", err)

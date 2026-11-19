@@ -66,6 +66,7 @@ root**, so a branch carries the policy that matches its own build layout.
 - `name`
 - `path` (a concrete relative path; globs are rejected)
 - `policy`: `clone`, `seed`, `cargo-target`, `recreate`, `share`, `empty`, or `skip`
+- `seed` (only with `policy = "seed"`): `"cargo-deps"`, see [PATH_POLICIES.md](PATH_POLICIES.md#seed)
 - `inputs` (globs allowed)
 - `prepare` and `validate` as direct argv arrays
 - `allow_unignored`

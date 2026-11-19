@@ -58,6 +58,7 @@ type LayerRule struct {
 	Path             string    `json:"path"`
 	Mode             LayerMode `json:"mode"`
 	Inputs           []string  `json:"inputs,omitempty"`
+	Seed             SeedKind  `json:"seed,omitempty"`
 	Prepare          []string  `json:"prepare,omitempty"`
 	Validate         []string  `json:"validate,omitempty"`
 	AllowUnignored   bool      `json:"allow_unignored,omitempty"`
@@ -68,6 +69,18 @@ type LayerRule struct {
 	Builtin          bool      `json:"-"`
 	Origin           string    `json:"-"`
 }
+
+// SeedKind names a per-toolchain dependency seed that a `seed` rule starts a
+// workspace path from, instead of the primary checkout's copy of the path.
+type SeedKind string
+
+// SeedCargoDeps seeds a Cargo target directory with the compiled units of
+// registry and git dependencies only; see internal/native/dep_seed.go.
+const SeedCargoDeps SeedKind = "cargo-deps"
+
+// IsDepSeed reports whether the rule draws from a per-toolchain seed. Such a
+// rule is never captured from a checkout: its payload lives in the seed store.
+func (r LayerRule) IsDepSeed() bool { return r.Mode == LayerSeed && r.Seed != "" }
 
 func (r LayerRule) EffectiveInputs() []string {
 	values := r.Inputs
@@ -306,6 +319,13 @@ func ValidateRule(rule LayerRule) error {
 	case LayerClone, LayerSeed, LayerCargoTarget, LayerRecreate, LayerShare, LayerEmpty, LayerSkip:
 	default:
 		return fmt.Errorf("unsupported mode %q", rule.Mode)
+	}
+	switch {
+	case rule.Seed == "":
+	case rule.Mode != LayerSeed:
+		return fmt.Errorf("seed = %q requires policy = %q", rule.Seed, LayerSeed)
+	case rule.Seed != SeedCargoDeps:
+		return fmt.Errorf("unsupported seed %q (known: %q)", rule.Seed, SeedCargoDeps)
 	}
 	for index, input := range rule.EffectiveInputs() {
 		if err := validateRelative(input, true); err != nil {

@@ -63,6 +63,32 @@ maintain skip it unless `--force`. With `workspace_root = "~/git/_wt"` in
 `~/.config/cambium/config.toml`, `git cambium add -b NAME -name NAME` needs no
 path.
 
+Every removal first saves the workspace (untracked files included) as a hidden
+checkpoint, `removed/<name>-<time>`, so even `--force` is recoverable:
+
+```bash
+cambium recover --removed                          # list
+cambium recover --removed --path ~/git/_wt/back removed/agent-auth-20261119T101500Z agent-auth
+```
+
+`cambium run` writes a use marker named by its PID for the length of its child;
+a dead PID's marker is ignored. Checks never kill, signal or wait.
+
+## Dependency seeds for Cargo
+
+```toml
+# .cambium.toml
+[[path]]
+path = "target"
+policy = "seed"
+seed = "cargo-deps"
+```
+
+New workspaces start `target` from the registry and git dependency units of the
+seed for their `rustc` release, never from workspace members (cloning those
+makes Cargo treat another checkout's crates as Fresh). Warm the seed from a
+built workspace with `cambium seed refresh [NAME]`.
+
 # Replace a branch with a tag verified on the remote, then compare-and-delete it.
 # Exit 3 + {"archived":false,"reason":...}: checked-out, missing, tag-conflict,
 # push-unverified, moved. Rerunning after success returns {"already":true}.

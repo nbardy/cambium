@@ -362,6 +362,7 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		EnvironmentReady:      layerResult.Ready,
 		EnvironmentMissing:    layerResult.Missing,
 		EnvironmentUnverified: layerResult.Unverified,
+		DependencySeeds:       layerResult.Seeds,
 	}
 	if err = b.Registry.Save(workspace); err != nil {
 		return model.Workspace{}, err

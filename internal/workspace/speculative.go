@@ -19,6 +19,10 @@ type CheckpointOptions struct {
 	Message string
 	Parent  string
 	Detach  bool
+	// Passive saves the checkpoint without touching the workspace record
+	// (root, environments, last-used time): used when the workspace is about
+	// to be removed, so removal guards still see it as it was.
+	Passive bool
 }
 
 type CheckpointResult struct {
@@ -96,6 +100,9 @@ func (m *Manager) Checkpoint(ctx context.Context, workspaceName string, options 
 	workspaceValue.EnvironmentUnverified = unverified
 	workspaceValue.LastUsedAt = time.Now().UTC()
 	if err := store.UpdateRefAndPublish(ctx, checkpoint.Root, checkpoint.Ref, func() error {
+		if options.Passive {
+			return nil
+		}
 		return m.saveWorkspaceLocked(ctx, workspaceValue)
 	}); err != nil {
 		return CheckpointResult{}, fmt.Errorf("publish checkpoint environments and workspace root: %w", err)
@@ -215,6 +222,7 @@ func (m *Manager) Fork(ctx context.Context, source string, spec CreateSpec) (res
 			created.EnvironmentReady = result.Ready
 			created.EnvironmentMissing = result.Missing
 			created.EnvironmentUnverified = result.Unverified
+			created.DependencySeeds = result.Seeds
 		}
 		created.SpeculativeRoot = rootID.String()
 		created.LastUsedAt = time.Now().UTC()
