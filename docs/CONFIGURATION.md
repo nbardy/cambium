@@ -60,6 +60,7 @@ root**, so a branch carries the policy that matches its own build layout.
 | `workspace_root` | unset | directory for `add NAME` with no PATH: `<root>/<name>`. `~/` and absolute paths; relative paths are relative to the primary checkout |
 | `merge_target` | unset | ref (e.g. `origin/main`) that marks a workspace finished; `maintain` removes clean, idle, **ephemeral** workspaces whose HEAD is in it, after a best-effort fetch of that remote branch |
 | `prune_merged_on_add` | `false` | needs `merge_target`; `add` and `create` first remove finished workspaces the same way (guarded and checkpointed; a failure only warns) |
+| `submodules` | `false` | `add`/`create` clone each git submodule from the invoking checkout's local copy (no network, remote restored to `.gitmodules`); `remove` refuses a dirty or unpushed submodule (`submodule-unpushed`), then empties it so `git worktree remove` can proceed |
 | `repos_root` | `~/git` | **per-user file only**; where `status --all` and `maintain --all-repos` look for repositories with `.git/cambium` |
 | `allow_policy_commands` | `false` | **local file only**; see [Commands and trust](#commands-and-trust) |
 

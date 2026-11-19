@@ -29,21 +29,22 @@ func holderList(holders []inuse.Holder) string {
 type RefusalReason string
 
 const (
-	RefuseUnreadable       RefusalReason = "unreadable"
-	RefuseInProgress       RefusalReason = "in-progress"
-	RefuseBranchChanged    RefusalReason = "branch-changed"
-	RefuseDirty            RefusalReason = "dirty"
-	RefuseSalvageFailed    RefusalReason = "salvage-failed"
-	RefuseUnmerged         RefusalReason = "unmerged"
-	RefuseOutputConflict   RefusalReason = "output-conflict"
-	RefuseOutputUnreadable RefusalReason = "output-unreadable"
-	RefuseCheckedOut       RefusalReason = "checked-out"
-	RefuseMissing          RefusalReason = "missing"
-	RefuseTagConflict      RefusalReason = "tag-conflict"
-	RefusePushUnverified   RefusalReason = "push-unverified"
-	RefuseMoved            RefusalReason = "moved"
-	RefuseInUse            RefusalReason = "in-use"
-	RefusePrimary          RefusalReason = "primary"
+	RefuseUnreadable        RefusalReason = "unreadable"
+	RefuseInProgress        RefusalReason = "in-progress"
+	RefuseBranchChanged     RefusalReason = "branch-changed"
+	RefuseDirty             RefusalReason = "dirty"
+	RefuseSalvageFailed     RefusalReason = "salvage-failed"
+	RefuseUnmerged          RefusalReason = "unmerged"
+	RefuseOutputConflict    RefusalReason = "output-conflict"
+	RefuseOutputUnreadable  RefusalReason = "output-unreadable"
+	RefuseCheckedOut        RefusalReason = "checked-out"
+	RefuseMissing           RefusalReason = "missing"
+	RefuseTagConflict       RefusalReason = "tag-conflict"
+	RefusePushUnverified    RefusalReason = "push-unverified"
+	RefuseMoved             RefusalReason = "moved"
+	RefuseInUse             RefusalReason = "in-use"
+	RefusePrimary           RefusalReason = "primary"
+	RefuseSubmoduleUnpushed RefusalReason = "submodule-unpushed"
 )
 
 // Refusal is the typed "nothing was deleted" outcome. The CLI maps it to exit
@@ -127,6 +128,9 @@ func (m *Manager) safeRemove(ctx context.Context, name string, options SafeRemov
 		if err != nil {
 			return err
 		}
+		if err := m.checkSubmodules(ctx, current.Path); err != nil {
+			return err
+		}
 		if !clean && options.SalvageRef == "" {
 			return refuse(RefuseDirty, "workspace %q has uncommitted or untracked changes:\n%s", name, status)
 		}
@@ -148,7 +152,8 @@ func (m *Manager) safeRemove(ctx context.Context, name string, options SafeRemov
 			}
 			result.Harvested = summary
 		}
-		return nil
+		// Last, after every guard: drop the submodule copies the checks just proved empty of unique work.
+		return m.dropSubmodules(ctx, current.Path)
 	})
 	if err != nil {
 		return SafeRemoveResult{}, err

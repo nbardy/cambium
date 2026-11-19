@@ -308,6 +308,8 @@ func assignSetting(value *Config, setting Setting) error {
 			return fmt.Errorf("merge_target: %w", err)
 		}
 		value.MergeTarget = parsed
+	case "submodules":
+		return parseBoolInto(&value.Submodules, setting)
 	case "prune_merged_on_add":
 		return parseBoolInto(&value.PruneMergedOnAdd, setting)
 	case "repos_root":

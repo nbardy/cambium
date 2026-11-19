@@ -293,3 +293,36 @@ func TestRunRegistersAUseMarkerForItsChild(t *testing.T) {
 	f.mustRun("remove", "running")
 	requireExists(t, path, false)
 }
+
+// submodules = true: a new workspace gets its kit from the invoking checkout,
+// removal refuses unpushed kit work, then drops a clean kit so the worktree
+// can go (git worktree remove refuses populated submodules).
+func TestSubmodulesPopulateAndRemove(t *testing.T) {
+	f := newSafeFixture(t)
+	kit := filepath.Join(t.TempDir(), "kit")
+	gitCLI(t, filepath.Dir(kit), "init", "-q", "-b", "main", kit)
+	writeFile(t, filepath.Join(kit, "k.txt"), "k\n")
+	gitCLI(t, kit, "add", ".")
+	gitCLI(t, kit, "commit", "-q", "-m", "kit")
+	gitCLI(t, f.root, "-c", "protocol.file.allow=always", "submodule", "add", "-q", kit, "kit")
+	writeFile(t, filepath.Join(f.root, ".cambium.toml"), "version = 1\n[settings]\nsubmodules = true\n")
+	gitCLI(t, f.root, "add", ".")
+	gitCLI(t, f.root, "commit", "-q", "-m", "kit submodule")
+
+	ws := f.create("kitws")
+	requireExists(t, filepath.Join(ws, "kit", "k.txt"), true)
+	if got := strings.TrimSpace(gitOut(t, filepath.Join(ws, "kit"), "remote", "get-url", "origin")); got != kit {
+		t.Fatalf("kit remote not restored to .gitmodules url: %s", got)
+	}
+	writeFile(t, filepath.Join(ws, "kit", "new.txt"), "n\n")
+	gitCLI(t, filepath.Join(ws, "kit"), "add", ".")
+	gitCLI(t, filepath.Join(ws, "kit"), "commit", "-q", "-m", "unpushed")
+	gitCLI(t, ws, "add", "kit")
+	gitCLI(t, ws, "commit", "-q", "-m", "bump kit")
+	f.refused("submodule-unpushed", "remove", "--json", "kitws")
+	requireExists(t, ws, true)
+	gitCLI(t, ws, "reset", "-q", "--hard", "HEAD~1")
+	gitCLI(t, filepath.Join(ws, "kit"), "reset", "-q", "--hard", "HEAD~1")
+	f.mustRun("remove", "kitws")
+	requireExists(t, ws, false)
+}

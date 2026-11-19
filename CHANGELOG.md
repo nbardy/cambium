@@ -4,6 +4,7 @@
 
 - `merge_target` and `prune_merged_on_add` settings: `maintain` and `add`/`create` sweep clean, idle
   workspaces already merged into the target, after a best-effort fetch.
+- `submodules` setting: populate submodules from the invoking checkout on add; guarded drop on remove.
 - `prune --merged` and `maintain` only remove **ephemeral** workspaces (others are reported as kept).
 
 ## 0.8.0 — wrapper behaviour moves into Cambium

@@ -123,6 +123,10 @@ type Config struct {
 	// PruneMergedOnAdd makes `add` and `create` sweep merged workspaces
 	// (against MergeTarget) first, so finished ones never pile up.
 	PruneMergedOnAdd bool `json:"prune_merged_on_add,omitempty"`
+	// Submodules populates a new workspace's git submodules from the invoking
+	// checkout's local copies, and makes removal drop them after proving they
+	// hold no unpushed or uncommitted work.
+	Submodules bool `json:"submodules,omitempty"`
 }
 
 func Default() Config {

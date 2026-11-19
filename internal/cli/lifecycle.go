@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"text/tabwriter"
 	"time"
 
+	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/native"
 	"github.com/nbardy/cambium/internal/workspace"
 )
@@ -238,4 +240,21 @@ func (a *App) sweepOnAdd(ctx context.Context, manager *workspace.Manager) {
 	for _, name := range result.Removed {
 		fmt.Fprintf(a.Stderr, "removed merged workspace %s\n", name)
 	}
+}
+
+// populateSubmodules honours the submodules setting. The source is the checkout
+// the command was run from, falling back to the primary checkout.
+func (a *App) populateSubmodules(ctx context.Context, manager *workspace.Manager, created model.Workspace) error {
+	if !manager.Project.Config.Submodules {
+		return nil
+	}
+	source := manager.Project.PrimaryRoot()
+	if out, err := manager.Project.Repository.RunAt(ctx, a.Cwd, nil, "rev-parse", "--show-toplevel"); err == nil {
+		source = strings.TrimSpace(out.Stdout)
+	}
+	missing, err := manager.PopulateSubmodules(ctx, created, source)
+	for _, path := range missing {
+		fmt.Fprintf(a.Stderr, "warning: submodule %s left empty: %s has no copy of it\n", path, source)
+	}
+	return err
 }

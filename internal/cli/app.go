@@ -275,6 +275,9 @@ func (a *App) runCreate(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := a.populateSubmodules(ctx, manager, created); err != nil {
+		return err
+	}
 	if *jsonOutput {
 		return writeJSON(a.Stdout, created)
 	}
@@ -338,6 +341,9 @@ func (a *App) runAdd(ctx context.Context, args []string) error {
 		Ephemeral: *ephemeral, RequireCoW: *requireCoW, Materializer: materializer,
 	})
 	if err != nil {
+		return err
+	}
+	if err := a.populateSubmodules(ctx, manager, created); err != nil {
 		return err
 	}
 	if *jsonOutput {
