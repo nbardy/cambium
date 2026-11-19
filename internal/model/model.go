@@ -52,6 +52,7 @@ type Workspace struct {
 	EnvironmentReady      bool            `json:"environment_ready"`
 	EnvironmentMissing    []string        `json:"environment_missing,omitempty"`
 	EnvironmentUnverified []string        `json:"environment_unverified,omitempty"`
+	DependencySeeds       []string        `json:"dependency_seeds,omitempty"`
 	SpeculativeRoot       string          `json:"speculative_root,omitempty"`
 }
 

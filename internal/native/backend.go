@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/nbardy/cambium/internal/failpoint"
+	"github.com/nbardy/cambium/internal/inuse"
 	"github.com/nbardy/cambium/internal/lockfile"
 	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/operation"
@@ -137,7 +138,14 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		return model.Workspace{}, fmt.Errorf("branch %q already exists", spec.Branch)
 	}
 	if spec.Path == "" {
-		spec.Path = filepath.Join(b.Project.WorktreesDir(), slug(spec.Name))
+		root, rootErr := b.Project.Config.ResolveWorkspaceRoot(b.Project.PrimaryRoot())
+		if rootErr != nil {
+			return model.Workspace{}, fmt.Errorf("resolve workspace_root: %w", rootErr)
+		}
+		if root == "" {
+			root = b.Project.WorktreesDir()
+		}
+		spec.Path = filepath.Join(root, slug(spec.Name))
 	}
 	spec.Path, err = canonicalCreationPath(spec.Path)
 	if err != nil {
@@ -354,6 +362,7 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 		EnvironmentReady:      layerResult.Ready,
 		EnvironmentMissing:    layerResult.Missing,
 		EnvironmentUnverified: layerResult.Unverified,
+		DependencySeeds:       layerResult.Seeds,
 	}
 	if err = b.Registry.Save(workspace); err != nil {
 		return model.Workspace{}, err
@@ -428,7 +437,18 @@ func (b *Backend) remove(ctx context.Context, name string, force, deleteBranch b
 	if err != nil {
 		return err
 	}
+	// The primary checkout is never a removable workspace, even with force.
+	if SamePath(workspace.Path, b.Project.PrimaryRoot()) {
+		return fmt.Errorf("workspace %q is the primary checkout %s; refusing to remove it", name, workspace.Path)
+	}
 	if !force {
+		holders, err := inuse.Check(workspace.Path, b.Project.UseDir(workspace.ID))
+		if err != nil {
+			return fmt.Errorf("check whether workspace %q is in use: %w", name, err)
+		}
+		if len(holders) > 0 {
+			return fmt.Errorf("workspace %q is in use (%s); stop it or use --force", name, holders[0])
+		}
 		clean, status, err := b.Project.Repository.IsClean(ctx, workspace.Path)
 		if err != nil {
 			return err
@@ -569,4 +589,15 @@ func pathWithin(path, root string) bool {
 		return false
 	}
 	return relative == "." || relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator))
+}
+
+// SamePath compares two paths after resolving symlinks where they exist.
+func SamePath(a, b string) bool {
+	resolve := func(path string) string {
+		if resolved, err := filepath.EvalSymlinks(path); err == nil {
+			path = resolved
+		}
+		return filepath.Clean(path)
+	}
+	return resolve(a) == resolve(b)
 }

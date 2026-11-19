@@ -76,6 +76,9 @@ func (m *Manager) Adopt(ctx context.Context, name, path string) (model.Workspace
 			itemPath = filepath.Clean(item.Path)
 		}
 		if itemPath == absolute {
+			if native.SamePath(itemPath, m.Project.PrimaryRoot()) {
+				return model.Workspace{}, fmt.Errorf("cannot adopt the primary checkout %s", absolute)
+			}
 			if item.Bare {
 				return model.Workspace{}, fmt.Errorf("cannot adopt bare worktree %s", absolute)
 			}

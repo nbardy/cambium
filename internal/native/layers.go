@@ -54,6 +54,9 @@ type LayerApplyResult struct {
 	Missing    []string `json:"missing,omitempty"`
 	Unverified []string `json:"unverified,omitempty"`
 	Recreated  []string `json:"recreated,omitempty"`
+	// Seeds records, per dependency-seed path, whether it was seeded or why it
+	// started empty. A missing seed is not an error, but it is never silent.
+	Seeds []string `json:"seeds,omitempty"`
 }
 
 // PrepareLayers resolves branch-correct receipts from the target Git tree. A
@@ -107,6 +110,16 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 			return nil, sourcePathErr
 		}
 		base := LayerSnapshot{Version: layerVersion, ID: id, Rule: rule, RuleBuiltin: rule.Builtin, RuleOrigin: rule.Origin, Expected: expectedLayer(rule, targetInputs, project.Repository.Root, sourcePresent), SourceRef: commit, Inputs: targetInputs, CreatedAt: time.Now().UTC()}
+		if rule.IsDepSeed() {
+			// The payload comes from the per-toolchain seed when the workspace is
+			// created, never from a checkout.
+			layer, err := publishMetadataLayer(ctx, project, base)
+			if err != nil {
+				return nil, err
+			}
+			layers = append(layers, layer)
+			continue
+		}
 		switch rule.Mode {
 		case config.LayerSkip, config.LayerEmpty, config.LayerShare, config.LayerRecreate:
 			layer, err := publishMetadataLayer(ctx, project, base)
@@ -176,6 +189,15 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 			if err := removeIfPresent(destination); err != nil {
 				return LayerApplyResult{}, err
 			}
+		}
+		if rule.IsDepSeed() {
+			note, err := applyDepSeed(ctx, cloner, workspacePath, rule, requireCoW)
+			if err != nil {
+				return LayerApplyResult{}, err
+			}
+			result.Seeds = append(result.Seeds, note)
+			result.IDs = append(result.IDs, layer.ID)
+			continue
 		}
 		switch rule.Mode {
 		case config.LayerSkip:
@@ -341,6 +363,14 @@ func CaptureWorkspaceLayers(ctx context.Context, project *project.Project, works
 				continue
 			}
 			return nil, err
+		}
+		if rule.IsDepSeed() {
+			layer, err := publishMetadataLayer(ctx, project, base)
+			if err != nil {
+				return nil, err
+			}
+			layers = append(layers, layer)
+			continue
 		}
 		switch rule.Mode {
 		case config.LayerClone, config.LayerSeed, config.LayerCargoTarget:
@@ -764,6 +794,9 @@ func fingerprintRule(sourceRef string, rule config.LayerRule, inputs []ReceiptIn
 	_, _ = hash.Write([]byte(rule.Path + "\x00" + string(rule.Mode) + "\x00"))
 	for _, pattern := range rule.EffectiveInputs() {
 		_, _ = hash.Write([]byte("input-pattern\x00" + pattern + "\x00"))
+	}
+	if rule.Seed != "" {
+		_, _ = hash.Write([]byte("seed\x00" + string(rule.Seed) + "\x00"))
 	}
 	_, _ = hash.Write([]byte(fmt.Sprintf("required=%t\x00activate=%t\x00allow-unignored=%t\x00builtin=%t\x00", rule.Required, rule.ActivateOnInputs, rule.AllowUnignored, rule.Builtin)))
 	for _, value := range rule.Prepare {

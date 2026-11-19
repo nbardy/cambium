@@ -11,8 +11,18 @@ import (
 
 	"github.com/nbardy/cambium/internal/fsx"
 	"github.com/nbardy/cambium/internal/gitx"
+	"github.com/nbardy/cambium/internal/inuse"
 	"github.com/nbardy/cambium/internal/model"
+	"github.com/nbardy/cambium/internal/native"
 )
+
+func holderList(holders []inuse.Holder) string {
+	parts := make([]string, len(holders))
+	for i, holder := range holders {
+		parts[i] = holder.String()
+	}
+	return strings.Join(parts, "; ")
+}
 
 // RefusalReason names why a guarded command preserved its target. The values
 // are part of the JSON contract read by orchestrators (oompa, Buddies).
@@ -32,6 +42,8 @@ const (
 	RefuseTagConflict      RefusalReason = "tag-conflict"
 	RefusePushUnverified   RefusalReason = "push-unverified"
 	RefuseMoved            RefusalReason = "moved"
+	RefuseInUse            RefusalReason = "in-use"
+	RefusePrimary          RefusalReason = "primary"
 )
 
 // Refusal is the typed "nothing was deleted" outcome. The CLI maps it to exit
@@ -63,6 +75,9 @@ type SafeRemoveResult struct {
 	Removed    bool           `json:"removed"`
 	SalvageRef string         `json:"salvageRef"`
 	Harvested  HarvestSummary `json:"harvested"`
+	// Checkpoint is the hidden ref taken before removal ("" when there was
+	// nothing to save); `cambium recover --removed` restores from it.
+	Checkpoint string `json:"checkpoint,omitempty"`
 }
 
 var inProgressMarkers = []string{"MERGE_HEAD", "rebase-merge", "rebase-apply", "CHERRY_PICK_HEAD", "REVERT_HEAD"}
@@ -72,9 +87,35 @@ var inProgressMarkers = []string{"MERGE_HEAD", "rebase-merge", "rebase-apply", "
 // never leaves a salvage ref or a half-harvest behind; side-effecting steps
 // (salvage, harvest) run last, still under the workspace and Git locks.
 func (m *Manager) SafeRemove(ctx context.Context, name string, options SafeRemoveOptions) (SafeRemoveResult, error) {
+	checkpoint, err := m.SaveBeforeRemove(ctx, name)
+	if err != nil {
+		return SafeRemoveResult{}, err
+	}
+	result, err := m.safeRemove(ctx, name, options)
+	if err != nil {
+		// A refusal deletes nothing, so the checkpoint would only hold cache bytes.
+		m.DiscardIfSurvived(ctx, name, checkpoint)
+		return result, err
+	}
+	result.Checkpoint = checkpoint
+	return result, nil
+}
+
+func (m *Manager) safeRemove(ctx context.Context, name string, options SafeRemoveOptions) (SafeRemoveResult, error) {
 	result := SafeRemoveResult{Removed: true}
 	repo := m.Project.Repository
 	err := m.Native.RemoveIf(ctx, name, true, options.DeleteBranch, func(current model.Workspace) error {
+		if native.SamePath(current.Path, m.Project.PrimaryRoot()) {
+			return refuse(RefusePrimary, "%s is the primary checkout, not a removable workspace", current.Path)
+		}
+		// Guarded removal has no force: a workspace in use is never removed.
+		holders, err := inuse.Check(current.Path, m.Project.UseDir(current.ID))
+		if err != nil {
+			return refuse(RefuseUnreadable, "check whether %s is in use: %v", current.Path, err)
+		}
+		if len(holders) > 0 {
+			return refuse(RefuseInUse, "workspace %q is in use: %s", name, holderList(holders))
+		}
 		clean, status, err := repo.IsClean(ctx, current.Path)
 		if err != nil {
 			return refuse(RefuseUnreadable, "git status failed in %s: %v", current.Path, err)

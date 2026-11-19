@@ -38,19 +38,56 @@ cambium remove --delete-branch agent-auth     # when the agent is done
 cambium prune                                 # drop old, unused caches
 ```
 
-## Guarded removal and archiving
+## Guarded removal, housekeeping and archiving
 
-For orchestrators that must never lose agent work:
+`remove` never loses work by default. Exit 3 + a typed reason on refusal:
 
 ```bash
-# Remove only if nothing is lost. Exit 3 + {"removed":false,"reason":...} on refusal.
-# Reasons, in order: unreadable, in-progress, branch-changed, dirty, unmerged,
-# salvage-failed, output-conflict, output-unreadable.
+# Reasons: unreadable, in-progress, branch-changed, in-use, primary, dirty,
+# unmerged, salvage-failed, output-conflict, output-unreadable.
 # --require-merged: refuse unless HEAD is an ancestor of main
 # --harvest: move git-ignored output/ files to the primary checkout first
 # --salvage-ref: snapshot a dirty tree (incl. untracked) instead of refusing
-cambium remove --safe --json --require-merged main --harvest output \
-  --salvage-ref refs/salvage/agent agent-auth
+# --force: the explicit opt-out (still never the primary checkout)
+cambium remove --json --require-merged main --harvest output \
+  --salvage-ref refs/salvage/agent agent-auth        # works from any directory
+
+cambium status --all            # dirty, unpushed, merged, in-use, exclusive bytes
+cambium prune --merged main     # remove clean workspaces already in main
+cambium maintain --all-repos    # reconcile + forget --missing + prune caches
+```
+
+A workspace is "in use" when a live process has its cwd inside it, a
+`cambium run` is active in it, or Cargo holds its build lock; remove, prune and
+maintain skip it unless `--force`. With `workspace_root = "~/git/_wt"` in
+`~/.config/cambium/config.toml`, `git cambium add -b NAME -name NAME` needs no
+path.
+
+Every removal first saves the workspace (untracked files included) as a hidden
+checkpoint, `removed/<name>-<time>`, so even `--force` is recoverable:
+
+```bash
+cambium recover --removed                          # list
+cambium recover --removed --path ~/git/_wt/back removed/agent-auth-20261119T101500Z agent-auth
+```
+
+`cambium run` writes a use marker named by its PID for the length of its child;
+a dead PID's marker is ignored. Checks never kill, signal or wait.
+
+## Dependency seeds for Cargo
+
+```toml
+# .cambium.toml
+[[path]]
+path = "target"
+policy = "seed"
+seed = "cargo-deps"
+```
+
+New workspaces start `target` from the registry and git dependency units of the
+seed for their `rustc` release, never from workspace members (cloning those
+makes Cargo treat another checkout's crates as Fresh). Warm the seed from a
+built workspace with `cambium seed refresh [NAME]`.
 
 # Replace a branch with a tag verified on the remote, then compare-and-delete it.
 # Exit 3 + {"archived":false,"reason":...}: checked-out, missing, tag-conflict,

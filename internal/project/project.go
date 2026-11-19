@@ -36,7 +36,7 @@ func Open(ctx context.Context, path string, runner execx.Runner) (*Project, erro
 		return nil, err
 	}
 	stateDir := filepath.Join(repository.CommonGitDir, "cambium")
-	for _, child := range []string{"baselines", "layers", "worktrees", "workspace-meta", "locks", "operations", "benchmarks", "speculative"} {
+	for _, child := range []string{"baselines", "layers", "worktrees", "workspace-meta", "use", "locks", "operations", "benchmarks", "speculative"} {
 		if err := os.MkdirAll(filepath.Join(stateDir, child), 0o755); err != nil {
 			return nil, err
 		}
@@ -54,3 +54,13 @@ func (p *Project) OperationsDir() string {
 }
 func (p *Project) BenchmarksDir() string  { return filepath.Join(p.StateDir, "benchmarks") }
 func (p *Project) SpeculativeDir() string { return filepath.Join(p.StateDir, "speculative") }
+
+// PrimaryRoot is the primary checkout, derived from the common Git dir so it is
+// the same whether cambium runs in the primary or in a linked worktree.
+func (p *Project) PrimaryRoot() string { return filepath.Dir(p.Repository.CommonGitDir) }
+
+// UseDir holds the use markers of one workspace instance (keyed by its ID, so
+// a same-name replacement never inherits a predecessor's markers).
+func (p *Project) UseDir(workspaceID string) string {
+	return filepath.Join(p.StateDir, "use", workspaceID)
+}

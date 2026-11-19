@@ -57,6 +57,8 @@ root**, so a branch carries the policy that matches its own build layout.
 | `require_cow` | `false` | fail instead of falling back to a normal Git checkout |
 | `prepared_index` | `true` | seed worktree indexes from immutable baselines |
 | `require_ignored_layers` | `true` | managed outputs must be Git-ignored unless a rule opts out |
+| `workspace_root` | unset | directory for `add NAME` with no PATH: `<root>/<name>`. `~/` and absolute paths; relative paths are relative to the primary checkout |
+| `repos_root` | `~/git` | **per-user file only**; where `status --all` and `maintain --all-repos` look for repositories with `.git/cambium` |
 | `allow_policy_commands` | `false` | **local file only**; see [Commands and trust](#commands-and-trust) |
 
 ### Path rule keys
@@ -64,6 +66,7 @@ root**, so a branch carries the policy that matches its own build layout.
 - `name`
 - `path` (a concrete relative path; globs are rejected)
 - `policy`: `clone`, `seed`, `cargo-target`, `recreate`, `share`, `empty`, or `skip`
+- `seed` (only with `policy = "seed"`): `"cargo-deps"`, see [PATH_POLICIES.md](PATH_POLICIES.md#seed)
 - `inputs` (globs allowed)
 - `prepare` and `validate` as direct argv arrays
 - `allow_unignored`
@@ -97,6 +100,20 @@ allow_policy_commands = true
 It lives in Git's common directory, so every linked worktree of the clone
 shares it and it can never be committed. `[[path]]` rules here are rejected:
 what a commit builds with is decided by that commit.
+
+## Per-user config
+
+`~/.config/cambium/config.toml` (or `$XDG_CONFIG_HOME/cambium/`, or the file in
+`$CAMBIUM_CONFIG`) takes `[settings]` only, at the lowest precedence:
+defaults, user, committed `.cambium.toml`, clone-local config.
+
+```toml
+version = 1
+
+[settings]
+workspace_root = "~/git/_wt"
+repos_root = "~/git"
+```
 
 ## Path precedence
 

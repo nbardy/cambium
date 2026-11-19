@@ -53,6 +53,39 @@ Good fits:
 
 A seed never becomes a correctness authority.
 
+#### `seed = "cargo-deps"`
+
+```toml
+[[path]]
+path = "target"
+policy = "seed"
+seed = "cargo-deps"
+```
+
+A machine-wide, per-toolchain seed of Cargo dependency builds, instead of a
+copy of the primary checkout's directory. `cambium seed refresh [NAME]`
+publishes it from a built workspace (while no build holds Cargo's lock);
+`add`, `create` and `fork` clone it (APFS clone, about zero bytes) into a
+workspace whose path is absent.
+
+- Store: `~/Library/Caches/cambium-seed/<rustc release>/target`, a link to one
+  immutable snapshot; `$CAMBIUM_SEED_ROOT` overrides it. The release comes from
+  `rustc -vV` run in the workspace, so `rust-toolchain.toml` applies. The
+  snapshot also records the full `rustc -vV`; a different build of the same
+  release gets no seed.
+- Whitelist: a unit is published only when its `.fingerprint/<package>-<hash>`
+  names a package that `Cargo.lock` lists with a `source` (registry or git).
+  Its `build/` directory and `deps/` files follow by that name and hash.
+  Workspace members, path dependencies and anything unidentified stay behind.
+  A package name that is both local and registry stops the refresh.
+- On apply the seed is pruned again against the receiving workspace's own
+  `Cargo.lock`, and nothing is applied without one.
+- One seed per toolchain: a refresh replaces it (the previous snapshot is kept
+  for readers already cloning it).
+- Never silent: a workspace that gets no seed records why under
+  `dependency seed:` (`inspect`), for example "no seed for rustc 1.93.0".
+- Not captured into checkpoints or receipts; the seed store is the only source.
+
 ### `cargo-target`
 
 Seed a Cargo `target` directory with third-party build output only.

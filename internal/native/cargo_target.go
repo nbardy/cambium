@@ -56,25 +56,27 @@ type unknownLocals struct{}
 
 func (unknownLocals) contains(string) bool { return true }
 
-// readCargoLocals classifies the lockfile once. Cargo.lock is a TOML file of
-// `[[package]]` tables; only `name` and the presence of `source` matter here.
-func readCargoLocals(lockfile string) localPackages {
+// scanCargoLock splits a lockfile's packages into those without a `source`
+// (workspace members and path dependencies) and those with one (registry and
+// git). Cargo.lock is a TOML file of `[[package]]` tables; only `name` and the
+// presence of `source` matter here.
+func scanCargoLock(lockfile string) (locals, sourced map[string]struct{}, err error) {
 	file, err := os.Open(lockfile)
 	if err != nil {
-		return unknownLocals{}
+		return nil, nil, err
 	}
 	defer file.Close()
-	locals := lockedLocals{}
-	packages := 0
-	name, sourced, open := "", false, false
+	locals, sourced = map[string]struct{}{}, map[string]struct{}{}
+	name, hasSource, open := "", false, false
 	flush := func() {
 		if open && name != "" {
-			packages++
-			if !sourced {
+			if hasSource {
+				sourced[name] = struct{}{}
+			} else {
 				locals[name] = struct{}{}
 			}
 		}
-		name, sourced, open = "", false, false
+		name, hasSource, open = "", false, false
 	}
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1<<20)
@@ -89,14 +91,26 @@ func readCargoLocals(lockfile string) localPackages {
 		case open && strings.HasPrefix(line, "name = "):
 			name = strings.Trim(strings.TrimPrefix(line, "name = "), `"`)
 		case open && strings.HasPrefix(line, "source = "):
-			sourced = true
+			hasSource = true
 		}
 	}
 	flush()
-	if scanner.Err() != nil || packages == 0 {
+	if err := scanner.Err(); err != nil {
+		return nil, nil, err
+	}
+	if len(locals)+len(sourced) == 0 {
+		return nil, nil, errors.New("no packages in lockfile")
+	}
+	return locals, sourced, nil
+}
+
+// readCargoLocals classifies the lockfile once.
+func readCargoLocals(lockfile string) localPackages {
+	locals, _, err := scanCargoLock(lockfile)
+	if err != nil {
 		return unknownLocals{}
 	}
-	return locals
+	return lockedLocals(locals)
 }
 
 // cargoProfileDirs finds the directories that hold a `.fingerprint`: Cargo

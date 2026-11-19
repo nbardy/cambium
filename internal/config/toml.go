@@ -24,6 +24,9 @@ const (
 	ScopeCommitted Scope = iota
 	// ScopeLocal is <git-common-dir>/cambium/config.toml: [settings] only.
 	ScopeLocal
+	// ScopeUser is the per-user config (UserPath): [settings] only. It is the
+	// lowest-precedence file, so a repository can override it.
+	ScopeUser
 )
 
 // Setting is one validated `key = value` line from a [settings] table. Raw is
@@ -127,8 +130,8 @@ func Parse(name string, reader io.Reader, scope Scope) (File, error) {
 			if !seenVersion {
 				return fmt.Errorf("%s:%d: version = 1 must appear before [[path]]", name, lineNumber)
 			}
-			if scope == ScopeLocal {
-				return fmt.Errorf("%s:%d: [[path]] rules belong in the committed %s, not the local config", name, lineNumber, PolicyFilename)
+			if scope != ScopeCommitted {
+				return fmt.Errorf("%s:%d: [[path]] rules belong in the committed %s, not the local or user config", name, lineNumber, PolicyFilename)
 			}
 			file.Rules = append(file.Rules, LayerRule{Origin: name})
 			current = &file.Rules[len(file.Rules)-1]
@@ -246,8 +249,17 @@ func checkSetting(setting Setting, scope Scope) error {
 	if setting.Key == "allow_policy_commands" && scope == ScopeCommitted {
 		return fmt.Errorf("allow_policy_commands may only be set in the local config (%s under the Git common dir), never in the committed %s: a branch must not be able to enable command execution", filepath.Join("cambium", LocalFilename), PolicyFilename)
 	}
+	if setting.Key == "repos_root" && scope != ScopeUser {
+		return errors.New("repos_root may only be set in the per-user config; it names where maintain --all-repos looks, not a property of one repository")
+	}
 	var probe Config
-	return assignSetting(&probe, setting)
+	if err := assignSetting(&probe, setting); err != nil {
+		return err
+	}
+	if scope == ScopeUser && setting.Key == "workspace_root" && !filepath.IsAbs(probe.WorkspaceRoot) && probe.WorkspaceRoot != "~" && !strings.HasPrefix(probe.WorkspaceRoot, "~/") {
+		return fmt.Errorf("workspace_root %q in the per-user config must be absolute or start with ~/", probe.WorkspaceRoot)
+	}
+	return nil
 }
 
 func applySettings(value *Config, file File) error {
@@ -284,6 +296,18 @@ func assignSetting(value *Config, setting Setting) error {
 		return parseBoolInto(&value.RequireIgnoredLayers, setting)
 	case "allow_policy_commands":
 		return parseBoolInto(&value.AllowPolicyCommands, setting)
+	case "workspace_root":
+		parsed, err := parseTOMLString(setting.Raw)
+		if err != nil {
+			return fmt.Errorf("workspace_root: %w", err)
+		}
+		value.WorkspaceRoot = parsed
+	case "repos_root":
+		parsed, err := parseTOMLString(setting.Raw)
+		if err != nil {
+			return fmt.Errorf("repos_root: %w", err)
+		}
+		value.ReposRoot = parsed
 	default:
 		return fmt.Errorf("unknown setting %q", setting.Key)
 	}
@@ -314,6 +338,12 @@ func assignPolicyValue(rule *LayerRule, key, raw string) error {
 			return err
 		}
 		rule.Mode = LayerMode(value)
+	case "seed":
+		value, err := parseTOMLString(raw)
+		if err != nil {
+			return err
+		}
+		rule.Seed = SeedKind(value)
 	case "inputs":
 		value, err := parseTOMLStringArray(raw)
 		if err != nil {
