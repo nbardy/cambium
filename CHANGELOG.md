@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.10.0 - nothing unpushed is removed silently; protection; one registry
+
+- **Unpushed work.** `remove`, `prune --merged`, `maintain`, `gc` and the sweep on `add` refuse (`unpushed`,
+  exit 3) a workspace whose HEAD holds commits that no remote or other branch holds. `--salvage-ref REF`
+  keeps them at REF and says so; `--force` is the explicit opt-out. Commits held by another branch or a
+  remote-tracking ref are not "unpushed".
+- **NAME lookup.** `path`, `inspect`, `remove`, `seed refresh` NAME find the workspace through a user-level
+  registry of repositories (`~/.local/state/cambium/repositories`, written whenever Cambium runs in a
+  repository; `$CAMBIUM_STATE_DIR` overrides), then `repos_root`. A miss names where it looked and how to fix it.
+- **`prune --merged` works alone** (no `--older-than`); `--dry-run` applies the same guards as the real run.
+- **Protection.** `protect = true` (repository) and `protected_repos` (user config) make `maintain`, `prune`
+  and `gc` refuse a repository; `maintain --exclude PATH` (repeatable) is the per-run form for callers with
+  dynamic policy.
+- **`remove --harvest DIR --harvest-to DEST`** moves ignored files to an absolute rescue directory
+  (`--harvest .` for the whole workspace); rebuildable dependency and compiler state stays behind.
+- **`scrub_env`** setting: allow-listed child environment, hooks and fsmonitor disabled.
+  Inherited `GIT_DIR`/`GIT_WORK_TREE`-style selectors never redirect Cambium.
+- `scripts/wrapper-parity-test.sh` (run by `system-test.sh`): default workspace root, submodules and a real
+  `cargo build` seed, with real commands.
+
 ## 0.9.0 - repo-level sweep settings
 
 - `merge_target` and `prune_merged_on_add` settings: `maintain` and `add`/`create` sweep clean, idle

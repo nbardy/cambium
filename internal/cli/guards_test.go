@@ -298,3 +298,19 @@ func TestMaintainExcludeLeavesNamedRepositoriesAlone(t *testing.T) {
 	requireExists(t, keptPath, true)
 	requireExists(t, sweptPath, false)
 }
+
+// remove --dry-run is the "check NAME" wrappers had: same refusal, no change.
+func TestRemoveDryRunRefusesLikeTheRealRemoveAndChangesNothing(t *testing.T) {
+	f := newSafeFixture(t)
+	clean := f.create("clean")
+	dirty := f.create("dirty")
+	writeFile(t, filepath.Join(dirty, "x.txt"), "x\n")
+	if code := f.run("remove", "--dry-run", "dirty"); code != 3 {
+		t.Fatalf("dry-run on a dirty workspace: exit %d, want 3", code)
+	}
+	f.mustRun("remove", "--dry-run", "clean")
+	requireExists(t, clean, true)
+	requireExists(t, filepath.Join(dirty, "x.txt"), true)
+	f.mustRun("remove", "clean")
+	requireExists(t, clean, false)
+}

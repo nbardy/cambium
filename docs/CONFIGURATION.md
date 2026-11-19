@@ -61,6 +61,9 @@ root**, so a branch carries the policy that matches its own build layout.
 | `merge_target` | unset | ref (e.g. `origin/main`) that marks a workspace finished; `maintain` removes clean, idle, **ephemeral** workspaces whose HEAD is in it, after a best-effort fetch of that remote branch |
 | `prune_merged_on_add` | `false` | needs `merge_target`; `add` and `create` first remove finished workspaces the same way (guarded and checkpointed; a failure only warns) |
 | `submodules` | `false` | `add`/`create` clone each git submodule from the invoking checkout's local copy (no network, remote restored to `.gitmodules`); `remove` refuses a dirty or unpushed submodule (`submodule-unpushed`), then empties it so `git worktree remove` can proceed |
+| `protect` | `false` | **repository only** (committed or clone-local); `maintain`, `prune` and `gc` refuse this repository (exit 3, `protected`) and the sweep on `add` skips it. An explicit `remove NAME` still runs its guards |
+| `protected_repos` | `[]` | **per-user file only**; repositories, or directories holding repositories, protected the same way. Wrapper policy that is dynamic goes through `maintain --exclude PATH` instead |
+| `scrub_env` | `false` | every child process (Git, policy commands) runs with an allow-listed environment (`PATH HOME USER LOGNAME LANG LC_* TZ TMPDIR GIT_AUTHOR/COMMITTER_*`), `core.hooksPath=/dev/null`, `core.fsmonitor=false` and no terminal prompts, so a repository hook never sees provider keys. Repository selectors (`GIT_DIR`, `GIT_WORK_TREE`, ...) inherited from a calling hook are always dropped, scrubbed or not |
 | `repos_root` | `~/git` | **per-user file only**; where `status --all` and `maintain --all-repos` look for repositories with `.git/cambium` |
 | `allow_policy_commands` | `false` | **local file only**; see [Commands and trust](#commands-and-trust) |
 

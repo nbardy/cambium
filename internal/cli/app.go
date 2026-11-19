@@ -28,7 +28,7 @@ import (
 	"github.com/nbardy/cambium/internal/workspace"
 )
 
-var Version = "0.9.0"
+var Version = "0.10.0"
 
 type App struct {
 	Stdout io.Writer
@@ -787,17 +787,21 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 	harvest := set.String("harvest", "", "move git-ignored files under DIR into the primary checkout first (with --harvest-to: DIR may be . for the whole workspace)")
 	harvestTo := set.String("harvest-to", "", "with --harvest: move them to DEST/<path> instead (a rescue directory, absolute or ~/...); regenerable dependencies and Cargo compiler state are left behind")
 	salvageRef := set.String("salvage-ref", "", "keep uncommitted work (as a snapshot commit) and unpushed commits at REF (refs/...) instead of refusing")
+	dryRun := set.Bool("dry-run", false, "run every guard and say whether removal would proceed, changing nothing")
 	if err := set.Parse(args); err != nil {
 		return err
 	}
 	if set.NArg() != 1 {
-		return errors.New("usage: cambium remove [--force | [--json] [--require-merged REF] [--harvest DIR [--harvest-to DEST]] [--salvage-ref REF]] [--delete-branch] NAME")
+		return errors.New("usage: cambium remove [--dry-run] [--force | [--json] [--require-merged REF] [--harvest DIR [--harvest-to DEST]] [--salvage-ref REF]] [--delete-branch] NAME")
 	}
 	// Removal is guarded by default: a dirty, in-progress, in-use or
 	// branch-changed workspace is refused (exit 3). --force is the only opt-out.
 	if *force {
 		if *safe {
 			return errors.New("--safe and --force are mutually exclusive")
+		}
+		if *dryRun {
+			return errors.New("--dry-run runs the guards; drop --force")
 		}
 		if *jsonOutput || *requireMerged != "" || *harvest != "" || *harvestTo != "" || *salvageRef != "" {
 			return errors.New("--json, --require-merged, --harvest and --salvage-ref apply to guarded removal; drop --force")
@@ -828,7 +832,7 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 		return err
 	}
 	result, err := manager.SafeRemove(ctx, set.Arg(0), workspace.SafeRemoveOptions{
-		DeleteBranch: *deleteBranch, RequireMerged: *requireMerged, HarvestDir: *harvest, HarvestTo: dest, SalvageRef: *salvageRef,
+		DeleteBranch: *deleteBranch, RequireMerged: *requireMerged, HarvestDir: *harvest, HarvestTo: dest, SalvageRef: *salvageRef, DryRun: *dryRun,
 	})
 	var refusal *workspace.Refusal
 	if errors.As(err, &refusal) && *jsonOutput {
@@ -839,6 +843,10 @@ func (a *App) runRemove(ctx context.Context, args []string) error {
 	}
 	if *jsonOutput {
 		return writeJSON(a.Stdout, result)
+	}
+	if *dryRun {
+		fmt.Fprintf(a.Stdout, "would remove %s\n", set.Arg(0))
+		return nil
 	}
 	if result.Checkpoint != "" {
 		fmt.Fprintf(a.Stderr, "checkpoint: %s (cambium recover --removed)\n", result.Checkpoint)
@@ -1507,7 +1515,7 @@ Usage:
   cambium adopt NAME PATH
   cambium reconcile [--dry-run] [--json]
   cambium env <explain|validate|capture> WORKSPACE
-  cambium remove [--json] [--require-merged REF] [--harvest DIR [--harvest-to DEST]] [--salvage-ref REF] [--delete-branch] NAME
+  cambium remove [--dry-run] [--json] [--require-merged REF] [--harvest DIR [--harvest-to DEST]] [--salvage-ref REF] [--delete-branch] NAME
   cambium remove --force [--delete-branch] NAME
   cambium forget [--dry-run] [--json] <NAME... | --missing>
   cambium archive [--json] [--remote origin] BRANCH TAG

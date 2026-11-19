@@ -40,14 +40,20 @@ cambium prune                                 # drop old, unused caches
 
 ## Guarded removal, housekeeping and archiving
 
-`remove` never loses work by default. Exit 3 + a typed reason on refusal:
+`remove` never loses work by default: a dirty tree or a commit that no remote
+or other branch holds is refused (or, with `--salvage-ref`, saved at a ref and
+reported). `prune`, `maintain` and the sweep on `add` use the same guard. Exit 3 + a typed reason on refusal:
 
 ```bash
 # Reasons: unreadable, in-progress, branch-changed, in-use, primary, dirty,
-# unmerged, salvage-failed, output-conflict, output-unreadable.
+# unpushed, submodule-unpushed, protected, unmerged, salvage-failed,
+# output-conflict, output-unreadable.
 # --require-merged: refuse unless HEAD is an ancestor of main
 # --harvest: move git-ignored output/ files to the primary checkout first
-# --salvage-ref: snapshot a dirty tree (incl. untracked) instead of refusing
+#   (--harvest . --harvest-to ~/git/_rescued/DATE/NAME moves them elsewhere;
+#   rebuildable dependency and compiler directories stay behind)
+# --salvage-ref: snapshot a dirty tree (incl. untracked) and any unpushed
+#   commits at a ref instead of refusing
 # --force: the explicit opt-out (still never the primary checkout)
 cambium remove --json --require-merged main --harvest output \
   --salvage-ref refs/salvage/agent agent-auth        # works from any directory
@@ -55,6 +61,7 @@ cambium remove --json --require-merged main --harvest output \
 cambium status --all            # dirty, unpushed, merged, in-use, exclusive bytes
 cambium prune --merged main     # remove clean workspaces already in main
 cambium maintain --all-repos    # reconcile + forget --missing + prune caches
+cambium maintain --all-repos --exclude ~/git/loft   # skip repositories you protect
 ```
 
 A workspace is "in use" when a live process has its cwd inside it, a
