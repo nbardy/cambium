@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 CAMBIUM_BIN=${CAMBIUM_BIN:-cambium}
 PATH=$(dirname "$CAMBIUM_BIN"):$PATH
 export PATH
@@ -123,6 +124,6 @@ fi
 "$CAMBIUM_BIN" doctor >/dev/null
 
 # Wrapper-parity behaviours with real git and cargo.
-sh "$(dirname "$0")/wrapper-parity-test.sh"
+sh "$SCRIPT_DIR/wrapper-parity-test.sh"
 
 printf 'Cambium system test passed\n'
