@@ -1,9 +1,15 @@
 package native
 
 import (
+	"context"
+	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/nbardy/cambium/internal/config"
+	"github.com/nbardy/cambium/internal/project"
 )
 
 func TestReceiptReusesEnvironmentAcrossCommitsWhenInputsMatch(t *testing.T) {
@@ -52,3 +58,58 @@ func TestReceiptIncludesPolicyIdentityNotOnlyCurrentlyMatchedInputs(t *testing.T
 		t.Fatal("changing required policy did not change receipt identity")
 	}
 }
+
+// A dep-seed layer captured from a workspace was once written as a
+// metadata-only receipt with present=true and no payload, which loadLayer
+// rejects; every later publish of the id then failed with "file exists".
+func TestMetadataLayerNeverClaimsUnbackedPayloadAndBrokenLayerIsReplaced(t *testing.T) {
+	state := t.TempDir()
+	p := &project.Project{StateDir: state}
+	for _, d := range []string{p.LayersDir(), p.LocksDir()} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	rule := config.LayerRule{Path: "target", Mode: config.LayerSeed, Seed: "cargo-deps"}
+	layer := LayerSnapshot{Version: layerVersion, ID: "abc", Rule: rule, Present: true, CreatedAt: time.Now().UTC()}
+	ctx := context.Background()
+
+	// Prevention: present=true is dropped when there is no payload.
+	got, err := publishMetadataLayer(ctx, p, layer)
+	if err != nil || got.Present {
+		t.Fatalf("metadata-only publish: present=%v err=%v", got.Present, err)
+	}
+	if loaded, ok := loadLayer(filepath.Join(p.LayersDir(), "abc")); !ok || loaded.Present {
+		t.Fatalf("published layer not loadable as absent: ok=%v", ok)
+	}
+
+	// Recovery: a pre-existing broken directory is moved aside.
+	broken := filepath.Join(p.LayersDir(), "def")
+	if err := os.MkdirAll(broken, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{
+		"metadata.json": `{"version":` + itoa(layerVersion) + `,"id":"def","rule":{"path":"target","mode":"seed","seed":"cargo-deps"},"present":true}`,
+		"ready":         "def\n",
+	} {
+		if err := os.WriteFile(filepath.Join(broken, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, ok := loadLayer(broken); ok {
+		t.Fatal("fixture should be rejected by loadLayer")
+	}
+	layer.ID = "def"
+	if _, err := publishMetadataLayer(ctx, p, layer); err != nil {
+		t.Fatalf("publish over broken layer: %v", err)
+	}
+	if _, ok := loadLayer(broken); !ok {
+		t.Fatal("layer not loadable after recovery")
+	}
+	aside, _ := filepath.Glob(filepath.Join(p.LayersDir(), ".layer-def-incomplete-*"))
+	if len(aside) != 1 {
+		t.Fatalf("broken directory not preserved aside: %v", aside)
+	}
+}
+
+func itoa(n int) string { return strconv.Itoa(n) }

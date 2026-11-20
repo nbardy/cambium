@@ -498,8 +498,12 @@ func publishMetadataLayer(ctx context.Context, project *project.Project, layer L
 	}
 	defer lock.Release()
 
+	// A metadata-only receipt cannot claim a payload it does not have. loadLayer
+	// rejects present clone/seed/cargo-target layers without one, and the
+	// resulting directory would block every later publish of this id.
+	layer = withoutUnbackedPresence(layer)
 	if existing, ok := loadLayer(finalRoot); ok {
-		merged := mergeLayerObservation(existing, layer)
+		merged := withoutUnbackedPresence(mergeLayerObservation(existing, layer))
 		metadata, err := json.MarshalIndent(merged, "", "  ")
 		if err != nil {
 			return LayerSnapshot{}, err
@@ -509,6 +513,9 @@ func publishMetadataLayer(ctx context.Context, project *project.Project, layer L
 		}
 		_ = touchCacheEntry(finalRoot)
 		return merged, nil
+	}
+	if err := quarantineIncompleteLayer(project, finalRoot); err != nil {
+		return LayerSnapshot{}, err
 	}
 	temporary, err := os.MkdirTemp(project.LayersDir(), ".layer-"+layer.ID+"-*")
 	if err != nil {
@@ -532,6 +539,39 @@ func publishMetadataLayer(ctx context.Context, project *project.Project, layer L
 		return LayerSnapshot{}, err
 	}
 	return layer, nil
+}
+
+// withoutUnbackedPresence clears Present on a payload-bearing layer that has
+// no payload. Dependency-seed layers are captured this way: the payload comes
+// from the per-toolchain seed, so the receipt records no payload of its own.
+func withoutUnbackedPresence(layer LayerSnapshot) LayerSnapshot {
+	switch layer.Rule.Mode {
+	case config.LayerClone, config.LayerSeed, config.LayerCargoTarget:
+		if layer.Payload == "" {
+			layer.Present = false
+		}
+	}
+	return layer
+}
+
+// quarantineIncompleteLayer moves a layer directory that loadLayer rejects
+// out of the way so the id can be published again. The caller holds the layer
+// lock. The directory is renamed, not deleted, so nothing is lost; the dot
+// prefix keeps it out of the layer cache.
+func quarantineIncompleteLayer(project *project.Project, finalRoot string) error {
+	if _, err := os.Lstat(finalRoot); errors.Is(err, os.ErrNotExist) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	if _, ok := loadLayer(finalRoot); ok {
+		return nil
+	}
+	aside := filepath.Join(project.LayersDir(), fmt.Sprintf(".layer-%s-incomplete-%d", filepath.Base(finalRoot), time.Now().UnixNano()))
+	if err := os.Rename(finalRoot, aside); err != nil {
+		return fmt.Errorf("move incomplete layer %s aside: %w", finalRoot, err)
+	}
+	return fsx.SyncDir(project.LayersDir())
 }
 
 func mergeLayerObservation(existing, observed LayerSnapshot) LayerSnapshot {
@@ -596,9 +636,7 @@ func publishLayer(ctx context.Context, project *project.Project, sourceRoot, sou
 		previous = &layer
 	}
 	if previous == nil {
-		if _, err := os.Stat(finalRoot); err == nil {
-			return LayerSnapshot{}, fmt.Errorf("incomplete layer exists at %s; run `cambium doctor --repair`", finalRoot)
-		} else if !errors.Is(err, os.ErrNotExist) {
+		if err := quarantineIncompleteLayer(project, finalRoot); err != nil {
 			return LayerSnapshot{}, err
 		}
 	}
