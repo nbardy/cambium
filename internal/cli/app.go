@@ -961,7 +961,7 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 		return 1, err
 	}
 	name := set.Arg(0)
-	value, err := manager.Load(ctx, name, true)
+	value, err := manager.Load(ctx, name, false)
 	if errors.Is(err, state.ErrWorkspaceNotFound) {
 		materializer := model.Materializer("")
 		if *materializerValue != "" {
@@ -975,12 +975,9 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 	if err != nil {
 		return 1, err
 	}
-	if value.Status != model.WorkspaceReady {
-		return 1, fmt.Errorf("workspace %q is %s", name, value.Status)
-	}
 	// Register use so prune, maintain and remove leave this workspace alone while
 	// the command runs, even if it is idle between processes.
-	releaseUse, err := manager.MarkInUse(value)
+	marker, releaseUse, err := manager.MarkInUse(ctx, value)
 	if err != nil {
 		return 1, fmt.Errorf("mark workspace in use: %w", err)
 	}
@@ -990,6 +987,7 @@ func (a *App) runCommand(ctx context.Context, args []string) (int, error) {
 	child.Stdin = a.Stdin
 	child.Stdout = a.Stdout
 	child.Stderr = a.Stderr
+	child.ExtraFiles = []*os.File{marker}
 	child.Env = append(os.Environ(), "CAMBIUM_WORKSPACE="+value.Name, "CAMBIUM_WORKSPACE_PATH="+value.Path, "CAMBIUM_REPOSITORY="+value.RepositoryRoot)
 	runErr := child.Run()
 	_ = manager.TouchIf(ctx, name, value.ID)

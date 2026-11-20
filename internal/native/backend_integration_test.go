@@ -261,10 +261,14 @@ func TestConcurrentWorkspaceCreation(t *testing.T) {
 	}
 	results := make(chan result, count)
 	var wg sync.WaitGroup
+	// Keep two creates overlapping without issuing a burst of Git subprocesses.
+	slots := make(chan struct{}, 2)
 	for i := 0; i < count; i++ {
+		slots <- struct{}{}
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
+			defer func() { <-slots }()
 			name := fmt.Sprintf("parallel-%02d", index)
 			workspace, err := backend.Create(ctx, native.CreateSpec{Name: name, Materializer: model.MaterializerGit})
 			results <- result{name: name, path: workspace.Path, err: err}

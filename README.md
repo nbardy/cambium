@@ -45,7 +45,7 @@ or other branch holds is refused (or, with `--salvage-ref`, saved at a ref and
 reported). `prune`, `maintain` and the sweep on `add` use the same guard. Exit 3 + a typed reason on refusal:
 
 ```bash
-# Reasons: unreadable, in-progress, branch-changed, in-use, primary, dirty,
+# Reasons: unreadable, in-progress, branch-changed, in-use, in-use-unknown, primary, dirty,
 # unpushed, submodule-unpushed, protected, unmerged, salvage-failed,
 # output-conflict, output-unreadable.
 # --require-merged: refuse unless HEAD is an ancestor of main
@@ -64,9 +64,11 @@ cambium maintain --all-repos    # reconcile + forget --missing + prune caches
 cambium maintain --all-repos --exclude ~/git/loft   # skip repositories you protect
 ```
 
-A workspace is "in use" when a live process has its cwd inside it, a
-`cambium run` is active in it, or Cargo holds its build lock; remove, prune and
-maintain skip it unless `--force`. With `workspace_root = "~/git/_wt"` in
+A workspace is "in use" when `cambium run` holds its use marker or Cargo holds a
+build lock. Run long-lived commands through `cambium run` so Cambium can track
+them. If the records cannot be checked, including legacy PID-only markers,
+guarded removal reports `in-use-unknown` and keeps the workspace.
+With `workspace_root = "~/git/_wt"` in
 `~/.config/cambium/config.toml`, `git cambium add -b NAME -name NAME` needs no
 path.
 

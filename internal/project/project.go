@@ -74,5 +74,8 @@ func (p *Project) PrimaryRoot() string { return filepath.Dir(p.Repository.Common
 // UseDir holds the use markers of one workspace instance (keyed by its ID, so
 // a same-name replacement never inherits a predecessor's markers).
 func (p *Project) UseDir(workspaceID string) string {
+	if workspaceID == "" {
+		return ""
+	}
 	return filepath.Join(p.StateDir, "use", workspaceID)
 }

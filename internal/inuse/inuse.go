@@ -1,36 +1,23 @@
-// Package inuse answers one question for prune, maintain and remove: is
-// anything still using this workspace? Three independent signals, any of which
-// means "in use":
-//
-//   - a live process whose current directory is inside the workspace;
-//   - a use marker (a file named by PID under the project's use directory)
-//     written by `cambium run` for the duration of its child;
-//   - a held build lock: an flock on target/.cargo-lock or
-//     target/<profile>/.cargo-lock, which Cargo holds while it builds.
-//
-// The check is advisory by design. It never kills, signals or waits.
+// Package inuse checks workspace use markers and Cargo build locks without
+// querying the process table.
 package inuse
 
 import (
-	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 )
 
 type Kind string
 
 const (
-	KindProcess Kind = "process" // a live process has its cwd inside the workspace
-	KindMarker  Kind = "marker"  // a live `cambium run` registered use
-	KindLock    Kind = "lock"    // a held flock on a build lock file
+	KindMarker Kind = "marker"
+	KindLock   Kind = "lock"
 )
 
 // Holder is one reason a workspace is in use.
@@ -47,52 +34,65 @@ func (h Holder) String() string {
 	return fmt.Sprintf("%s (%s)", h.Kind, h.Detail)
 }
 
-// Check reports every holder of the workspace at path. markerDir is the
-// per-workspace directory used by Mark ("" disables the marker signal).
+// UnknownError means the available records could not establish workspace use.
+type UnknownError struct {
+	Cause error
+}
+
+func (e *UnknownError) Error() string { return "workspace use is unknown: " + e.Cause.Error() }
+func (e *UnknownError) Unwrap() error { return e.Cause }
+
+// Check reports holders of a workspace and its receipt-scoped use directory.
 func Check(path, markerDir string) ([]Holder, error) {
-	resolved, err := filepath.EvalSymlinks(path)
+	if markerDir == "" {
+		return nil, &UnknownError{Cause: errors.New("workspace has no recorded identity")}
+	}
+	markers, err := heldMarkers(markerDir)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, nil // nothing on disk can be in use
-		}
-		return nil, err
+		return nil, &UnknownError{Cause: err}
 	}
-	var holders []Holder
-	cwds, err := processCwds()
+	builds, err := heldBuildLocks(path)
 	if err != nil {
-		return nil, fmt.Errorf("list process working directories: %w", err)
+		return nil, &UnknownError{Cause: err}
 	}
-	self := os.Getpid()
-	for _, entry := range cwds {
-		if entry.pid != self && within(entry.cwd, resolved) {
-			holders = append(holders, Holder{Kind: KindProcess, PID: entry.pid, Detail: "cwd " + entry.cwd})
-		}
-	}
-	if markerDir != "" {
-		markers, err := liveMarkers(markerDir)
-		if err != nil {
-			return nil, err
-		}
-		holders = append(holders, markers...)
-	}
-	holders = append(holders, heldBuildLocks(resolved)...)
-	return holders, nil
+	return append(markers, builds...), nil
 }
 
-// Mark registers the current process as using a workspace until release is
-// called. A crashed marker owner is ignored (its PID is dead) and swept later.
-func Mark(markerDir string) (release func(), err error) {
+const pendingPrefix = ".pending-"
+const markerPrefix = "run-"
+
+// Mark registers this invocation until release. The returned file can also
+// be passed to the child so its lock survives an abrupt exit of the caller.
+func Mark(markerDir string) (*os.File, func(), error) {
 	if err := os.MkdirAll(markerDir, 0o755); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	path := filepath.Join(markerDir, strconv.Itoa(os.Getpid()))
-	if err := os.WriteFile(path, []byte("cambium run\n"), 0o644); err != nil {
-		return nil, err
+	file, err := os.CreateTemp(markerDir, pendingPrefix)
+	if err != nil {
+		return nil, nil, err
 	}
-	return func() { _ = os.Remove(path) }, nil
+	defer os.Remove(file.Name())
+	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		_ = file.Close()
+		return nil, nil, err
+	}
+
+	suffix := strings.TrimPrefix(filepath.Base(file.Name()), pendingPrefix)
+	path := filepath.Join(markerDir, fmt.Sprintf("%s%d-%s", markerPrefix, os.Getpid(), suffix))
+	// Publish only after locking so a reader never sees an unopened marker.
+	// Link also refuses to replace another invocation's marker.
+	if err := os.Link(file.Name(), path); err != nil {
+		_ = file.Close()
+		return nil, nil, err
+	}
+	release := sync.OnceFunc(func() {
+		_ = os.Remove(path)
+		_ = file.Close()
+	})
+	return file, release, nil
 }
 
-func liveMarkers(dir string) ([]Holder, error) {
+func heldMarkers(dir string) ([]Holder, error) {
 	entries, err := os.ReadDir(dir)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
@@ -102,112 +102,98 @@ func liveMarkers(dir string) ([]Holder, error) {
 	}
 	var holders []Holder
 	for _, entry := range entries {
-		pid, convErr := strconv.Atoi(entry.Name())
-		if convErr != nil || pid <= 0 {
+		name := entry.Name()
+		if strings.HasPrefix(name, pendingPrefix) {
 			continue
 		}
-		if ProcessAlive(pid) {
+		path := filepath.Join(dir, name)
+		if pid, err := strconv.Atoi(name); err == nil && pid > 0 {
+			return nil, fmt.Errorf("legacy use marker %s has no open-handle record", path)
+		}
+		owner, marked := strings.CutPrefix(name, markerPrefix)
+		pidText, suffix, _ := strings.Cut(owner, "-")
+		pid, err := strconv.Atoi(pidText)
+		if !marked || pid <= 0 || err != nil || suffix == "" {
+			return nil, fmt.Errorf("unrecognized use marker %s", path)
+		}
+		held, err := lockHeld(path)
+		if err != nil {
+			return nil, err
+		}
+		if held {
 			holders = append(holders, Holder{Kind: KindMarker, PID: pid, Detail: "cambium run"})
 		}
 	}
 	return holders, nil
 }
 
-// ProcessAlive reports whether pid exists (EPERM means it exists, owned by another user).
-func ProcessAlive(pid int) bool {
-	err := syscall.Kill(pid, 0)
-	return err == nil || errors.Is(err, syscall.EPERM)
-}
-
-func within(path, root string) bool {
-	path, root = filepath.Clean(path), filepath.Clean(root)
-	return path == root || strings.HasPrefix(path, root+string(filepath.Separator))
-}
-
-// heldBuildLocks probes Cargo's lock files without blocking. A shared flock is
-// taken and dropped immediately: it succeeds unless an exclusive holder (a
-// running cargo build) exists, and it never disturbs a holder.
-func heldBuildLocks(root string) []Holder {
-	var candidates []string
-	candidates = append(candidates, filepath.Join(root, "target", ".cargo-lock"))
-	profiles, _ := filepath.Glob(filepath.Join(root, "target", "*", ".cargo-lock"))
-	candidates = append(candidates, profiles...)
-	nested, _ := filepath.Glob(filepath.Join(root, "*", "target", "*", ".cargo-lock"))
-	candidates = append(candidates, nested...)
-	var holders []Holder
-	for _, path := range candidates {
-		file, err := os.Open(path)
-		if err != nil {
-			continue
-		}
-		err = syscall.Flock(int(file.Fd()), syscall.LOCK_SH|syscall.LOCK_NB)
-		if err == nil {
-			_ = syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
-		} else if errors.Is(err, syscall.EWOULDBLOCK) {
-			holders = append(holders, Holder{Kind: KindLock, Detail: "held " + path})
-		}
-		_ = file.Close()
-	}
-	return holders
-}
-
-type cwdEntry struct {
-	pid int
-	cwd string
-}
-
-// processCwds lists (pid, cwd) for every process this user may inspect.
-func processCwds() ([]cwdEntry, error) {
-	if runtime.GOOS == "linux" {
-		return procCwds()
-	}
-	return lsofCwds()
-}
-
-func procCwds() ([]cwdEntry, error) {
-	dirs, err := filepath.Glob("/proc/[0-9]*")
+// heldBuildLocks checks target directories at the root and one level down,
+// including Cargo's profiled build directories.
+func heldBuildLocks(root string) ([]Holder, error) {
+	entries, err := os.ReadDir(root)
 	if err != nil {
 		return nil, err
 	}
-	var out []cwdEntry
-	for _, dir := range dirs {
-		pid, convErr := strconv.Atoi(filepath.Base(dir))
-		if convErr != nil {
+	targets := []string{filepath.Join(root, "target")}
+	for _, entry := range entries {
+		if entry.IsDir() || entry.Type()&os.ModeSymlink != 0 {
+			targets = append(targets, filepath.Join(root, entry.Name(), "target"))
+		}
+	}
+
+	var holders []Holder
+	for _, target := range targets {
+		profiles, err := os.ReadDir(target)
+		if errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ENOTDIR) {
 			continue
 		}
-		cwd, linkErr := os.Readlink(filepath.Join(dir, "cwd"))
-		if linkErr != nil {
-			continue // exited, or another user's process
+		if err != nil {
+			return nil, err
 		}
-		out = append(out, cwdEntry{pid, cwd})
+		candidates := []string{filepath.Join(target, ".cargo-lock")}
+		for _, profile := range profiles {
+			if profile.IsDir() || profile.Type()&os.ModeSymlink != 0 {
+				candidates = append(candidates, filepath.Join(target, profile.Name(), ".cargo-lock"))
+			}
+		}
+		for _, path := range candidates {
+			held, err := lockHeld(path)
+			if err != nil {
+				return nil, err
+			}
+			if held {
+				holders = append(holders, Holder{Kind: KindLock, Detail: "held " + path})
+			}
+		}
 	}
-	return out, nil
+	return holders, nil
 }
 
-// lsofCwds parses `lsof -Fpn` field output: "p<pid>" then "n<path>" lines.
-// lsof exits 1 when it could not inspect some processes; that is normal, so only
-// a failure with no output is an error.
-func lsofCwds() ([]cwdEntry, error) {
-	command := exec.Command("lsof", "-a", "-d", "cwd", "-Fpn")
-	command.Dir = string(filepath.Separator) // our own cwd must not look like a holder
-	var stdout bytes.Buffer
-	command.Stdout = &stdout
-	runErr := command.Run()
-	if stdout.Len() == 0 && runErr != nil {
-		return nil, fmt.Errorf("lsof: %w", runErr)
+// lockHeld probes without blocking, even if a lock path was replaced by a FIFO.
+func lockHeld(path string) (bool, error) {
+	file, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK|syscall.O_NOFOLLOW, 0)
+	if errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ENOTDIR) {
+		return false, nil
 	}
-	var out []cwdEntry
-	pid := 0
-	scanner := bufio.NewScanner(&stdout)
-	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
-	for scanner.Scan() {
-		line := scanner.Text()
-		switch {
-		case strings.HasPrefix(line, "p"):
-			pid, _ = strconv.Atoi(line[1:])
-		case strings.HasPrefix(line, "n") && pid > 0:
-			out = append(out, cwdEntry{pid, line[1:]})
-		}
+	if err != nil {
+		return false, err
 	}
-	return out, scanner.Err()
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		return false, err
+	}
+	if !info.Mode().IsRegular() {
+		return false, fmt.Errorf("lock %s is not a regular file", path)
+	}
+	// Cargo and run markers take exclusive locks. Closing drops our shared
+	// probe, while a crashed owner's abandoned marker is already unlocked.
+	err = syscall.Flock(int(file.Fd()), syscall.LOCK_SH|syscall.LOCK_NB)
+	if errors.Is(err, syscall.EWOULDBLOCK) {
+		return true, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("probe lock %s: %w", path, err)
+	}
+	return false, nil
 }

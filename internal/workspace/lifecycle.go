@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -36,10 +37,21 @@ func (m *Manager) InUse(value model.Workspace) ([]inuse.Holder, error) {
 	return inuse.Check(value.Path, m.Project.UseDir(value.ID))
 }
 
-// MarkInUse registers the calling process as a user of the workspace until the
-// returned function is called.
-func (m *Manager) MarkInUse(value model.Workspace) (func(), error) {
-	return inuse.Mark(m.Project.UseDir(value.ID))
+// MarkInUse publishes the use marker under the same lock as guarded removal.
+func (m *Manager) MarkInUse(ctx context.Context, value model.Workspace) (*os.File, func(), error) {
+	lock, err := m.Native.LockWorkspace(ctx, value.Name)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer lock.Release()
+	current, err := m.loadReadyWorkspaceLocked(ctx, value.Name)
+	if err != nil {
+		return nil, nil, err
+	}
+	if current.ID != value.ID || current.Path != value.Path {
+		return nil, nil, fmt.Errorf("workspace %q was replaced or moved before recording its use", value.Name)
+	}
+	return inuse.Mark(m.Project.UseDir(current.ID))
 }
 
 // Status is one workspace's answer to "can I delete this, and what does it cost".
@@ -56,6 +68,7 @@ type Status struct {
 	Merged          bool               `json:"merged"`
 	MergedInto      string             `json:"merged_into"`
 	InUse           []inuse.Holder     `json:"in_use,omitempty"`
+	InUseUnknown    bool               `json:"in_use_unknown,omitempty"`
 	Size            *fsx.TreeSize      `json:"size,omitempty"`
 	LastUsedAt      time.Time          `json:"last_used_at"`
 	Errors          []string           `json:"errors,omitempty"`
@@ -66,7 +79,7 @@ type Status struct {
 // unpushed, not in use. Merged is reported separately; an unmerged but pushed
 // branch is removable and its commits stay on the remote.
 func (s Status) Removable() bool {
-	return !s.Missing && s.Dirty == 0 && s.Unpushed == 0 && len(s.InUse) == 0 && len(s.Errors) == 0
+	return !s.Missing && s.Dirty == 0 && s.Unpushed == 0 && len(s.InUse) == 0 && !s.InUseUnknown && len(s.Errors) == 0
 }
 
 // Statuses reports every workspace of this repository. mergedInto names the
@@ -98,11 +111,17 @@ func (m *Manager) statusOf(ctx context.Context, value model.Workspace, mergedInt
 		Ephemeral: value.Ephemeral, MergedInto: mergedInto, LastUsedAt: value.LastUsedAt,
 		DependencySeeds: value.DependencySeeds,
 	}
-	if _, err := os.Stat(value.Path); err != nil {
+	if _, err := os.Stat(value.Path); errors.Is(err, os.ErrNotExist) {
 		status.Missing = true
 		return status
 	}
 	fail := func(what string, err error) { status.Errors = append(status.Errors, what+": "+err.Error()) }
+	if holders, err := m.InUse(value); err != nil {
+		status.InUseUnknown = true
+		fail("in-use", err)
+	} else {
+		status.InUse = holders
+	}
 	if porcelain, err := repo.StatusPorcelain(ctx, value.Path); err != nil {
 		fail("status", err)
 	} else {
@@ -126,11 +145,6 @@ func (m *Manager) statusOf(ctx context.Context, value model.Workspace, mergedInt
 		if !errors.As(err, &refusal) {
 			fail("merged", err)
 		}
-	}
-	if holders, err := m.InUse(value); err != nil {
-		fail("in-use", err)
-	} else {
-		status.InUse = holders
 	}
 	if withBytes {
 		if size, err := fsx.MeasureTree(value.Path); err != nil {

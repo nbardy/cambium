@@ -44,6 +44,7 @@ const (
 	RefusePushUnverified    RefusalReason = "push-unverified"
 	RefuseMoved             RefusalReason = "moved"
 	RefuseInUse             RefusalReason = "in-use"
+	RefuseInUseUnknown      RefusalReason = "in-use-unknown"
 	RefusePrimary           RefusalReason = "primary"
 	RefuseSubmoduleUnpushed RefusalReason = "submodule-unpushed"
 	RefuseUnpushed          RefusalReason = "unpushed"
@@ -143,9 +144,9 @@ func (m *Manager) guardRemoval(ctx context.Context, name string, current model.W
 		return plan, refuse(RefusePrimary, "%s is the primary checkout, not a removable workspace", current.Path)
 	}
 	// Guarded removal has no force: a workspace in use is never removed.
-	holders, err := inuse.Check(current.Path, m.Project.UseDir(current.ID))
+	holders, err := m.InUse(current)
 	if err != nil {
-		return plan, refuse(RefuseUnreadable, "check whether %s is in use: %v", current.Path, err)
+		return plan, refuse(RefuseInUseUnknown, "%s: %v", current.Path, err)
 	}
 	if len(holders) > 0 {
 		return plan, refuse(RefuseInUse, "workspace %q is in use: %s", name, holderList(holders))

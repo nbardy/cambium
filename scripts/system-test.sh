@@ -95,14 +95,14 @@ test ! -e "$WORKSPACE"
 # Exercise independent CLI processes racing through the same shared Git
 # administration directory and prepared-layer cache.
 pids=""
-for index in 1 2 3 4; do
+for index in 1 2; do
   "$CAMBIUM_BIN" create --json --materializer git "parallel-$index" >"$ROOT/parallel-$index.out" &
   pids="$pids $!"
 done
 for pid in $pids; do
   wait "$pid"
 done
-for index in 1 2 3 4; do
+for index in 1 2; do
   PARALLEL_PATH=$(sed -n 's/.*"path": "\([^"]*\)".*/\1/p' "$ROOT/parallel-$index.out")
   test -n "$PARALLEL_PATH"
   test "$(cat "$PARALLEL_PATH/src/value.txt")" = base

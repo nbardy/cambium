@@ -65,6 +65,8 @@ func (a *App) runStatus(ctx context.Context, args []string) error {
 		state := yesNo(len(row.InUse) > 0)
 		if row.Missing {
 			state = "missing"
+		} else if row.InUseUnknown {
+			state = "unknown"
 		}
 		exclusive := "-"
 		if row.Size != nil {

@@ -98,10 +98,11 @@ func TestRemoveAndPruneRefuseInUseWorkspace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	release, err := manager.MarkInUse(value)
+	_, release, err := manager.MarkInUse(context.Background(), value)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(release)
 	f.refused("in-use", "remove", "--json", "busy")
 	out := f.mustRun("prune", "--merged", "main", "--older-than", "1ns", "--json")
 	if strings.Contains(out, `"removed":["busy"]`) {
@@ -109,6 +110,19 @@ func TestRemoveAndPruneRefuseInUseWorkspace(t *testing.T) {
 	}
 	requireExists(t, path, true)
 	release()
+	legacyMarker := filepath.Join(manager.Project.UseDir(value.ID), "123")
+	writeFile(t, legacyMarker, "cambium run\n")
+	f.refused("in-use-unknown", "remove", "--json", "busy")
+	var statuses []workspace.Status
+	if err := json.Unmarshal([]byte(f.mustRun("status", "--no-bytes", "--json")), &statuses); err != nil {
+		t.Fatal(err)
+	}
+	if len(statuses) != 1 || !statuses[0].InUseUnknown || statuses[0].Removable() {
+		t.Fatalf("status did not report unknown workspace use: %+v", statuses)
+	}
+	if err := os.Remove(legacyMarker); err != nil {
+		t.Fatal(err)
+	}
 	f.mustRun("remove", "busy")
 	requireExists(t, path, false)
 }
@@ -293,7 +307,7 @@ func TestRunRegistersAUseMarkerForItsChild(t *testing.T) {
 		t.Fatal(err)
 	}
 	markers := manager.Project.UseDir(value.ID)
-	out := f.mustRun("run", "running", "--", "ls", markers)
+	out := f.mustRun("run", "running", "--", "sh", "-c", "test -f /dev/fd/3 && ls \"$1\"", "marker", markers)
 	if strings.TrimSpace(out) == "" {
 		t.Fatalf("no use marker existed while the child ran: %q", out)
 	}

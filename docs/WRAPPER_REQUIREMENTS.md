@@ -66,9 +66,9 @@ E-F cleanup_tools (49-74), G-H relay (75-87), I other callers (88-92), J owner-w
 | 53 | COVERED | `maintain --older-than`, `prune --older-than`. |
 | 54 | DROPPED | A wrapper's per-repository message. `maintain` reports per-repository `error` and continues; the exit code is non-zero if any failed. |
 | 55 | COVERED | `gc` stays opt-in and refuses protected repositories and unpushed work; `maintain` removes only merged, clean, idle, ephemeral workspaces and checkpoints before every removal. |
-| 56 | COVERED | In-use markers (live cwd, `cambium run`, held Cargo lock) block removal, prune and maintain; idle age for workspaces with no commits comes from `--older-than`. |
+| 56 | COVERED | Locked `cambium run` markers and held Cargo locks block removal, prune and maintain; idle age for workspaces with no commits comes from `--older-than`. |
 | 57 | COVERED | Cambium workspaces are found by the registry and `repos_root` (`list`, `status --all`); the Claude Code and Codex adapters in `integrations/` create Cambium workspaces. Plain `git worktree`s Cambium never created are not Cambium's to find: `disk.py` keeps scanning for them, and its plain-Git fallback in `remove_linked` is for exactly those, commented as such. |
-| 58 | COVERED | In-use detection: a live process with its cwd inside, a `cambium run` marker, or a held Cargo lock. (`disk.py` still runs its `lsof` check for directories Cambium does not own.) |
+| 58 | COVERED | In-use detection uses locks on workspace-scoped `cambium run` markers and Cargo build locks. Unreadable records and legacy PID-only markers produce `in-use-unknown`. |
 | 59 | DROPPED | Cambium takes no `git worktree lock`; a lock held on a plain worktree is `disk.py`'s plain-Git case. |
 | 60 | COVERED | `prune --merged --older-than 24h` and `maintain --older-than`; `status --all` shows activity. |
 | 61 | COVERED | `cambium status --all`: dirty, unpushed, merged, in-use, exclusive bytes. |
