@@ -44,21 +44,22 @@ func (m *Manager) MarkInUse(value model.Workspace) (func(), error) {
 
 // Status is one workspace's answer to "can I delete this, and what does it cost".
 type Status struct {
-	Name       string         `json:"name"`
-	Repository string         `json:"repository"`
-	Path       string         `json:"path"`
-	Branch     string         `json:"branch"`
-	Ephemeral  bool           `json:"ephemeral"`
-	Missing    bool           `json:"missing"`
-	Dirty      int            `json:"dirty_paths"`
-	Unpushed   int            `json:"unpushed_commits"` // reachable from HEAD, from no remote-tracking ref and no other branch or tag
-	HasCommits bool           `json:"has_commits"`      // HEAD moved past the base commit
-	Merged     bool           `json:"merged"`
-	MergedInto string         `json:"merged_into"`
-	InUse      []inuse.Holder `json:"in_use,omitempty"`
-	Size       *fsx.TreeSize  `json:"size,omitempty"`
-	LastUsedAt time.Time      `json:"last_used_at"`
-	Errors     []string       `json:"errors,omitempty"`
+	Name            string             `json:"name"`
+	Repository      string             `json:"repository"`
+	Path            string             `json:"path"`
+	Branch          string             `json:"branch"`
+	Ephemeral       bool               `json:"ephemeral"`
+	Missing         bool               `json:"missing"`
+	Dirty           int                `json:"dirty_paths"`
+	Unpushed        int                `json:"unpushed_commits"` // reachable from HEAD, from no remote-tracking ref and no other branch or tag
+	HasCommits      bool               `json:"has_commits"`      // HEAD moved past the base commit
+	Merged          bool               `json:"merged"`
+	MergedInto      string             `json:"merged_into"`
+	InUse           []inuse.Holder     `json:"in_use,omitempty"`
+	Size            *fsx.TreeSize      `json:"size,omitempty"`
+	LastUsedAt      time.Time          `json:"last_used_at"`
+	Errors          []string           `json:"errors,omitempty"`
+	DependencySeeds []model.SeedResult `json:"dependency_seeds,omitempty"`
 }
 
 // Removable is true only when removal loses nothing: present, clean, nothing
@@ -95,6 +96,7 @@ func (m *Manager) statusOf(ctx context.Context, value model.Workspace, mergedInt
 	status := Status{
 		Name: value.Name, Repository: m.Project.PrimaryRoot(), Path: value.Path, Branch: value.Branch,
 		Ephemeral: value.Ephemeral, MergedInto: mergedInto, LastUsedAt: value.LastUsedAt,
+		DependencySeeds: value.DependencySeeds,
 	}
 	if _, err := os.Stat(value.Path); err != nil {
 		status.Missing = true

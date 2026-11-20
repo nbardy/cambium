@@ -62,29 +62,31 @@ policy = "seed"
 seed = "cargo-deps"
 ```
 
-A machine-wide, per-toolchain seed of Cargo dependency builds, instead of a
-copy of the primary checkout's directory. `cambium seed refresh [NAME]`
-publishes it from a built workspace (while no build holds Cargo's lock);
-`add`, `create` and `fork` clone it (APFS clone, about zero bytes) into a
-workspace whose path is absent.
+Cambium uses this rule by default for an ignored `target` with a committed
+`Cargo.lock` on a CoW filesystem. An explicit rule for `target` takes precedence.
 
-- Store: `~/Library/Caches/cambium-seed/<rustc release>/target`, a link to one
-  immutable snapshot; `$CAMBIUM_SEED_ROOT` overrides it. The release comes from
-  `rustc -vV` run in the workspace, so `rust-toolchain.toml` applies. The
-  snapshot also records the full `rustc -vV`; a different build of the same
-  release gets no seed.
-- Whitelist: a unit is published only when its `.fingerprint/<package>-<hash>`
-  names a package that `Cargo.lock` lists with a `source` (registry or git).
-  Its `build/` directory and `deps/` files follow by that name and hash.
-  Workspace members, path dependencies and anything unidentified stay behind.
-  A package name that is both local and registry stops the refresh.
-- On apply the seed is pruned again against the receiving workspace's own
-  `Cargo.lock`, and nothing is applied without one.
-- One seed per toolchain: a refresh replaces it (the previous snapshot is kept
-  for readers already cloning it).
-- Never silent: a workspace that gets no seed records why under
-  `dependency seed:` (`inspect`), for example "no seed for rustc 1.93.0".
-- Not captured into checkpoints or receipts; the seed store is the only source.
+`cambium seed warm [PATH]` runs `cargo check` and `cargo build` with
+`--locked --workspace` in a temporary linked worktree at the invoking
+checkout's HEAD. The path selects the seed rule. Cargo's workspace features,
+configured target and default profile apply. `cambium seed refresh [NAME]`
+publishes the profiles present in an existing build. Removal also publishes
+missing profiles when Cargo's build lock is idle.
+
+- The store defaults to `~/Library/Caches/cambium-seed` on macOS and
+  `$XDG_CACHE_HOME/cambium-seed` (or `~/.cache/cambium-seed`) on Linux.
+  `$CAMBIUM_SEED_ROOT` overrides it. The `v2` store keys each payload by a
+  digest of `Cargo.lock`, the full `rustc -vV` output, and the Cargo target
+  triple and profile directory. Warm or refresh supplies the new entries.
+- A unit is published when its fingerprint names a package listed with a
+  registry or Git source in `Cargo.lock`. Matching files under `build/` and
+  `deps/` travel with it. Workspace members, path dependencies and
+  unidentified units are excluded. A name listed as both local and sourced
+  is ambiguous and prevents capture.
+- Add, create and fork start an absent target from the matching payloads.
+  Cargo decides which units are fresh. Add and status show the seed outcome
+  and include a typed reason in JSON under `dependency_seeds`.
+- Git-tree layers and checkpoints keep policy receipts. The seed store holds
+  the payloads referenced by those policies.
 
 ### `cargo-target`
 

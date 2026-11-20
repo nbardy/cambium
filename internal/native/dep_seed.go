@@ -1,7 +1,9 @@
 package native
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,53 +11,26 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/nbardy/cambium/internal/config"
 	"github.com/nbardy/cambium/internal/environment"
 	"github.com/nbardy/cambium/internal/execx"
-	"github.com/nbardy/cambium/internal/project"
+	"github.com/nbardy/cambium/internal/fsx"
+	"github.com/nbardy/cambium/internal/lockfile"
+	"github.com/nbardy/cambium/internal/model"
 )
 
-// A dependency seed (`policy = "seed"`, `seed = "cargo-deps"`) starts a new
-// workspace's Cargo target directory from the compiled units of registry and
-// git dependencies, one seed per compiler release, shared by every repository
-// and workspace on the machine. It generalizes Keel's scripts/seed.sh.
-//
-// Only dependency units travel (measured 2026-10-30 in Keel, 2026-11-12 here):
-// Cargo's fingerprints for workspace members do not depend on the checkout
-// path, so a member unit cloned into another checkout reads Fresh, and the
-// binary prints the ORIGIN's CARGO_MANIFEST_DIR. Registry and git sources live
-// at the same CARGO_HOME paths in every checkout, so their units are safe.
-// Membership is a whitelist: a unit is published only when its
-// `.fingerprint/<package>-<hash>` names a package that Cargo.lock lists with a
-// source. Anything unidentified stays behind, so the worst outcome is a
-// rebuild, never a wrong binary.
-
-// SeedRootEnv overrides the seed store directory.
 const SeedRootEnv = "CAMBIUM_SEED_ROOT"
 
-const seedRecordName = "cambium-seed.json"
+var (
+	errNoSeedArtifacts      = errors.New("no compiled registry or git dependency units")
+	errSeedCompilerMismatch = errors.New("target was built with a different rustc")
+)
 
-// How many published snapshots a toolchain keeps: the current one and the one
-// before it, so an apply that resolved the old link just before a refresh can
-// still finish cloning it.
-const seedSnapshotsKept = 2
-
-// SeedRoot is where per-toolchain seeds live: CAMBIUM_SEED_ROOT, else
-// ~/Library/Caches/cambium-seed on macOS, else $XDG_CACHE_HOME/cambium-seed.
 func SeedRoot() (string, error) {
 	if value := os.Getenv(SeedRootEnv); value != "" {
-		return value, nil
-	}
-	if runtime.GOOS == "darwin" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
-		}
-		return filepath.Join(home, "Library", "Caches", "cambium-seed"), nil
+		return filepath.Abs(value)
 	}
 	cache, err := os.UserCacheDir()
 	if err != nil {
@@ -64,46 +39,69 @@ func SeedRoot() (string, error) {
 	return filepath.Join(cache, "cambium-seed"), nil
 }
 
-// Toolchain is the compiler a workspace builds with, as `rustc -vV` reports it
-// from inside that workspace (so rust-toolchain.toml applies).
 type Toolchain struct {
 	Release string
+	Host    string
 	Info    string
+	Rustc   string
 }
 
-var rustcRelease = regexp.MustCompile(`(?m)^release: (\S+)$`)
+func pinnedRustup(runner execx.Runner, dir string) (string, error) {
+	pinned := os.Getenv("RUSTUP_TOOLCHAIN") != ""
+	for _, name := range []string{"rust-toolchain.toml", "rust-toolchain"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
+			pinned = true
+		}
+	}
+	if !pinned {
+		return "", nil
+	}
+	return runner.LookPath("rustup")
+}
 
 func detectToolchain(ctx context.Context, runner execx.Runner, dir string) (Toolchain, error) {
-	result, err := runner.Run(ctx, execx.Command{Dir: dir, Name: "rustc", Args: []string{"-vV"}})
+	rustc := os.Getenv("RUSTC")
+	if rustc == "" {
+		rustc = "rustc"
+		rustup, err := pinnedRustup(runner, dir)
+		if err != nil {
+			return Toolchain{}, err
+		}
+		if rustup != "" {
+			result, err := runner.Run(ctx, execx.Command{Dir: dir, Name: rustup, Args: []string{"which", "rustc"}})
+			if err != nil {
+				return Toolchain{}, err
+			}
+			rustc = strings.TrimSpace(result.Stdout)
+		}
+	}
+	result, err := runner.Run(ctx, execx.Command{Dir: dir, Name: rustc, Args: []string{"-vV"}})
 	if err != nil {
-		return Toolchain{}, fmt.Errorf("rustc -vV in %s: %w", dir, err)
+		return Toolchain{}, fmt.Errorf("detect rustc in %s: %w", dir, err)
 	}
-	match := rustcRelease.FindStringSubmatch(result.Stdout)
-	if match == nil {
-		return Toolchain{}, fmt.Errorf("rustc -vV in %s printed no release line", dir)
+	toolchain := Toolchain{Info: strings.TrimSpace(result.Stdout), Rustc: rustc}
+	for _, line := range strings.Split(result.Stdout, "\n") {
+		switch key, value, _ := strings.Cut(line, ": "); key {
+		case "release":
+			toolchain.Release = value
+		case "host":
+			toolchain.Host = value
+		}
 	}
-	return Toolchain{Release: match[1], Info: result.Stdout}, nil
+	if toolchain.Release == "" || toolchain.Host == "" {
+		return Toolchain{}, errors.New("rustc -vV did not report its release and host")
+	}
+	return toolchain, nil
 }
 
-// seedRecord is written beside every snapshot.
-type seedRecord struct {
-	OriginTarget  string        `json:"origin_target"`
-	Created       time.Time     `json:"created"`
-	Rustc         string        `json:"rustc"`
-	Registry      int           `json:"registry_packages"`
-	LocalExcluded []string      `json:"local_packages_excluded"`
-	Profiles      []ProfileSeed `json:"profiles"`
-}
-
-// ProfileSeed counts what one profile directory contributed.
 type ProfileSeed struct {
 	Profile           string `json:"profile"`
+	Target            string `json:"target"`
 	Units             int    `json:"units"`
 	Files             int    `json:"files"`
 	DroppedLocalUnits int    `json:"dropped_local_units"`
 }
 
-// SeedPublication is the result of `cambium seed refresh`.
 type SeedPublication struct {
 	Release  string        `json:"release"`
 	Seed     string        `json:"seed"`
@@ -111,135 +109,263 @@ type SeedPublication struct {
 	Profiles []ProfileSeed `json:"profiles"`
 }
 
-// seedUnitFile matches the unit hash inside a deps file name:
-// lib<crate>-<hash>.rlib, <crate>-<hash>.d, <crate>-<hash>.<cgu>.rcgu.o, <bin>-<hash>.
-var seedUnitFile = regexp.MustCompile(`-([0-9a-f]{16})(?:\.|$)`)
+type seedRecord struct {
+	ProfileSeed
+	Payload string `json:"payload"`
+}
 
-var cargoUnitFull = regexp.MustCompile(`^(.+)-([0-9a-f]{16})$`)
+func (p ProfileSeed) key() string {
+	return seedDigest([]byte(p.Target + "\x00" + p.Profile))
+}
 
-// RefreshDepSeed publishes the dependency units of the workspace's Cargo
-// targets as the seed for its compiler release, replacing the previous one.
-// The workspace's rules name which paths are Cargo targets.
-func RefreshDepSeed(ctx context.Context, project *project.Project, cloner Cloner, workspacePath string) (SeedPublication, error) {
-	commit, err := project.Repository.ResolveCommitAt(ctx, workspacePath, "HEAD")
+type depSeed struct {
+	target    string
+	lockRoot  string
+	root      string
+	lockHash  string
+	toolchain Toolchain
+	locals    map[string]struct{}
+	sourced   map[string]struct{}
+}
+
+func seedDigest(data []byte) string { return fmt.Sprintf("%x", sha256.Sum256(data)) }
+
+func resolveDepSeed(ctx context.Context, cloner Cloner, target string) (depSeed, model.SeedReason, error) {
+	lock := cargoLockfile(target)
+	content, err := os.ReadFile(lock)
 	if err != nil {
-		return SeedPublication{}, err
+		return depSeed{}, model.SeedLockUnavailable, fmt.Errorf("read %s: %w", lock, err)
 	}
-	rules, err := environment.ResolveRulesAt(ctx, project.Repository, commit)
+	locals, sourced, err := parseCargoLock(bytes.NewReader(content))
 	if err != nil {
-		return SeedPublication{}, err
+		return depSeed{}, model.SeedLockUnavailable, fmt.Errorf("read %s: %w", lock, err)
 	}
-	var target string
-	for _, rule := range rules {
-		if rule.IsDepSeed() {
-			target = filepath.Join(workspacePath, filepath.FromSlash(rule.Path))
-			break
-		}
-	}
-	if target == "" {
-		return SeedPublication{}, errors.New(`no path policy with policy = "seed" and seed = "cargo-deps" in this repository`)
-	}
-	locals, sourced, err := scanCargoLock(cargoLockfile(target))
-	if err != nil {
-		return SeedPublication{}, fmt.Errorf("read %s: %w", cargoLockfile(target), err)
+	if len(sourced) == 0 {
+		return depSeed{}, model.SeedNoSourceBuild, errors.New("Cargo.lock lists no registry or Git dependencies")
 	}
 	for name := range locals {
 		if _, both := sourced[name]; both {
-			// A shared name would make the fingerprint whitelist ambiguous.
-			return SeedPublication{}, fmt.Errorf("package %q is both local and registry in Cargo.lock; refusing to guess", name)
+			return depSeed{}, model.SeedCaptureFailed, fmt.Errorf("package %q has both local and sourced entries in Cargo.lock", name)
 		}
 	}
-	toolchain, err := detectToolchain(ctx, cloner.runner(), workspacePath)
+	toolchain, err := detectToolchain(ctx, cloner.runner(), filepath.Dir(target))
 	if err != nil {
-		return SeedPublication{}, err
+		return depSeed{}, model.SeedToolchainUnavailable, err
 	}
 	root, err := SeedRoot()
 	if err != nil {
-		return SeedPublication{}, err
+		return depSeed{}, model.SeedCaptureFailed, err
 	}
-	version := filepath.Join(root, toolchain.Release)
-	stamp := fmt.Sprintf("%s-%d", time.Now().Format("20060102T150405"), os.Getpid())
-	staging := filepath.Join(version, "target."+stamp)
-	if err := os.MkdirAll(staging, 0o755); err != nil {
-		return SeedPublication{}, err
+	lockHash := seedDigest(content)
+	lockRoot := filepath.Join(root, "v2", lockHash)
+	return depSeed{target: target, lockRoot: lockRoot, root: filepath.Join(lockRoot, seedDigest([]byte(toolchain.Info))), lockHash: lockHash, toolchain: toolchain, locals: locals, sourced: sourced}, "", nil
+}
+
+// The store is shared by repositories, so the layer lock lives beside the
+// shared entries. Readers hold it until their clone of the generation ends.
+func (s depSeed) lock(ctx context.Context) (*lockfile.Lock, error) {
+	return lockfile.AcquireContext(ctx, filepath.Join(s.lockRoot, "layer-"+s.lockHash+".lock"))
+}
+
+func (s depSeed) failure(err error) {
+	reason := model.SeedCaptureFailed
+	if errors.Is(err, errSeedCompilerMismatch) {
+		reason = model.SeedToolchainMismatch
 	}
-	// Cargo holds its build lock exclusively while it writes; holding it shared
-	// while cloning gives a consistent snapshot, and refuses while a build runs.
-	release, err := holdCargoIdle(target)
+	detail, _, _ := strings.Cut(err.Error(), "\n")
+	data, _ := json.Marshal(model.SeedResult{Reason: reason, Detail: detail})
+	_ = fsx.WriteFileAtomic(filepath.Join(s.root, "failure"), data, 0o644)
+}
+
+func readSeedRecord(root string) (seedRecord, bool) {
+	data, err := os.ReadFile(filepath.Join(root, "metadata.json"))
+	var record seedRecord
+	if err != nil || json.Unmarshal(data, &record) != nil || record.Units <= 0 || record.Files <= 0 {
+		return seedRecord{}, false
+	}
+	profile := filepath.FromSlash(record.Profile)
+	if !filepath.IsLocal(profile) || filepath.Clean(profile) != profile || profile == "." || record.key() != filepath.Base(root) ||
+		!strings.HasPrefix(record.Payload, ".payload-") || filepath.Base(record.Payload) != record.Payload {
+		return seedRecord{}, false
+	}
+	payload := filepath.Join(root, record.Payload)
+	if info, err := os.Lstat(payload); err != nil || !info.IsDir() {
+		return seedRecord{}, false
+	}
+	for _, dir := range []string{".fingerprint", "deps"} {
+		path := filepath.Join(payload, dir)
+		if info, err := os.Lstat(path); err != nil || !info.IsDir() {
+			return seedRecord{}, false
+		}
+		entries, err := os.ReadDir(path)
+		if err != nil || len(entries) == 0 {
+			return seedRecord{}, false
+		}
+		if dir == "deps" && !hasSeedArtifact(entries) {
+			return seedRecord{}, false
+		}
+	}
+	return record, true
+}
+
+func (s depSeed) capture(ctx context.Context, cloner Cloner, onlyMissing bool) (publication SeedPublication, err error) {
+	if _, err := os.Lstat(s.target); errors.Is(err, os.ErrNotExist) {
+		return publication, fmt.Errorf("%s: %w", s.target, errNoSeedArtifacts)
+	}
+	lock, err := s.lock(ctx)
 	if err != nil {
-		_ = os.RemoveAll(staging)
-		return SeedPublication{}, fmt.Errorf("%w; refresh again when it finishes", err)
+		return publication, err
+	}
+	defer lock.Release()
+	defer func() {
+		if err != nil && !errors.Is(err, errNoSeedArtifacts) {
+			s.failure(err)
+		}
+	}()
+	release, err := holdCargoIdle(s.target)
+	if err != nil {
+		return publication, err
 	}
 	defer release()
+	if err := s.checkCompiler(); err != nil {
+		return publication, err
+	}
+	profiles, _, err := cargoProfileDirs(s.target)
+	if err != nil {
+		return publication, err
+	}
+	publication = SeedPublication{Release: s.toolchain.Release, Seed: s.root, Snapshot: s.root}
+	for _, dir := range profiles {
+		profile, err := s.captureProfile(ctx, cloner, dir, onlyMissing)
+		if err != nil {
+			return publication, err
+		}
+		if profile.Units > 0 && profile.Files > 0 {
+			publication.Profiles = append(publication.Profiles, profile)
+		}
+	}
+	if len(publication.Profiles) == 0 {
+		return publication, fmt.Errorf("%s: %w", s.target, errNoSeedArtifacts)
+	}
+	_ = os.Remove(filepath.Join(s.root, "failure"))
+	return publication, nil
+}
+
+// Cargo caches the compiler probe alongside the target. Check it when
+// available so a toolchain change after a build cannot label the old target
+// as the new compiler. Cargo also verifies fingerprints of individual units.
+func (s depSeed) checkCompiler() error {
+	data, err := os.ReadFile(filepath.Join(s.target, ".rustc_info.json"))
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var probe struct {
+		Outputs map[string]struct{ Stdout string }
+	}
+	if err := json.Unmarshal(data, &probe); err != nil {
+		return err
+	}
+	found := false
+	for _, output := range probe.Outputs {
+		info := strings.TrimSpace(output.Stdout)
+		if strings.HasPrefix(info, "rustc ") && strings.Contains(info, "\nrelease: ") {
+			if info == s.toolchain.Info {
+				return nil
+			}
+			found = true
+		}
+	}
+	if found {
+		return fmt.Errorf("%w than %s", errSeedCompilerMismatch, s.toolchain.Release)
+	}
+	return nil
+}
+
+func (s depSeed) captureProfile(ctx context.Context, cloner Cloner, dir string, onlyMissing bool) (ProfileSeed, error) {
+	relative, err := filepath.Rel(s.target, dir)
+	if err != nil {
+		return ProfileSeed{}, err
+	}
+	triple := s.toolchain.Host
+	if parent := filepath.Dir(relative); parent != "." {
+		triple = parent
+	}
+	layout := ProfileSeed{Target: triple, Profile: filepath.ToSlash(relative)}
+	root := filepath.Join(s.root, layout.key())
+	previous, exists := readSeedRecord(root)
+	if onlyMissing && exists {
+		return previous.ProfileSeed, nil
+	}
+	if !exists {
+		// An interrupted or externally damaged entry owns neither a valid
+		// payload nor a reusable receipt. Keep it aside for inspection.
+		if _, err := os.Lstat(root); err == nil {
+			aside, err := os.MkdirTemp(s.root, ".incomplete-")
+			if err != nil {
+				return ProfileSeed{}, err
+			}
+			if err := os.Rename(root, aside); err != nil {
+				_ = os.Remove(aside)
+				return ProfileSeed{}, err
+			}
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return ProfileSeed{}, err
+		}
+	}
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return ProfileSeed{}, err
+	}
+	staging, err := os.MkdirTemp(root, ".payload-")
+	if err != nil {
+		return ProfileSeed{}, err
+	}
 	published := false
 	defer func() {
 		if !published {
 			_ = os.RemoveAll(staging)
+			if !exists {
+				_ = os.Remove(root)
+			}
 		}
 	}()
-	var rootFiles []string
-	for _, name := range []string{".rustc_info.json", "CACHEDIR.TAG"} {
-		if _, err := os.Lstat(filepath.Join(target, name)); err == nil {
-			rootFiles = append(rootFiles, filepath.Join(target, name))
-		}
+	profile, err := seedProfile(ctx, cloner.runner(), dir, staging, layout, s.sourced, s.locals)
+	if err != nil || profile.Units == 0 || profile.Files == 0 {
+		return profile, err
 	}
-	if err := cloneInto(ctx, cloner.runner(), rootFiles, staging); err != nil {
-		return SeedPublication{}, err
-	}
-	profiles, _, err := cargoProfileDirs(target)
+	current, err := os.ReadFile(cargoLockfile(s.target))
 	if err != nil {
-		return SeedPublication{}, err
+		return ProfileSeed{}, err
 	}
-	var seeded []ProfileSeed
-	for _, dir := range profiles {
-		relative, err := filepath.Rel(target, dir)
-		if err != nil {
-			return SeedPublication{}, err
-		}
-		profile, err := seedProfile(ctx, cloner.runner(), dir, filepath.Join(staging, relative), relative, sourced, locals)
-		if err != nil {
-			return SeedPublication{}, err
-		}
-		seeded = append(seeded, profile)
+	if seedDigest(current) != s.lockHash {
+		return ProfileSeed{}, errors.New("Cargo.lock changed during seed capture")
 	}
-	if len(seeded) == 0 {
-		return SeedPublication{}, fmt.Errorf("%s has no Cargo profile with a .fingerprint; build the workspace first", target)
-	}
-	excluded := make([]string, 0, len(locals))
-	for name := range locals {
-		excluded = append(excluded, name)
-	}
-	sort.Strings(excluded)
-	record := seedRecord{OriginTarget: target, Created: time.Now().UTC(), Rustc: toolchain.Info, Registry: len(sourced), LocalExcluded: excluded, Profiles: seeded}
-	encoded, err := json.MarshalIndent(record, "", "  ")
+	record, err := json.Marshal(seedRecord{ProfileSeed: profile, Payload: filepath.Base(staging)})
 	if err != nil {
-		return SeedPublication{}, err
+		return ProfileSeed{}, err
 	}
-	if err := os.WriteFile(filepath.Join(staging, seedRecordName), append(encoded, '\n'), 0o644); err != nil {
-		return SeedPublication{}, err
-	}
-	link := filepath.Join(version, "target")
-	if info, err := os.Lstat(link); err == nil && info.Mode()&os.ModeSymlink == 0 {
-		return SeedPublication{}, fmt.Errorf("%s is a directory, not a seed link; remove it explicitly", link)
-	}
-	// Atomic replace: readers resolve `target` to the old or the new complete snapshot.
-	temporary := filepath.Join(version, fmt.Sprintf(".target.link.%d", os.Getpid()))
-	_ = os.Remove(temporary)
-	if err := os.Symlink(filepath.Base(staging), temporary); err != nil {
-		return SeedPublication{}, err
-	}
-	if err := os.Rename(temporary, link); err != nil {
-		return SeedPublication{}, err
+	if err := fsx.WriteFileAtomic(filepath.Join(root, "metadata.json"), record, 0o644); err != nil {
+		// A directory sync can fail after metadata points at the new generation.
+		current, ok := readSeedRecord(root)
+		published = ok && current.Payload == filepath.Base(staging)
+		return ProfileSeed{}, err
 	}
 	published = true
-	retireOldSnapshots(version)
-	return SeedPublication{Release: toolchain.Release, Seed: link, Snapshot: staging, Profiles: seeded}, nil
+	if exists {
+		_ = os.RemoveAll(filepath.Join(root, previous.Payload))
+	}
+	return profile, nil
 }
+
+var seedUnitFile = regexp.MustCompile(`-([0-9a-f]{16})(?:\.|$)`)
+var cargoUnitFull = regexp.MustCompile(`^(.+)-([0-9a-f]{16})$`)
 
 // seedProfile stages one profile directory: the fingerprint directories of
 // registry/git packages, their build-script directories, and the deps files
 // carrying one of their unit hashes.
-func seedProfile(ctx context.Context, runner execx.Runner, source, destination, name string, sourced, locals map[string]struct{}) (ProfileSeed, error) {
+func seedProfile(ctx context.Context, runner execx.Runner, source, destination string, profile ProfileSeed, sourced, locals map[string]struct{}) (ProfileSeed, error) {
 	entries, err := os.ReadDir(filepath.Join(source, ".fingerprint"))
 	if err != nil {
 		return ProfileSeed{}, err
@@ -249,14 +375,14 @@ func seedProfile(ctx context.Context, runner execx.Runner, source, destination, 
 	droppedLocal := 0
 	for _, entry := range entries {
 		match := cargoUnitFull.FindStringSubmatch(entry.Name())
-		if match == nil {
+		if match == nil || !entry.IsDir() {
 			continue
 		}
 		if _, ok := sourced[match[1]]; ok {
 			hashes[match[2]] = struct{}{}
 			fingerprints = append(fingerprints, filepath.Join(source, ".fingerprint", entry.Name()))
 			build := filepath.Join(source, "build", entry.Name())
-			if info, err := os.Stat(build); err == nil && info.IsDir() {
+			if info, err := os.Lstat(build); err == nil && info.IsDir() {
 				builds = append(builds, build)
 			}
 		} else if _, ok := locals[match[1]]; ok {
@@ -264,16 +390,24 @@ func seedProfile(ctx context.Context, runner execx.Runner, source, destination, 
 		}
 	}
 	var deps []string
+	var artifacts []os.DirEntry
 	depEntries, err := os.ReadDir(filepath.Join(source, "deps"))
 	if err != nil {
 		return ProfileSeed{}, err
 	}
 	for _, entry := range depEntries {
+		if !entry.Type().IsRegular() {
+			continue
+		}
 		if match := seedUnitFile.FindStringSubmatch(entry.Name()); match != nil {
 			if _, ok := hashes[match[1]]; ok {
 				deps = append(deps, filepath.Join(source, "deps", entry.Name()))
+				artifacts = append(artifacts, entry)
 			}
 		}
+	}
+	if !hasSeedArtifact(artifacts) {
+		return profile, nil
 	}
 	for _, part := range []struct {
 		sources []string
@@ -283,7 +417,17 @@ func seedProfile(ctx context.Context, runner execx.Runner, source, destination, 
 			return ProfileSeed{}, err
 		}
 	}
-	return ProfileSeed{Profile: name, Units: len(hashes), Files: len(deps), DroppedLocalUnits: droppedLocal}, nil
+	profile.Units, profile.Files, profile.DroppedLocalUnits = len(hashes), len(deps), droppedLocal
+	return profile, nil
+}
+
+func hasSeedArtifact(entries []os.DirEntry) bool {
+	for _, entry := range entries {
+		if entry.Type().IsRegular() && filepath.Ext(entry.Name()) != ".d" {
+			return true
+		}
+	}
+	return false
 }
 
 // cloneInto copies sources into directory with one clone primitive per
@@ -315,69 +459,121 @@ func cloneInto(ctx context.Context, runner execx.Runner, sources []string, direc
 	return nil
 }
 
-// retireOldSnapshots keeps the newest seedSnapshotsKept snapshots. Snapshots
-// are APFS clones, so removing one frees only its unique blocks.
-func retireOldSnapshots(version string) {
-	snapshots, _ := filepath.Glob(filepath.Join(version, "target.*"))
-	sort.Strings(snapshots) // names start with a sortable timestamp
-	for len(snapshots) > seedSnapshotsKept {
-		_ = os.RemoveAll(snapshots[0])
-		snapshots = snapshots[1:]
+func applyDepSeed(ctx context.Context, cloner Cloner, workspace string, rule config.LayerRule, requireCoW bool) (model.SeedResult, error) {
+	cold := func(reason model.SeedReason, detail string) (model.SeedResult, error) {
+		return model.SeedResult{Path: rule.Path, Reason: reason, Detail: detail}, ctx.Err()
 	}
-}
-
-// applyDepSeed starts a workspace's target directory from the seed for its
-// compiler. Every outcome is a named line for the workspace record: "seeded"
-// or "unseeded: <reason>". An absent seed is not an error (the first build
-// compiles dependencies itself) but it is said aloud.
-func applyDepSeed(ctx context.Context, cloner Cloner, workspacePath string, rule config.LayerRule, requireCoW bool) (string, error) {
-	destination := filepath.Join(workspacePath, filepath.FromSlash(rule.Path))
-	unseeded := func(format string, args ...any) (string, error) {
-		return fmt.Sprintf("%s: unseeded: %s", rule.Path, fmt.Sprintf(format, args...)), nil
-	}
+	destination := filepath.Join(workspace, filepath.FromSlash(rule.Path))
 	if _, err := os.Lstat(destination); err == nil {
-		return unseeded("%s already exists; a seed only starts an absent path", rule.Path)
+		return cold(model.SeedDestinationExists, "a seed only starts an absent path")
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return cold(model.SeedCloneFailed, err.Error())
 	}
-	// The seed is pruned against this workspace's own Cargo.lock, so a package
-	// that is local here is rebuilt here whatever the seed's origin thought.
-	lockfile := cargoLockfile(destination)
-	locals, _, err := scanCargoLock(lockfile)
+	seed, reason, err := resolveDepSeed(ctx, cloner, destination)
 	if err != nil {
-		return unseeded("no readable Cargo.lock beside the path (%v)", err)
+		return cold(reason, err.Error())
 	}
-	toolchain, err := detectToolchain(ctx, cloner.runner(), workspacePath)
+	lock, err := seed.lock(ctx)
 	if err != nil {
-		return unseeded("%v", err)
+		return cold(model.SeedCaptureFailed, err.Error())
 	}
-	root, err := SeedRoot()
-	if err != nil {
-		return unseeded("%v", err)
+	defer lock.Release()
+	profiles, err := os.ReadDir(seed.root)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return cold(model.SeedCaptureFailed, err.Error())
 	}
-	link := filepath.Join(root, toolchain.Release, "target")
-	snapshot, err := filepath.EvalSymlinks(link)
-	if err != nil {
-		return unseeded("no seed for rustc %s; `cambium seed refresh` publishes one", toolchain.Release)
+	var records []seedRecord
+	var sources []string
+	incomplete := false
+	for _, profile := range profiles {
+		if !profile.IsDir() || strings.HasPrefix(profile.Name(), ".") {
+			continue
+		}
+		root := filepath.Join(seed.root, profile.Name())
+		record, ok := readSeedRecord(root)
+		if !ok {
+			incomplete = true
+			continue
+		}
+		records = append(records, record)
+		sources = append(sources, filepath.Join(root, record.Payload))
 	}
-	recorded, err := os.ReadFile(filepath.Join(snapshot, seedRecordName))
-	var record seedRecord
-	if err != nil || json.Unmarshal(recorded, &record) != nil {
-		return unseeded("seed %s has no readable %s", snapshot, seedRecordName)
-	}
-	if strings.TrimSpace(record.Rustc) != strings.TrimSpace(toolchain.Info) {
-		// Same release number, different build (commit or host): Cargo would
-		// discard the units anyway.
-		return unseeded("seed was built by a different rustc than %s", toolchain.Release)
+	if len(records) == 0 {
+		if failure, err := os.ReadFile(filepath.Join(seed.root, "failure")); err == nil {
+			var result model.SeedResult
+			if json.Unmarshal(failure, &result) == nil && result.Reason != "" {
+				return cold(result.Reason, result.Detail)
+			}
+			return cold(model.SeedCaptureFailed, "seed failure record is unreadable")
+		}
+		if incomplete {
+			return cold(model.SeedCaptureFailed, "seed has an incomplete payload; run cambium seed warm "+rule.Path)
+		}
+		toolchains, err := os.ReadDir(seed.lockRoot)
+		if err != nil {
+			return cold(model.SeedCaptureFailed, err.Error())
+		}
+		for _, compiler := range toolchains {
+			if !compiler.IsDir() || compiler.Name() == filepath.Base(seed.root) {
+				continue
+			}
+			entries, _ := os.ReadDir(filepath.Join(seed.lockRoot, compiler.Name()))
+			for _, entry := range entries {
+				if _, ok := readSeedRecord(filepath.Join(seed.lockRoot, compiler.Name(), entry.Name())); ok {
+					return cold(model.SeedToolchainMismatch, "this Cargo.lock has a seed for a different compiler; run cambium seed warm "+rule.Path)
+				}
+			}
+		}
+		return cold(model.SeedNoSourceBuild, "no dependency build for this Cargo.lock and rustc "+seed.toolchain.Release+"; run cambium seed warm "+rule.Path)
 	}
 	if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {
-		return "", err
+		return cold(model.SeedCloneFailed, err.Error())
 	}
-	if _, err := cloner.ClonePath(ctx, snapshot, destination, requireCoW); err != nil {
-		_ = os.RemoveAll(destination)
-		return "", fmt.Errorf("clone seed into %s: %w", rule.Path, err)
+	staging, err := os.MkdirTemp(filepath.Dir(destination), ".cambium-seed-")
+	if err != nil {
+		return cold(model.SeedCloneFailed, err.Error())
 	}
-	// pruneCargoTarget also drops the seed record, which sits at the top level.
-	if err := pruneCargoTarget(destination, lockedLocals(locals)); err != nil {
-		return "", err
+	defer os.RemoveAll(staging)
+	units := 0
+	for i, record := range records {
+		if _, err := cloner.ClonePath(ctx, sources[i], filepath.Join(staging, filepath.FromSlash(record.Profile)), requireCoW); err != nil {
+			return cold(model.SeedCloneFailed, err.Error())
+		}
+		units += record.Units
 	}
-	return fmt.Sprintf("%s: seeded from rustc %s", rule.Path, toolchain.Release), nil
+	if err := os.Rename(staging, destination); err != nil {
+		return cold(model.SeedCloneFailed, err.Error())
+	}
+	return model.SeedResult{Path: rule.Path, Reason: model.SeedCloned, Detail: fmt.Sprintf("%d dependency units for rustc %s", units, seed.toolchain.Release)}, nil
+}
+
+func (b *Backend) seedRules(ctx context.Context, worktree, commit string) ([]config.LayerRule, error) {
+	return environment.ResolveRulesAt(ctx, b.Project.Repository, commit, func() bool {
+		return b.Cloner.Probe(ctx, worktree).Supported
+	})
+}
+
+func (b *Backend) harvestDepSeeds(ctx context.Context, worktree string) {
+	commit, err := b.Project.Repository.ResolveCommitAt(ctx, worktree, "HEAD")
+	if err != nil {
+		return
+	}
+	rules, err := b.seedRules(ctx, worktree, commit)
+	if err != nil {
+		return
+	}
+	for _, rule := range rules {
+		if !rule.IsDepSeed() {
+			continue
+		}
+		target := filepath.Join(worktree, filepath.FromSlash(rule.Path))
+		info, err := os.Lstat(target)
+		if err != nil || !info.IsDir() || validateLayerSafetyAt(ctx, b.Project, worktree, rule) != nil {
+			continue
+		}
+		seed, _, err := resolveDepSeed(ctx, b.Cloner, target)
+		if err == nil {
+			_, _ = seed.capture(ctx, b.Cloner, true)
+		}
+	}
 }

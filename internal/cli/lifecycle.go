@@ -77,6 +77,9 @@ func (a *App) runStatus(ctx context.Context, args []string) error {
 		for _, problem := range row.Errors {
 			fmt.Fprintf(a.Stderr, "warning: %s: %s\n", row.Name, problem)
 		}
+		for _, seed := range row.DependencySeeds {
+			fmt.Fprintf(a.Stderr, "%s seed: %s\n", row.Name, seed)
+		}
 	}
 	return table.Flush()
 }

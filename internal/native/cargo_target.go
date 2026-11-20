@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -66,6 +67,10 @@ func scanCargoLock(lockfile string) (locals, sourced map[string]struct{}, err er
 		return nil, nil, err
 	}
 	defer file.Close()
+	return parseCargoLock(file)
+}
+
+func parseCargoLock(file io.Reader) (locals, sourced map[string]struct{}, err error) {
 	locals, sourced = map[string]struct{}{}, map[string]struct{}{}
 	name, hasSource, open := "", false, false
 	flush := func() {

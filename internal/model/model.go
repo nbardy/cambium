@@ -1,6 +1,11 @@
 package model
 
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
+)
 
 // Materializer selects how tracked files are populated into a linked Git
 // worktree. Auto prefers filesystem CoW and otherwise delegates checkout to
@@ -52,8 +57,59 @@ type Workspace struct {
 	EnvironmentReady      bool            `json:"environment_ready"`
 	EnvironmentMissing    []string        `json:"environment_missing,omitempty"`
 	EnvironmentUnverified []string        `json:"environment_unverified,omitempty"`
-	DependencySeeds       []string        `json:"dependency_seeds,omitempty"`
+	DependencySeeds       []SeedResult    `json:"dependency_seeds,omitempty"`
 	SpeculativeRoot       string          `json:"speculative_root,omitempty"`
+}
+
+type SeedReason string
+
+const (
+	SeedCloned               SeedReason = "seeded"
+	SeedNoSourceBuild        SeedReason = "no_source_build"
+	SeedCaptureFailed        SeedReason = "capture_failed"
+	SeedToolchainMismatch    SeedReason = "toolchain_mismatch"
+	SeedToolchainUnavailable SeedReason = "toolchain_unavailable"
+	SeedLockUnavailable      SeedReason = "lock_unavailable"
+	SeedDestinationExists    SeedReason = "destination_exists"
+	SeedCloneFailed          SeedReason = "clone_failed"
+	SeedLegacyUnknown        SeedReason = "legacy_unknown"
+)
+
+// SeedResult records what happened when the workspace was materialized.
+type SeedResult struct {
+	Path   string     `json:"path"`
+	Reason SeedReason `json:"reason"`
+	Detail string     `json:"detail,omitempty"`
+}
+
+func (s SeedResult) String() string {
+	if s.Reason == SeedCloned {
+		return fmt.Sprintf("%s: seeded: %s", s.Path, s.Detail)
+	}
+	return fmt.Sprintf("%s: cold (%s): %s", s.Path, s.Reason, s.Detail)
+}
+
+func (s *SeedResult) UnmarshalJSON(data []byte) error {
+	if len(data) > 0 && data[0] == '"' {
+		// v0.10 stored these observations as display strings.
+		var line string
+		if err := json.Unmarshal(data, &line); err != nil {
+			return err
+		}
+		path, detail, _ := strings.Cut(line, ": ")
+		*s = SeedResult{Path: path, Reason: SeedLegacyUnknown, Detail: detail}
+		switch {
+		case strings.HasPrefix(detail, "seeded from "):
+			s.Reason, s.Detail = SeedCloned, strings.TrimPrefix(detail, "seeded ")
+		case strings.HasPrefix(detail, "unseeded: no seed for rustc "):
+			s.Reason = SeedNoSourceBuild
+		case strings.HasPrefix(detail, "unseeded: seed was built by a different rustc "):
+			s.Reason = SeedToolchainMismatch
+		}
+		return nil
+	}
+	type record SeedResult
+	return json.Unmarshal(data, (*record)(s))
 }
 
 type DoctorCheck struct {

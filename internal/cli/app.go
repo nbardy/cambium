@@ -354,6 +354,11 @@ func (a *App) runAdd(ctx context.Context, args []string) error {
 		return writeJSON(a.Stdout, created)
 	}
 	if *printPath {
+		for _, seed := range created.DependencySeeds {
+			if seed.Reason != model.SeedCloned {
+				fmt.Fprintf(a.Stderr, "warning: %s\n", seed)
+			}
+		}
 		fmt.Fprintln(a.Stdout, created.Path)
 		return nil
 	}
@@ -1526,6 +1531,7 @@ Usage:
   cambium prune --merged REF [--older-than DURATION] [--delete-branch] [--dry-run] [--json]
   cambium status [--all] [--merged-into REF] [--no-bytes] [--json]
   cambium maintain [--all-repos] [--exclude PATH]... [--merged REF] [--older-than DURATION] [--dry-run] [--json]
+  cambium seed warm [--json] [PATH]
   cambium seed refresh [--json] [NAME]
   cambium doctor [--repair] [--json]
   cambium benchmark [flags]
@@ -1566,7 +1572,7 @@ func printWorkspaceDetail(writer io.Writer, value model.Workspace) {
 		fmt.Fprintf(writer, "environment unverified: %s\n", strings.Join(value.EnvironmentUnverified, ", "))
 	}
 	for _, note := range value.DependencySeeds {
-		fmt.Fprintf(writer, "dependency seed: %s\n", note)
+		fmt.Fprintf(writer, "seed: %s\n", note)
 	}
 	if value.SpeculativeRoot != "" {
 		fmt.Fprintf(writer, "speculative root: %s\n", value.SpeculativeRoot)

@@ -20,6 +20,7 @@ import (
 	"github.com/nbardy/cambium/internal/fsx"
 	"github.com/nbardy/cambium/internal/gitx"
 	"github.com/nbardy/cambium/internal/lockfile"
+	"github.com/nbardy/cambium/internal/model"
 	"github.com/nbardy/cambium/internal/project"
 )
 
@@ -56,14 +57,14 @@ type LayerApplyResult struct {
 	Recreated  []string `json:"recreated,omitempty"`
 	// Seeds records, per dependency-seed path, whether it was seeded or why it
 	// started empty. A missing seed is not an error, but it is never silent.
-	Seeds []string `json:"seeds,omitempty"`
+	Seeds []model.SeedResult `json:"seeds,omitempty"`
 }
 
 // PrepareLayers resolves branch-correct receipts from the target Git tree. A
 // source output is snapshotted only when the primary checkout has the same
 // receipt; this prevents a worktree for branch B from receiving branch A's
 // node_modules merely because both directories happen to exist locally.
-func PrepareLayers(ctx context.Context, project *project.Project, commit string, cloner Cloner, requireCoW bool) ([]LayerSnapshot, error) {
+func PrepareLayers(ctx context.Context, project *project.Project, commit string, cloner Cloner, requireCoW, supportsCoW bool) ([]LayerSnapshot, error) {
 	targetEntries, err := project.Repository.TreeEntries(ctx, commit)
 	if err != nil {
 		return nil, err
@@ -74,7 +75,7 @@ func PrepareLayers(ctx context.Context, project *project.Project, commit string,
 		sourceEntries, sourceCommitErr = project.Repository.TreeEntries(ctx, sourceCommit)
 	}
 
-	rules, err := environment.ResolveRulesAt(ctx, project.Repository, commit)
+	rules, err := environment.ResolveRulesAt(ctx, project.Repository, commit, func() bool { return supportsCoW })
 	if err != nil {
 		return nil, fmt.Errorf("resolve environment policies at %s: %w", commit, err)
 	}
@@ -191,7 +192,7 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 			}
 		}
 		if rule.IsDepSeed() {
-			note, err := applyDepSeed(ctx, cloner, workspacePath, rule, requireCoW)
+			note, err := applyDepSeed(ctx, cloner, workspacePath, rule, requireCoW || rule.Builtin)
 			if err != nil {
 				return LayerApplyResult{}, err
 			}
@@ -229,6 +230,9 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 			}
 		case config.LayerClone, config.LayerSeed:
 			if !layer.Present {
+				if rule.Mode == config.LayerSeed {
+					result.Seeds = append(result.Seeds, model.SeedResult{Path: rule.Path, Reason: model.SeedNoSourceBuild, Detail: "no captured output for this Git tree"})
+				}
 				if rule.Mode == config.LayerClone && (layer.Expected || rule.Required) {
 					result.Ready = false
 					result.Missing = append(result.Missing, rule.Path)
@@ -243,6 +247,9 @@ func applyLayers(ctx context.Context, project *project.Project, workspacePath st
 			}
 			if _, err := cloner.ClonePath(ctx, layer.Payload, destination, requireCoW); err != nil {
 				return LayerApplyResult{}, fmt.Errorf("materialize layer %s: %w", rule.Path, err)
+			}
+			if rule.Mode == config.LayerSeed {
+				result.Seeds = append(result.Seeds, model.SeedResult{Path: rule.Path, Reason: model.SeedCloned, Detail: "from the environment layer"})
 			}
 			if err := runRuleCommand(ctx, project, workspacePath, rule.Validate, "validate", rule.Path); err != nil {
 				return LayerApplyResult{}, err
@@ -342,7 +349,9 @@ func CaptureWorkspaceLayers(ctx context.Context, project *project.Project, works
 	if err != nil {
 		return nil, err
 	}
-	rules, err := environment.ResolveRulesAt(ctx, project.Repository, sourceRef)
+	rules, err := environment.ResolveRulesAt(ctx, project.Repository, sourceRef, func() bool {
+		return cloner.Probe(ctx, workspacePath).Supported
+	})
 	if err != nil {
 		return nil, fmt.Errorf("resolve environment policies at %s: %w", sourceRef, err)
 	}
@@ -866,7 +875,7 @@ func validateLayerSafetyAt(ctx context.Context, project *project.Project, worktr
 		}
 		return fmt.Errorf("path %q is tracked by Git; Cambium never overlays tracked paths", rule.Path)
 	}
-	if project.Config.RequireIgnoredLayers && !rule.AllowUnignored {
+	if (project.Config.RequireIgnoredLayers || rule.Builtin && rule.IsDepSeed()) && !rule.AllowUnignored {
 		ignored, err := project.Repository.IsIgnoredAt(ctx, worktree, rule.Path)
 		if err != nil {
 			return fmt.Errorf("check ignored path %s: %w", rule.Path, err)

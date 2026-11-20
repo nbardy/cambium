@@ -27,6 +27,7 @@ type CreateSpec struct {
 	RequireCoW    bool
 	Materializer  model.Materializer
 	PreparedIndex *bool
+	sourceOnly    bool
 }
 
 type PrepareResult struct {
@@ -73,20 +74,26 @@ func (b *Backend) Prepare(ctx context.Context, ref string, requested model.Mater
 		return PrepareResult{}, err
 	}
 	defer lock.Release()
-	return b.prepareAt(ctx, ref, requested, requireCoW, b.Project.WorktreesDir())
+	return b.prepareAt(ctx, ref, requested, requireCoW, b.Project.WorktreesDir(), false)
 }
 
 // prepareAt resolves materialization against the filesystem that will actually
 // hold the workspace. Custom workspace paths may be on a different volume than
 // Cambium's default state directory, so probing only the default location can
 // produce a false CoW plan followed by a late clone failure.
-func (b *Backend) prepareAt(ctx context.Context, ref string, requested model.Materializer, requireCoW bool, destinationParent string) (PrepareResult, error) {
+func (b *Backend) prepareAt(ctx context.Context, ref string, requested model.Materializer, requireCoW bool, destinationParent string, sourceOnly bool) (PrepareResult, error) {
 	commit, err := b.Project.Repository.ResolveCommit(ctx, ref)
 	if err != nil {
 		return PrepareResult{}, err
 	}
 	if requested == "" {
 		requested = b.Project.Config.Materializer
+	}
+	if sourceOnly {
+		// Warming needs a clean Git tree even when the temporary directory
+		// cannot clone from the repository's baseline volume.
+		plan, err := planMaterialization(model.MaterializerGit, CloneCapability{}, false)
+		return PrepareResult{Commit: commit, Plan: plan}, err
 	}
 	plan, err := b.Cloner.Plan(ctx, requested, b.Project.BaselinesDir(), destinationParent, requireCoW || b.Project.Config.RequireCoW)
 	if err != nil {
@@ -100,7 +107,7 @@ func (b *Backend) prepareAt(ctx context.Context, ref string, requested model.Mat
 		}
 		baseline = &value
 	}
-	layers, err := PrepareLayers(ctx, b.Project, commit, b.Cloner, requireCoW || b.Project.Config.RequireCoW)
+	layers, err := PrepareLayers(ctx, b.Project, commit, b.Cloner, requireCoW || b.Project.Config.RequireCoW, plan.Capability.Supported)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -180,7 +187,7 @@ func (b *Backend) Create(ctx context.Context, spec CreateSpec) (workspace model.
 	if err != nil {
 		return model.Workspace{}, err
 	}
-	prepared, prepareErr := b.prepareAt(ctx, spec.Ref, spec.Materializer, spec.RequireCoW, filepath.Dir(spec.Path))
+	prepared, prepareErr := b.prepareAt(ctx, spec.Ref, spec.Materializer, spec.RequireCoW, filepath.Dir(spec.Path), spec.sourceOnly)
 	if prepareErr != nil {
 		_ = cacheLock.Release()
 		return model.Workspace{}, prepareErr
@@ -467,6 +474,9 @@ func (b *Backend) remove(ctx context.Context, name string, force, deleteBranch b
 	record.DeleteBranch = deleteBranch
 	if err := b.Journal.Save(record); err != nil {
 		return err
+	}
+	if expectedBranchTip == "" {
+		b.harvestDepSeeds(ctx, workspace.Path)
 	}
 	if err = b.Project.Repository.WorktreeRemove(ctx, workspace.Path, force); err != nil {
 		return err

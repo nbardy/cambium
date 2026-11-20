@@ -142,7 +142,7 @@ func ResolveRules(repoRoot string) ([]config.LayerRule, error) {
 // keeps path policy branch-correct in the same way environment receipts are
 // branch-correct. Path rules have no local override: what a commit builds with
 // is decided by that commit.
-func ResolveRulesAt(ctx context.Context, repository gitx.Repository, commit string) ([]config.LayerRule, error) {
+func ResolveRulesAt(ctx context.Context, repository gitx.Repository, commit string, supportsCoW func() bool) ([]config.LayerRule, error) {
 	content, present, err := repository.FileAt(ctx, commit, config.PolicyFilename)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,32 @@ func ResolveRulesAt(ctx context.Context, repository gitx.Repository, commit stri
 			return nil, err
 		}
 	}
-	return config.MergeRules(Builtins(), custom)
+	builtins := Builtins()
+	for _, rule := range custom {
+		if rule.Path == "target" {
+			return config.MergeRules(builtins, custom)
+		}
+	}
+	_, rust, err := repository.FileAt(ctx, commit, "Cargo.lock")
+	if err != nil {
+		return nil, err
+	}
+	if rust {
+		for i, rule := range builtins {
+			if rule.Path != "target" {
+				continue
+			}
+			rule.Name = "Cargo dependency artifacts"
+			rule.Mode = config.LayerSkip
+			if supportsCoW() {
+				rule.Mode, rule.Seed = config.LayerSeed, config.SeedCargoDeps
+				rule.ActivateOnInputs, rule.SourceSensitive = true, false
+			}
+			builtins[i] = rule
+			break
+		}
+	}
+	return config.MergeRules(builtins, custom)
 }
 
 // Detect returns active existing ignored rules for init/explain output. It uses

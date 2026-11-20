@@ -83,19 +83,31 @@ a dead PID's marker is ignored. Checks never kill, signal or wait.
 
 ## Dependency seeds for Cargo
 
+A repository with a committed `Cargo.lock` gets `cargo-deps` seeding for its
+ignored `target` directory on CoW filesystems. An explicit rule for `target`
+takes precedence. Set `policy = "skip"` to leave the directory unmanaged.
+To enable the seed explicitly, use this rule in `.cambium.toml`.
+
 ```toml
-# .cambium.toml
 [[path]]
 path = "target"
 policy = "seed"
 seed = "cargo-deps"
 ```
 
-New workspaces start `target` from the registry and git dependency units of the
-seed for their `rustc` release, never from workspace members (cloning those
-makes Cargo treat another checkout's crates as Fresh). Warm the seed from a
-built workspace with `cambium seed refresh [NAME]`.
+Run `cambium seed warm target` to build the committed Cargo workspace in a
+temporary linked worktree and publish its registry and Git dependency artifacts
+for both `cargo check` and `cargo build`. The cache is keyed by the lockfile,
+compiler build, target triple and Cargo profile directory. Cargo checks
+freshness in the receiving workspace, where workspace members and path
+dependencies build locally.
 
+`cambium remove` fills missing seeds from a workspace's existing build.
+`cambium seed refresh [NAME]` publishes an existing build on demand. Add and
+status record whether each seed was cloned, with a reason such as
+`no_source_build`, `capture_failed` or `toolchain_mismatch` when it was cold.
+
+```bash
 # Replace a branch with a tag verified on the remote, then compare-and-delete it.
 # Exit 3 + {"archived":false,"reason":...}: checked-out, missing, tag-conflict,
 # push-unverified, moved. Rerunning after success returns {"already":true}.
