@@ -5,11 +5,15 @@ build:
 	go build -trimpath -o bin/cambium ./cmd/cambium
 	go build -trimpath -o bin/git-cambium ./cmd/git-cambium
 
+# Default -p 1 -parallel 1 avoids a macOS 15.5 XNU proc-table lock deadlock when
+# parallel test packages spawn rapid concurrent git/APFS operations (override with GO_TEST_FLAGS).
+GO_TEST_FLAGS ?= -p 1 -parallel 1
+
 test:
-	go test -count=1 ./...
+	go test -count=1 $(GO_TEST_FLAGS) ./...
 
 test-race:
-	go test -count=1 -race ./...
+	go test -count=1 -race $(GO_TEST_FLAGS) ./...
 
 vet:
 	go vet ./...
