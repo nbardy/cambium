@@ -611,6 +611,17 @@ func TestPopularEcosystemDefaultsUseGenericFilePolicies(t *testing.T) {
 			}
 			defer manager.Remove(ctx, value.Name, true, true)
 			workspacePayload := filepath.Join(value.Path, test.outputPath, "cambium-fixture.txt")
+			if test.name == "rust-cargo" {
+				// Rust Cargo.lock defaults target/ to the cargo-deps seed policy on CoW
+				// filesystems rather than blindly copying arbitrary files from target/.
+				if _, err := os.Stat(workspacePayload); !os.IsNotExist(err) {
+					t.Fatalf("expected cargo-deps default not to copy arbitrary target fixture, got err=%v", err)
+				}
+				if len(value.DependencySeeds) != 1 || value.DependencySeeds[0].Path != "target" {
+					t.Fatalf("expected cargo-deps seed result for target, got %+v", value.DependencySeeds)
+				}
+				return
+			}
 			assertFile(t, workspacePayload, test.name+"\n")
 			if err := os.WriteFile(workspacePayload, []byte("workspace-only\n"), 0o644); err != nil {
 				t.Fatal(err)

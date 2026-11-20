@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.1 - loud cold seeds, `seed warm`, harvest-on-remove, Rust cargo-deps default
+
+- **Loud cold seeds.** `cambium add` and `cambium status` (text and `--json`) report when a seed rule cloned nothing, with a typed reason (`no_source_build`, capture failure, toolchain mismatch, etc.), and recover from incomplete layers without ever recording an unbacked `present: true` layer.
+- **`cambium seed warm [PATH]`.** Builds third-party dependencies for the current `Cargo.lock`, toolchain, target triple, and profile in a scratch worktree and publishes the dependency-only seed layer independently of primary-checkout build state.
+- **Harvest on remove.** `cambium remove` publishes dependency-only `target/` artifacts (never workspace crates) when removing a workspace whose lock/toolchain has no warm seed.
+- **Rust default.** Repositories with `Cargo.lock` on CoW filesystems default `target` to `policy = "seed"` (`seed = "cargo-deps"`) unless an explicit `[[path]]` rule (such as `policy = "skip"`) overrides it.
+
 ## 0.10.0 - nothing unpushed is removed silently; protection; one registry
 
 - **Unpushed work.** `remove`, `prune --merged`, `maintain`, `gc` and the sweep on `add` refuse (`unpushed`,
